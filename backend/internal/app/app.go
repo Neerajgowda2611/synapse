@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"flag"
 	"net/http"
 	"os"
 	"os/signal"
@@ -10,16 +11,22 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/profiler/backend/configs"
+	"github.com/profiler/backend/internal/handler"
 	"github.com/profiler/backend/internal/logs"
 	"github.com/profiler/backend/internal/middleware"
 	"github.com/profiler/backend/pkg/database"
 )
 
 func Start() {
+	configPath := flag.String("config", "", "path to .env file")
+	flag.Parse()
+
 	logs.New()
 
-	cfg, err := configs.Load()
+	cfg, err := configs.Load(*configPath)
 	if err != nil {
 		logs.Error("failed to load config", "error", err.Error())
 		os.Exit(1)
@@ -44,7 +51,7 @@ func Start() {
 
 	logs.Info("database connected")
 
-	router := newRouter()
+	router := newRouter(db)
 
 	srv := &http.Server{
 		Addr:         cfg.ServerAddress(),
@@ -79,7 +86,7 @@ func Start() {
 	logs.Info("server stopped")
 }
 
-func newRouter() *gin.Engine {
+func newRouter(db *gorm.DB) *gin.Engine {
 	router := gin.New()
 	router.Use(middleware.Recovery())
 	router.Use(middleware.RequestLogger())
@@ -88,6 +95,8 @@ func newRouter() *gin.Engine {
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
+
+	handler.RegisterRoutes(router, db)
 
 	return router
 }

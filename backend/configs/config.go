@@ -14,8 +14,8 @@ type Config struct {
 	DatabaseURL string
 }
 
-func Load() (*Config, error) {
-	_ = godotenv.Load()
+func Load(configPath string) (*Config, error) {
+	loadEnv(configPath)
 
 	port := getEnv("PORT", "8080")
 	if _, err := strconv.Atoi(port); err != nil {
@@ -31,6 +31,19 @@ func Load() (*Config, error) {
 
 func (c *Config) ServerAddress() string {
 	return ":" + c.Port
+}
+
+func loadEnv(configPath string) {
+	if configPath != "" {
+		_ = godotenv.Load(configPath)
+		return
+	}
+
+	for _, path := range []string{".env", "../.env", "../../.env"} {
+		if err := godotenv.Load(path); err == nil {
+			return
+		}
+	}
 }
 
 func getEnv(key, fallback string) string {
