@@ -65,7 +65,7 @@ export default function PlatformPage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <span className="text-lg font-semibold">Profiler</span>
+          <span className="text-lg font-semibold text-gray-900">Profiler</span>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">{me?.email}</span>
             <button onClick={signOut} className="text-sm text-gray-500 hover:text-gray-900">
@@ -75,23 +75,23 @@ export default function PlatformPage() {
         </div>
       </header>
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <h1 className="text-xl font-semibold mb-4">Institutions</h1>
-        <div className="bg-white rounded-xl border overflow-hidden">
+        <h1 className="text-xl font-semibold text-gray-900 mb-4">Institutions</h1>
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           {institutions.length === 0 ? (
             <p className="text-center py-12 text-gray-400 text-sm">No institutions yet</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-gray-50 text-left">
-                  <th className="px-4 py-3">Name</th>
-                  <th className="px-4 py-3">Status</th>
+                <tr className="border-b border-gray-200 bg-gray-50 text-left">
+                  <th className="px-4 py-3 text-gray-700 font-medium">Name</th>
+                  <th className="px-4 py-3 text-gray-700 font-medium">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {institutions.map((inst) => (
-                  <tr key={inst.id} className="border-b">
-                    <td className="px-4 py-3">{inst.name}</td>
-                    <td className="px-4 py-3">{inst.status}</td>
+                  <tr key={inst.id} className="border-b border-gray-100">
+                    <td className="px-4 py-3 text-gray-900">{inst.name}</td>
+                    <td className="px-4 py-3 text-gray-700">{inst.status}</td>
                   </tr>
                 ))}
               </tbody>
