@@ -72,6 +72,7 @@ func (Institution) TableName() string {
 type InstitutionUser struct {
 	ID            uuid.UUID   `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
 	InstitutionID uuid.UUID   `gorm:"type:uuid;not null;index" json:"institution_id"`
+	ZitadelSub    *string     `gorm:"uniqueIndex" json:"zitadel_sub,omitempty"`
 	Name          string      `gorm:"not null" json:"name"`
 	Email         string      `gorm:"not null" json:"email"`
 	Role          string      `gorm:"not null" json:"role"`
@@ -83,6 +84,21 @@ type InstitutionUser struct {
 
 func (InstitutionUser) TableName() string {
 	return "institution_users"
+}
+
+type PlatformAdmin struct {
+	ID         uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	ZitadelSub *string   `gorm:"uniqueIndex" json:"zitadel_sub,omitempty"`
+	Email      string    `gorm:"not null;uniqueIndex" json:"email"`
+	Name       string    `gorm:"not null" json:"name"`
+	Role       string    `gorm:"not null;default:platform_admin" json:"role"`
+	Status     string    `gorm:"not null;default:active" json:"status"`
+	CreatedAt  time.Time `gorm:"not null;default:now()" json:"created_at"`
+	UpdatedAt  time.Time `gorm:"not null;default:now()" json:"updated_at"`
+}
+
+func (PlatformAdmin) TableName() string {
+	return "platform_admins"
 }
 
 type ConnectorDefinition struct {
@@ -222,6 +238,8 @@ func (RawRecord) TableName() string {
 type Learner struct {
 	ID                 uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
 	InstitutionID      uuid.UUID `gorm:"type:uuid;not null;index" json:"institution_id"`
+	ZitadelSub         *string   `gorm:"uniqueIndex" json:"zitadel_sub,omitempty"`
+	Email              *string   `gorm:"uniqueIndex" json:"email,omitempty"`
 	CanonicalLearnerID *string   `json:"canonical_learner_id,omitempty"`
 	Status             string    `gorm:"not null;default:active" json:"status"`
 	CreatedAt          time.Time `gorm:"not null;default:now()" json:"created_at"`

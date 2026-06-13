@@ -52,6 +52,21 @@ func (r *InstitutionUserRepository) GetByEmail(ctx context.Context, email string
 	return &user, nil
 }
 
+func (r *InstitutionUserRepository) GetByZitadelSub(ctx context.Context, sub string) (*model.InstitutionUser, error) {
+	var user model.InstitutionUser
+	if err := r.dbWithContext(ctx).First(&user, "zitadel_sub = ?", sub).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *InstitutionUserRepository) LinkZitadelSub(ctx context.Context, id uuid.UUID, sub string) error {
+	return r.dbWithContext(ctx).
+		Model(&model.InstitutionUser{}).
+		Where("id = ?", id).
+		Update("zitadel_sub", sub).Error
+}
+
 func (r *InstitutionUserRepository) ListByInstitutionID(ctx context.Context, institutionID uuid.UUID) ([]model.InstitutionUser, error) {
 	var users []model.InstitutionUser
 	if err := r.dbWithContext(ctx).

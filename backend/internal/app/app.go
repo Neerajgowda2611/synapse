@@ -10,13 +10,17 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/casbin/casbin/v3"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
 	"github.com/profiler/backend/configs"
+	"github.com/profiler/backend/internal/auth"
+	"github.com/profiler/backend/internal/authz"
 	"github.com/profiler/backend/internal/handler"
 	"github.com/profiler/backend/internal/logs"
 	"github.com/profiler/backend/internal/middleware"
+	"github.com/profiler/backend/internal/repository"
 	"github.com/profiler/backend/pkg/database"
 )
 
@@ -51,7 +55,27 @@ func Start() {
 
 	logs.Info("database connected")
 
-	router := newRouter(db)
+	validator, err := auth.NewValidator(cfg.ZitadelIssuer, cfg.ZitadelAudience, cfg.ZitadelJWKSURL)
+	if err != nil {
+		logs.Error("failed to initialize JWT validator", "error", err.Error())
+		os.Exit(1)
+	}
+	logs.Info("JWT validator initialized", "issuer", cfg.ZitadelIssuer)
+
+	resolver := auth.NewResolver(
+		repository.NewPlatformAdminRepository(db),
+		repository.NewInstitutionUserRepository(db),
+		repository.NewLearnerRepository(db),
+	)
+
+	enforcer, err := authz.NewEnforcer(db)
+	if err != nil {
+		logs.Error("failed to initialize Casbin enforcer", "error", err.Error())
+		os.Exit(1)
+	}
+	logs.Info("Casbin enforcer initialized")
+
+	router := newRouter(db, validator, resolver, enforcer, cfg.CORSAllowOrigins)
 
 	srv := &http.Server{
 		Addr:         cfg.ServerAddress(),
@@ -86,17 +110,23 @@ func Start() {
 	logs.Info("server stopped")
 }
 
-func newRouter(db *gorm.DB) *gin.Engine {
+func newRouter(
+	db *gorm.DB,
+	validator *auth.Validator,
+	resolver *auth.Resolver,
+	enforcer *casbin.Enforcer,
+	corsAllowOrigin string,
+) *gin.Engine {
 	router := gin.New()
 	router.Use(middleware.Recovery())
 	router.Use(middleware.RequestLogger())
-	router.Use(middleware.CORS())
+	router.Use(middleware.CORS(corsAllowOrigin))
 
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
-	handler.RegisterRoutes(router, db)
+	handler.RegisterRoutes(router, db, validator, resolver, enforcer)
 
 	return router
 }

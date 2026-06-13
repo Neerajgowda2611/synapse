@@ -37,6 +37,29 @@ func (r *LearnerRepository) GetFullProfile(ctx context.Context, id uuid.UUID) (*
 	)
 }
 
+func (r *LearnerRepository) GetByZitadelSub(ctx context.Context, sub string) (*model.Learner, error) {
+	var learner model.Learner
+	if err := r.dbWithContext(ctx).First(&learner, "zitadel_sub = ?", sub).Error; err != nil {
+		return nil, err
+	}
+	return &learner, nil
+}
+
+func (r *LearnerRepository) GetByEmail(ctx context.Context, email string) (*model.Learner, error) {
+	var learner model.Learner
+	if err := r.dbWithContext(ctx).First(&learner, "email = ?", email).Error; err != nil {
+		return nil, err
+	}
+	return &learner, nil
+}
+
+func (r *LearnerRepository) LinkZitadelSub(ctx context.Context, id uuid.UUID, sub string) error {
+	return r.dbWithContext(ctx).
+		Model(&model.Learner{}).
+		Where("id = ?", id).
+		Update("zitadel_sub", sub).Error
+}
+
 func (r *LearnerRepository) GetByCanonicalLearnerID(ctx context.Context, institutionID uuid.UUID, canonicalLearnerID string) (*model.Learner, error) {
 	var learner model.Learner
 	if err := r.dbWithContext(ctx).

@@ -9,9 +9,14 @@ import (
 )
 
 type Config struct {
-	Port        string
-	AppEnv      string
-	DatabaseURL string
+	Port             string
+	AppEnv           string
+	DatabaseURL      string
+	ZitadelIssuer    string
+	ZitadelAudience  string
+	ZitadelJWKSURL   string
+	FrontendURL      string
+	CORSAllowOrigins string
 }
 
 func Load(configPath string) (*Config, error) {
@@ -22,10 +27,28 @@ func Load(configPath string) (*Config, error) {
 		return nil, fmt.Errorf("invalid PORT: %w", err)
 	}
 
+	issuer := os.Getenv("ZITADEL_ISSUER")
+	if issuer == "" {
+		return nil, fmt.Errorf("ZITADEL_ISSUER is required")
+	}
+
+	audience := os.Getenv("ZITADEL_API_AUDIENCE")
+	if audience == "" {
+		return nil, fmt.Errorf("ZITADEL_API_AUDIENCE is required")
+	}
+
+	jwksURL := getEnv("ZITADEL_JWKS_URL", issuer+"/oauth/v2/keys")
+	frontendURL := getEnv("FRONTEND_URL", "http://localhost:3000")
+
 	return &Config{
-		Port:        port,
-		AppEnv:      getEnv("APP_ENV", "development"),
-		DatabaseURL: os.Getenv("DATABASE_URL"),
+		Port:             port,
+		AppEnv:           getEnv("APP_ENV", "development"),
+		DatabaseURL:      os.Getenv("DATABASE_URL"),
+		ZitadelIssuer:    issuer,
+		ZitadelAudience:  audience,
+		ZitadelJWKSURL:   jwksURL,
+		FrontendURL:      frontendURL,
+		CORSAllowOrigins: getEnv("CORS_ALLOW_ORIGINS", frontendURL),
 	}, nil
 }
 
