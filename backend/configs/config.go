@@ -9,14 +9,18 @@ import (
 )
 
 type Config struct {
-	Port             string
-	AppEnv           string
-	DatabaseURL      string
-	ZitadelIssuer    string
-	ZitadelAudience  string
-	ZitadelJWKSURL   string
-	FrontendURL      string
-	CORSAllowOrigins string
+	Port                  string
+	AppEnv                string
+	DatabaseURL           string
+	ZitadelIssuer         string
+	ZitadelAudience       string
+	ZitadelJWKSURL        string
+	ZitadelWebClientID    string
+	ZitadelServiceToken   string
+	ZitadelLoginClientID  string
+	ZitadelRedirectURI    string
+	FrontendURL           string
+	CORSAllowOrigins      string
 }
 
 func Load(configPath string) (*Config, error) {
@@ -39,16 +43,24 @@ func Load(configPath string) (*Config, error) {
 
 	jwksURL := getEnv("ZITADEL_JWKS_URL", issuer+"/oauth/v2/keys")
 	frontendURL := getEnv("FRONTEND_URL", "http://localhost:3000")
+	webClientID := os.Getenv("ZITADEL_WEB_CLIENT_ID")
+	if webClientID == "" {
+		return nil, fmt.Errorf("ZITADEL_WEB_CLIENT_ID is required")
+	}
 
 	return &Config{
-		Port:             port,
-		AppEnv:           getEnv("APP_ENV", "development"),
-		DatabaseURL:      os.Getenv("DATABASE_URL"),
-		ZitadelIssuer:    issuer,
-		ZitadelAudience:  audience,
-		ZitadelJWKSURL:   jwksURL,
-		FrontendURL:      frontendURL,
-		CORSAllowOrigins: getEnv("CORS_ALLOW_ORIGINS", frontendURL),
+		Port:                 port,
+		AppEnv:               getEnv("APP_ENV", "development"),
+		DatabaseURL:          os.Getenv("DATABASE_URL"),
+		ZitadelIssuer:        issuer,
+		ZitadelAudience:      audience,
+		ZitadelJWKSURL:       jwksURL,
+		ZitadelWebClientID:   webClientID,
+		ZitadelServiceToken:  os.Getenv("ZITADEL_SERVICE_USER_TOKEN"),
+		ZitadelLoginClientID: os.Getenv("ZITADEL_LOGIN_CLIENT_ID"),
+		ZitadelRedirectURI:   getEnv("ZITADEL_REDIRECT_URI", frontendURL+"/auth/callback"),
+		FrontendURL:          frontendURL,
+		CORSAllowOrigins:     getEnv("CORS_ALLOW_ORIGINS", frontendURL),
 	}, nil
 }
 

@@ -20,13 +20,13 @@ type Claims struct {
 
 // Validator validates Zitadel-issued JWTs using a cached JWKS.
 type Validator struct {
-	issuer   string
-	audience string
-	cache    *jwk.Cache
-	jwksURL  string
+	issuer    string
+	audiences []string
+	cache     *jwk.Cache
+	jwksURL   string
 }
 
-func NewValidator(issuer, audience, jwksURL string) (*Validator, error) {
+func NewValidator(issuer string, audiences []string, jwksURL string) (*Validator, error) {
 	cache := jwk.NewCache(context.Background())
 
 	if err := cache.Register(jwksURL, jwk.WithMinRefreshInterval(15*time.Minute)); err != nil {
@@ -42,10 +42,10 @@ func NewValidator(issuer, audience, jwksURL string) (*Validator, error) {
 	}
 
 	return &Validator{
-		issuer:   issuer,
-		audience: audience,
-		cache:    cache,
-		jwksURL:  jwksURL,
+		issuer:    issuer,
+		audiences: audiences,
+		cache:     cache,
+		jwksURL:   jwksURL,
 	}, nil
 }
 
@@ -62,11 +62,14 @@ func (v *Validator) Validate(ctx context.Context, rawToken string) (*Claims, err
 		jwt.WithKeySet(keySet),
 		jwt.WithValidate(true),
 		jwt.WithIssuer(v.issuer),
-		jwt.WithAudience(v.audience),
 		jwt.WithAcceptableSkew(30*time.Second),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("invalid token: %w", err)
+	}
+
+	if !audienceMatches(token.Audience(), v.audiences) {
+		return nil, fmt.Errorf("invalid token: audience mismatch (got %v, want one of %v)", token.Audience(), v.audiences)
 	}
 
 	email, _ := token.Get("email")
@@ -89,4 +92,15 @@ func (v *Validator) Validate(ctx context.Context, rawToken string) (*Claims, err
 		Name:          nameStr,
 		Audience:      token.Audience(),
 	}, nil
+}
+
+func audienceMatches(got, want []string) bool {
+	for _, expected := range want {
+		for _, aud := range got {
+			if aud == expected {
+				return true
+			}
+		}
+	}
+	return false
 }

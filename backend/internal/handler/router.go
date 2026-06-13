@@ -17,6 +17,8 @@ func RegisterRoutes(
 	validator *auth.Validator,
 	resolver *auth.Resolver,
 	enforcer *casbin.Enforcer,
+	loginClient *auth.LoginClient,
+	devMode bool,
 ) {
 	// Repositories
 	institutionRepo := repository.NewInstitutionRepository(db)
@@ -31,6 +33,7 @@ func RegisterRoutes(
 
 	// Handlers
 	authHandler := NewAuthHandler()
+	authLoginHandler := NewAuthLoginHandler(loginClient, devMode)
 	institutionHandler := NewInstitutionHandler(institutionService)
 	institutionUserHandler := NewInstitutionUserHandler(institutionUserService)
 	dataSourceHandler := NewDataSourceHandler(dataSourceService)
@@ -38,6 +41,13 @@ func RegisterRoutes(
 	requireAuth := middleware.RequireAuth(validator, resolver)
 
 	api := router.Group("/api/v1")
+
+	// Public auth — username/password login (same pattern as other Xcelerator apps)
+	authPublic := api.Group("/auth")
+	{
+		authPublic.POST("/login", authLoginHandler.Login)
+		authPublic.POST("/token-exchange", authLoginHandler.TokenExchange)
+	}
 
 	// Auth — requires a valid token but no specific role
 	api.GET("/auth/me", requireAuth, authHandler.Me)

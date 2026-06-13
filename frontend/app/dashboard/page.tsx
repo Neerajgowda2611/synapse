@@ -1,6 +1,9 @@
-import { auth } from "@/auth"
-import { api } from "@/lib/api/client"
-import { redirect } from "next/navigation"
+"use client"
+
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { ApiError, api } from "@/lib/api/client"
+import { clearAccessToken, getAccessToken } from "@/lib/config"
 
 interface MeResponse {
   user_id: string
@@ -8,39 +11,54 @@ interface MeResponse {
   name: string
   user_type: "platform" | "institution" | "learner"
   role: string
-  institution_id?: string
-  learner_id?: string
 }
 
-// This server component calls GET /api/v1/auth/me and routes the user
-// to the correct dashboard based on their user_type.
-export default async function DashboardPage() {
-  const session = await auth()
-  if (!session) redirect("/login")
+export default function DashboardPage() {
+  const router = useRouter()
 
-  let me: MeResponse | null = null
-
-  try {
-    me = await api.get<MeResponse>("/api/v1/auth/me")
-  } catch (err: unknown) {
-    const status = (err as { status?: number })?.status
-    if (status === 401) {
-      redirect("/login")
+  useEffect(() => {
+    if (!getAccessToken()) {
+      router.replace("/login")
+      return
     }
-    // user_not_provisioned or other error
-    redirect("/login?error=user_not_provisioned")
-  }
 
-  if (!me) redirect("/login")
+    api
+      .get<MeResponse>("/api/v1/auth/me")
+      .then((me) => {
+        switch (me.user_type) {
+          case "platform":
+            router.replace("/platform")
+            break
+          case "institution":
+            router.replace("/admin")
+            break
+          case "learner":
+            router.replace("/portal")
+            break
+          default:
+            router.replace("/login")
+        }
+      })
+      .catch((err) => {
+        clearAccessToken()
+        if (err instanceof ApiError) {
+          const body = err.body as { error?: string } | undefined
+          if (body?.error === "user_not_provisioned") {
+            router.replace("/login?error=user_not_provisioned")
+            return
+          }
+          if (err.status === 401) {
+            router.replace("/login")
+            return
+          }
+        }
+        router.replace("/login?error=auth_failed")
+      })
+  }, [router])
 
-  switch (me.user_type) {
-    case "platform":
-      redirect("/platform")
-    case "institution":
-      redirect("/admin")
-    case "learner":
-      redirect("/portal")
-    default:
-      redirect("/login")
-  }
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <p className="text-gray-600">Loading...</p>
+    </div>
+  )
 }

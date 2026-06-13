@@ -55,7 +55,7 @@ func Start() {
 
 	logs.Info("database connected")
 
-	validator, err := auth.NewValidator(cfg.ZitadelIssuer, cfg.ZitadelAudience, cfg.ZitadelJWKSURL)
+	validator, err := auth.NewValidator(cfg.ZitadelIssuer, []string{cfg.ZitadelAudience, cfg.ZitadelWebClientID}, cfg.ZitadelJWKSURL)
 	if err != nil {
 		logs.Error("failed to initialize JWT validator", "error", err.Error())
 		os.Exit(1)
@@ -75,7 +75,22 @@ func Start() {
 	}
 	logs.Info("Casbin enforcer initialized")
 
-	router := newRouter(db, validator, resolver, enforcer, cfg.CORSAllowOrigins)
+	loginClient := auth.NewLoginClient(
+		cfg.ZitadelIssuer,
+		cfg.ZitadelWebClientID,
+		cfg.ZitadelRedirectURI,
+		cfg.ZitadelServiceToken,
+		cfg.ZitadelLoginClientID,
+		os.Getenv("ZITADEL_ORG_ID"),
+		cfg.ZitadelAudience,
+	)
+	if loginClient.Enabled() {
+		logs.Info("Zitadel password login enabled")
+	} else {
+		logs.Info("Zitadel password login disabled — set ZITADEL_SERVICE_USER_TOKEN to enable")
+	}
+
+	router := newRouter(db, validator, resolver, enforcer, loginClient, cfg.CORSAllowOrigins, cfg.AppEnv != "production")
 
 	srv := &http.Server{
 		Addr:         cfg.ServerAddress(),
@@ -115,7 +130,9 @@ func newRouter(
 	validator *auth.Validator,
 	resolver *auth.Resolver,
 	enforcer *casbin.Enforcer,
+	loginClient *auth.LoginClient,
 	corsAllowOrigin string,
+	devMode bool,
 ) *gin.Engine {
 	router := gin.New()
 	router.Use(middleware.Recovery())
@@ -126,7 +143,7 @@ func newRouter(
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
-	handler.RegisterRoutes(router, db, validator, resolver, enforcer)
+	handler.RegisterRoutes(router, db, validator, resolver, enforcer, loginClient, devMode)
 
 	return router
 }

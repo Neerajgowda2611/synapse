@@ -1,23 +1,14 @@
-import { auth } from "@/auth"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
-export async function proxy(req: NextRequest & { auth: unknown }) {
+// Public routes — no auth check in proxy (token is in localStorage, checked client-side)
+const publicPaths = ["/login", "/auth/callback", "/api/auth/callback/zitadel"]
+
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  // Public paths — always accessible
-  const publicPaths = ["/login", "/api/auth"]
   if (publicPaths.some((p) => pathname.startsWith(p))) {
     return NextResponse.next()
-  }
-
-  const session = await auth()
-
-  // Unauthenticated — redirect to login
-  if (!session) {
-    const loginUrl = new URL("/login", req.url)
-    loginUrl.searchParams.set("callbackUrl", req.url)
-    return NextResponse.redirect(loginUrl)
   }
 
   return NextResponse.next()
