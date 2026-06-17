@@ -1,0 +1,354 @@
+Profiling Application — Product & Architecture
+Overview
+1. The problem with the resume
+As part of our suite of education applications, we are building a new-age profiling application.
+We believe the current method, means, and — most importantly — metrics of representing an
+individual do not reflect the true person in the right context.
+For higher-education students, profiling today collapses to a resume. There is very little variance
+between individuals, and most resumes fail to capture who the person actually is. In the race to
+produce ATS-aligned resumes, students have forfeited their personality and converged on
+near-identical representations of themselves, when in reality people are unique and widely
+different in their skills and their approach to life.
+A resume was also designed to capture history — a person's top five achievements. But today's
+individuals are far more than their history. Their abilities, motives, inspirations, and skills are
+highly complex, and representing that complexity properly gives them what a resume never can:
+the right alignment in any matchmaking process.
+When a company shortlists candidates, the ability to understand whether someone is a
+high-agency or high-compliance individual, an extrovert or an introvert, lets it make the best
+choice for both the company and the candidate. That is only scratching the surface — the
+company might also see that a candidate is highly punctual, with that signal verified by the
+mentors who supervised them over the course of their education. The principle throughout is
+that we surface the aggregated metric — agency, impact, reliability — and never force the
+company to scramble through hundreds of raw signals and infer for themselves.
+2. Design principles
+Five ideas anchor the system:
+-
+-
+-
+Multi-source. Insight comes from data, and data can come from anywhere. Our other
+apps (project-based learning, mentorship) integrate as first-class sources, but any
+external system can also plug in.
+Aggregated, inferred metrics. We turn disparate raw data into intelligent, inferred,
+human-readable metrics — and present those, not the raw material.
+Credentials at the core. Data is only as valuable as it is verifiable. Credentialing is built
+into the data source, not bolted on afterward.
+-
+-
+Context is everything. Every metric is captured in a context. A profile should never be
+read in isolation of the context it was earned in. We call that context a reward system.
+Transposition. Because every individual has a distinct profile in every reward system,
+the app's defining capability is to reliably translate a profile from one reward system into
+another.
+The end-user experience should be peppy and real, simple and derived. It should never feel like
+a monitoring system — it should feel like a fitness application.
+3. The layered architecture
+The heart of the system is a vertical stack of abstraction. Data enters near the bottom as atomic
+fact and rises into context-bound, comparable insight. Reading bottom-up:
+Canonical trait basis ← shared interlingua; the transposition hub
+▲
+Reward system (lens) ← context: what is valued, and how it is weighted
+▲
+Metrics ← aggregated traits (agency, reliability, impact)
+▲
+Signals ← first-order insights ("submitted 2 days early")
+▲
+Derivation layer ← reusable, versioned transforms
+▲
+Observations ← atomic facts ("deadline"
+,
+"submitted date")
+▲
+Connectors ← multi-source, credentialed, context-tagged
+3.1 The interpretation ladder: observations → derivations → signals →
+metrics
+The lowest meaningful distinction in the system is between a fact and an interpretation.
+An observation is an atomic fact from a source, carrying no judgment beyond its own value:
+deadline = Mar 5, submitted = Mar 3, commit_at = 23:14, meeting_attended =
+true. Observations are captured within a context and carry source, timestamp, and a data-level
+attestation.
+A signal is the first-order insight derived from one or more observations —
+"submitted 2 days
+early.
+" This is the first thing in the stack that means something, and it earns its name precisely
+for that reason.
+Between the two sits the derivation layer: a library of small, reusable, versioned transforms that
+turn raw facts into insights. A rule such as "days relative to deadline" consumes a submission
+date and a deadline date and emits the submitted_early signal. Derivations belong to the
+app, not to any one connector, so a single rule is written once and reused across every source
+that emits the relevant observations. They are versioned because the logic can be wrong and
+later improved — and that version is part of the provenance every signal carries.
+Signals then aggregate into metrics — the human-readable, context-bound traits we actually
+surface, such as reliability, agency, and impact.
+This is a directed graph, not a straight chain. One observation can feed many signals (a
+submission date with a deadline yields "submitted early"; the same date with a start date yields
+"started early"
+→ proactivity), and one signal can roll into multiple metrics. Derivation rules can
+also be parameterized by context, since what counts as "early" in a frantic startup environment
+differs from what counts as "early" in an academic one.
+3.2 Reward systems as lenses
+A reward system is, almost exactly, a reward function: it defines what is valued in a context, how
+raw behavior maps to value, and what counts as exceptional versus ordinary. Every individual
+has a distinct profile in every reward system — like a player's stat card, which differs between
+the Pokémon universe and the WWE universe.
+Concretely, a reward system defines:
+-
+-
+-
+which metrics are even relevant or visible in this context;
+how signals roll up into those metrics here (the measurement model);
+the normalization baseline — what is "normal" versus "standout" in this population;
+-
+and the weighting — how much each metric matters.
+Crucially, a reward system's relationship to a trait is a function, not a scalar weight. Many
+traits are bipolar spectra ("high agency vs. high compliance,
+" extrovert vs. introvert), not
+more-is-better magnitudes. A startup context rewards the agency pole; a regulated-industry
+context rewards the compliance pole; some traits are genuinely monotonic. So
+trait_emphasis encodes a reward-over-trait curve — monotonic, peaked at an ideal point, or
+pole-preferring. In the hiring use case,
+"fit" then becomes the alignment between a candidate's
+trait vector and the reward system's value function: two people with identical profiles can fit two
+contexts very differently.
+3.3 The canonical trait basis
+The single decision that determines whether the system is buildable is this: do reward systems
+define their metrics in entirely bespoke terms, or do they project onto a shared substrate? Fully
+bespoke means transposition requires a hand-built mapping for every pair of systems —
+unmaintainable. Fully universal means trivial transposition but no richness.
+The answer is in between. We maintain a canonical trait basis: a stable, relatively small set of
+latent dimensions (agency, conscientiousness, collaboration, creativity, resilience,
+communication, risk appetite, learning velocity, and so on), ideally anchored to validated
+psychometrics where they exist so we inherit their credibility. Each reward system is then a
+projection onto that basis plus its own native metrics.
+-
+-
+Native metrics are bespoke to a reward system — maximum fidelity inside it, but they
+only travel via learned mappings. They are the system's "untranslatable loanwords.
+"
+Projected (canonical) metrics are the lossy-but-comparable representation that makes
+any-to-any transposition possible.
+The basis is the interlingua and the transposition hub — the reserve currency through which
+profiles in different reward systems become commensurable.
+4. Data ingestion: connectors and variable altitude
+Because the interpretation ladder is explicit, connectors do not all enter at the same rung. Each
+connector declares the altitude at which it feeds data:
+-
+-
+-
+A pure data source (e.g. an LMS exposing only timestamps) feeds at the observation
+level, and the app runs its own derivations to manufacture the signals.
+A richer source that already computes "submitted early" feeds at the signal level and
+skips derivation.
+Our own suite apps (project-based learning, mentorship) will typically feed signals
+directly; a generic third-party plug-in may only manage raw observations.
+Same pipeline, different entry points — the app fills in whatever lower layers are missing below
+the declared altitude. This is what connector configuration actually negotiates: not just "what is
+your schema,
+" but "at what altitude are you handing me data, which derivations apply if it is raw,
+and how do your fields map into my schema.
+" During this configuration, the source shares
+enough of its metric semantics and schema that the profile app can transpose it into the
+canonical model.
+5. Credentialing and trust
+Data is only as valuable as it is verifiable, so credentialing is built into the source, not added
+later. The layered model makes clear that trust lives at two distinct levels:
+-
+-
+Trust in the observation — is the fact accurate, did the source faithfully report the real
+submission date, and who attested it?
+Trust in the derivation — is the logic that turned facts into an insight sound, and who
+authored it?
+When a connector feeds raw observations and our rules derive the signal, the whole chain is
+transparent and auditable — we can show exactly how "reliability" was computed and from
+what. When a connector hands over a pre-derived signal, we are trusting its derivation logic,
+which we usually cannot inspect. Those two cases are not equivalent and should not be scored
+the same. Every signal therefore records whether it was app-derived (with the rule and version,
+and the observation IDs it came from) or externally asserted (opaque).
+This yields a useful calibration behavior: when a connector supplies both the raw observations
+and its own derived signal, the app can recompute with its own rule and compare. Agreement
+raises our trust in that source; divergence flags it. Over time this tunes how much we believe
+each connector's opaque assertions.
+As part of configuring and piping data, a source can optionally specify who verified a given
+metric and when — for example, a mentor attesting a student's punctuality.
+6. Context and reward systems in depth
+Context attaches at the point of capture — an observation is recorded inside a reward system or
+one of its sub-contexts — and is preserved up the ladder. A generic aggregated metric such as
+"agency,
+" read outside its context, can be actively misleading, which is why a profile is never
+shown in isolation of its reward system.
+Reward systems are not flat; they compose. A "higher education" reward system can contain
+"coursework,
+" "internships,
+" and "extracurricular leadership" sub-contexts, and the weights by
+which those sub-contexts aggregate up the tree are themselves part of the parent system's
+definition. Modeling this hierarchy from the start avoids retrofitting it later.
+7. Transposition between reward systems
+Transposing a profile from one reward system to another is currency conversion, and every
+conversion carries a fidelity score. There are three routes, in increasing sophistication:
+-
+-
+-
+Through the canonical basis (hub-and-spoke). Project the source system's metrics
+into the trait basis, then apply the target system's lens. Always available, always
+somewhat lossy — the reserve-currency route.
+Direct learned mapping (pairwise). When many individuals hold profiles in both
+systems, learn a direct A→B mapping. More accurate where data is dense — the
+direct-exchange-rate route.
+Cold-start semantic mapping. When a brand-new connector plugs in with no
+overlapping individuals, bootstrap the mapping from the metadata it shares during
+configuration — schema plus semantic descriptions of what each metric means —
+aligning its metrics to the canonical traits before a single shared person exists.
+Adjacent contexts (two software-engineering reward systems) transpose at high confidence;
+distant ones (Pokémon → WWE) transpose at low confidence, and we surface that honestly
+rather than presenting the number as solid. Every transposed value is flagged as transposed
+and carries its fidelity.
+8. The anatomy of a metric
+A metric is never just a number; it is a number plus its evidential context. For a given individual
+in a given reward system, a metric reading carries:
+-
+-
+-
+-
+-
+-
+-
+Value and the signals it was derived from (full traceability down to observations).
+Attestations — who verified it, in what role, when, and at what scope.
+Verification level — self-reported, peer, mentor, institutional, or cryptographic.
+Evidence density — was this one data point or a hundred?
+Recency / decay — how current the reading is.
+Statistical confidence — a confidence interval, and percentile within the population.
+Transposition fidelity — whether the reading is native to this system or transposed in,
+and how reliably.
+These axes are largely orthogonal: a mentor-attested punctuality score built on three
+observations is high-verification but low-density, and the experience must be able to tell those
+apart.
+9. User experience
+Despite the depth beneath it, the surface must feel peppy, simple, and derived — a fitness app,
+not a monitoring system. Each reward system surfaces a small number of confident headline
+metrics, presented as progress and "leveling up" rather than as raw logs. The full provenance
+chain — metric ← signal ← observations, each annotated with its rule and attestation — is
+exactly what powers the drill-down: tap a ring, see the insight behind it, then see the raw facts it
+came from. The richness is always available, but never in the user's face.
+Appendix A — Data model summary
+Observation { # L0 — atomic fact
+id, type, value, fields
+source
+connector
+_
+timestamp
+context # reward system / sub-context captured in
+attestation # data-level credential
+}
+DerivationRule { # the transform library
+id, version
+name # "days relative to deadline"
+input
+_
+types # observation types consumed
+output
+_
+signal # signal type produced
+transform
+context
+_params # optional context sensitivity
+author / authority
+}
+Signal { # L1 — first-order insight
+id, type, value, context
+derived
+_
+from: [observation
+_
+ids] # transparent, app-derived
+derivation: { rule
+_
+id, version }
+# ...OR, for connector-supplied signals:
+asserted
+_
+by, opaque: true
+}
+Metric { # aggregated trait, per individual + reward system
+individual, reward
+_
+system, metric
+_
+id # canonical or native
+value
+derived
+_
+from: [signal
+_
+ids]
+attestations, verification
+_
+level
+observation
+_
+count, recency
+confidence
+_
+interval, percentile
+transposed?, transposition
+_
+fidelity
+}
+RewardSystem { # the lens / reward function
+id, name, domain
+trait
+_
+emphasis: { trait
+id -> reward
+_
+_
+fn } # value-over-trait curves
+signal
+_
+mappings
+population
+baseline
+_
+native
+metrics
+_
+sub
+_
+contexts # hierarchy / composition
+authority, credentialing_policy
+}
+Connector {
+id, source
+ingestion
+_
+altitude # observation | signal
+schema
+_
+mapping
+applicable
+derivations
+_
+credentialing
+}
+CanonicalTraitBasis { # the shared interlingua / transposition hub
+traits: [ { id, definition, anchored
+_
+to? } ]
+}
+Appendix B — Glossary
+-
+-
+-
+-
+-
+-
+-
+-
+Observation — an atomic fact from a source, no interpretation attached.
+Derivation rule — a versioned, reusable transform from observations to a signal.
+Signal — a first-order insight; the first thing in the stack that means something.
+Metric — an aggregated, context-bound trait surfaced to users.
+Reward system — a context, modeled as a reward function over traits; the lens.
+Canonical trait basis — the shared latent dimensions that make transposition possible.
+Transposition — translating a profile from one reward system into another, with a
+fidelity score.
+Ingestion altitude — the rung of the ladder at which a connector feeds data.

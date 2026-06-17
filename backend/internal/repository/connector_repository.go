@@ -51,6 +51,19 @@ func (r *ConnectorCredentialRepository) GetByDataSourceID(ctx context.Context, d
 	return &credential, nil
 }
 
+func (r *ConnectorCredentialRepository) UpsertByDataSourceID(ctx context.Context, credential *model.ConnectorCredential) error {
+	var existing model.ConnectorCredential
+	err := r.dbWithContext(ctx).First(&existing, "data_source_id = ?", credential.DataSourceID).Error
+	if err == nil {
+		existing.EncryptedPayload = credential.EncryptedPayload
+		return r.Update(ctx, &existing)
+	}
+	if err != gorm.ErrRecordNotFound {
+		return err
+	}
+	return r.Create(ctx, credential)
+}
+
 func (r *ConnectorCredentialRepository) DeleteByDataSourceID(ctx context.Context, dataSourceID uuid.UUID) error {
 	return r.dbWithContext(ctx).Delete(&model.ConnectorCredential{}, "data_source_id = ?", dataSourceID).Error
 }

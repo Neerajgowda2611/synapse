@@ -3,6 +3,7 @@ package authz
 import (
 	"github.com/casbin/casbin/v3"
 	"github.com/profiler/backend/internal/auth"
+	"gorm.io/gorm"
 )
 
 // Resources
@@ -99,4 +100,35 @@ func AssignRole(e *casbin.Enforcer, userID, role, domain string) error {
 func RemoveRole(e *casbin.Enforcer, userID, role, domain string) error {
 	_, err := e.DeleteRoleForUserInDomain(userID, role, domain)
 	return err
+}
+
+// SyncRolesFromDB reads every active row from user_roles and ensures a matching
+// Casbin G-rule exists. It is idempotent and should be called once at startup
+// so manually seeded or backfilled users are immediately authorised.
+func SyncRolesFromDB(db *gorm.DB, e *casbin.Enforcer) error {
+	var rows []struct {
+		UserID        string  `gorm:"column:user_id"`
+		Role          string  `gorm:"column:role"`
+		InstitutionID *string `gorm:"column:institution_id"`
+	}
+
+	if err := db.Raw(`
+		SELECT user_id::text, role, institution_id::text
+		FROM user_roles
+		WHERE status = 'active'
+	`).Scan(&rows).Error; err != nil {
+		return err
+	}
+
+	for _, r := range rows {
+		domain := "*"
+		if r.InstitutionID != nil && *r.InstitutionID != "" {
+			domain = *r.InstitutionID
+		}
+		if _, err := e.AddRoleForUserInDomain(r.UserID, r.Role, domain); err != nil {
+			return err
+		}
+	}
+
+	return e.SavePolicy()
 }

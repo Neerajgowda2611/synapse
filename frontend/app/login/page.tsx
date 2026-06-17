@@ -19,7 +19,7 @@ function LoginForm() {
     const urlError = searchParams.get("error")
     if (urlError === "user_not_provisioned") {
       setError(
-        "Your Zitadel account is not linked to Profiler yet. Ask an admin to add your email to platform_admins (or institution_users)."
+        "Your Zitadel account is not linked to Profiler yet. Ask an admin to add your email to the users table."
       )
     }
   }, [searchParams])

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/profiler/backend/internal/model"
@@ -12,8 +13,22 @@ import (
 
 var (
 	ErrInvalidInstitutionUser    = errors.New("invalid institution user input")
-	ErrInstitutionUserEmailTaken = errors.New("email already registered in this institution")
+	ErrInstitutionUserEmailTaken = errors.New("email already has this role in this institution")
 )
+
+// InstitutionUserView is the public-facing shape returned by this service.
+// It mirrors the old model.InstitutionUser JSON shape so existing callers and
+// the frontend keep working without changes.
+type InstitutionUserView struct {
+	ID            string    `json:"id"`
+	InstitutionID string    `json:"institution_id"`
+	Name          string    `json:"name"`
+	Email         string    `json:"email"`
+	Role          string    `json:"role"`
+	Status        string    `json:"status"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+}
 
 type CreateInstitutionUserInput struct {
 	InstitutionID uuid.UUID
@@ -23,14 +38,16 @@ type CreateInstitutionUserInput struct {
 }
 
 type InstitutionUserService struct {
-	repo *repository.InstitutionUserRepository
+	userRepo *repository.UserRepository
 }
 
-func NewInstitutionUserService(repo *repository.InstitutionUserRepository) *InstitutionUserService {
-	return &InstitutionUserService{repo: repo}
+func NewInstitutionUserService(userRepo *repository.UserRepository) *InstitutionUserService {
+	return &InstitutionUserService{userRepo: userRepo}
 }
 
-func (s *InstitutionUserService) Create(ctx context.Context, input CreateInstitutionUserInput) (*model.InstitutionUser, error) {
+// Create adds a user to an institution. If a users row for that email already
+// exists it is reused; only the role assignment is new.
+func (s *InstitutionUserService) Create(ctx context.Context, input CreateInstitutionUserInput) (*InstitutionUserView, error) {
 	name := strings.TrimSpace(input.Name)
 	email := strings.ToLower(strings.TrimSpace(input.Email))
 	role := strings.TrimSpace(input.Role)
@@ -38,40 +55,71 @@ func (s *InstitutionUserService) Create(ctx context.Context, input CreateInstitu
 	if name == "" || email == "" || role == "" {
 		return nil, ErrInvalidInstitutionUser
 	}
-
-	if !isValidRole(role) {
+	if !isValidInstitutionRole(role) {
 		return nil, ErrInvalidInstitutionUser
 	}
 
-	// Check email uniqueness within this institution
-	if existing, _ := s.repo.GetByEmail(ctx, email); existing != nil && existing.InstitutionID == input.InstitutionID {
-		return nil, ErrInstitutionUserEmailTaken
+	user := &model.User{
+		Name:   name,
+		Email:  email,
+		Status: "active",
 	}
-
-	user := &model.InstitutionUser{
-		InstitutionID: input.InstitutionID,
-		Name:          name,
-		Email:         email,
+	ur := &model.UserRole{
 		Role:          role,
+		InstitutionID: &input.InstitutionID,
 		Status:        "active",
 	}
 
-	if err := s.repo.Create(ctx, user); err != nil {
+	if err := s.userRepo.CreateWithRole(ctx, user, ur); err != nil {
+		if repository.IsDuplicateKey(err) {
+			return nil, ErrInstitutionUserEmailTaken
+		}
 		return nil, err
 	}
 
-	return user, nil
+	return &InstitutionUserView{
+		ID:            ur.ID.String(),
+		InstitutionID: input.InstitutionID.String(),
+		Name:          user.Name,
+		Email:         user.Email,
+		Role:          ur.Role,
+		Status:        ur.Status,
+		CreatedAt:     ur.CreatedAt,
+		UpdatedAt:     ur.UpdatedAt,
+	}, nil
 }
 
-func (s *InstitutionUserService) ListByInstitution(ctx context.Context, institutionID uuid.UUID) ([]model.InstitutionUser, error) {
-	return s.repo.ListByInstitutionID(ctx, institutionID)
-}
-
-func isValidRole(role string) bool {
-	valid := map[string]bool{
-		"institution_admin":    true,
-		"institution_operator": true,
-		"institution_viewer":   true,
+// ListByInstitution returns all active users for an institution.
+func (s *InstitutionUserService) ListByInstitution(ctx context.Context, institutionID uuid.UUID) ([]InstitutionUserView, error) {
+	roles, err := s.userRepo.ListByInstitutionID(ctx, institutionID)
+	if err != nil {
+		return nil, err
 	}
-	return valid[role]
+
+	views := make([]InstitutionUserView, 0, len(roles))
+	for _, ur := range roles {
+		instID := ""
+		if ur.InstitutionID != nil {
+			instID = ur.InstitutionID.String()
+		}
+		views = append(views, InstitutionUserView{
+			ID:            ur.ID.String(),
+			InstitutionID: instID,
+			Name:          ur.User.Name,
+			Email:         ur.User.Email,
+			Role:          ur.Role,
+			Status:        ur.Status,
+			CreatedAt:     ur.CreatedAt,
+			UpdatedAt:     ur.UpdatedAt,
+		})
+	}
+	return views, nil
+}
+
+func isValidInstitutionRole(role string) bool {
+	switch role {
+	case "institution_admin", "institution_operator", "institution_viewer":
+		return true
+	}
+	return false
 }

@@ -47,3 +47,14 @@ func (r *SchemaSnapshotRepository) ListByDataSourceID(ctx context.Context, dataS
 	}
 	return snapshots, nil
 }
+
+func (r *SchemaSnapshotRepository) NextVersion(ctx context.Context, dataSourceID uuid.UUID) (int, error) {
+	snapshot, err := r.GetLatestByDataSourceID(ctx, dataSourceID)
+	if err == nil {
+		return snapshot.Version + 1, nil
+	}
+	if err == gorm.ErrRecordNotFound {
+		return 1, nil
+	}
+	return 0, err
+}

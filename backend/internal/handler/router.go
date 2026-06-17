@@ -22,20 +22,23 @@ func RegisterRoutes(
 ) {
 	// Repositories
 	institutionRepo := repository.NewInstitutionRepository(db)
-	institutionUserRepo := repository.NewInstitutionUserRepository(db)
+	userRepo := repository.NewUserRepository(db)
 	connectorRepo := repository.NewConnectorDefinitionRepository(db)
 	dataSourceRepo := repository.NewDataSourceRepository(db)
+	credentialRepo := repository.NewConnectorCredentialRepository(db)
+	schemaRepo := repository.NewSchemaSnapshotRepository(db)
+	entityRepo := repository.NewDataSourceEntityRepository(db)
 
 	// Services
 	institutionService := service.NewInstitutionService(institutionRepo)
-	institutionUserService := service.NewInstitutionUserService(institutionUserRepo)
-	dataSourceService := service.NewDataSourceService(dataSourceRepo, institutionRepo, connectorRepo)
+	institutionUserService := service.NewInstitutionUserService(userRepo)
+	dataSourceService := service.NewDataSourceService(dataSourceRepo, institutionRepo, connectorRepo, credentialRepo, schemaRepo, entityRepo)
 
 	// Handlers
 	authHandler := NewAuthHandler()
 	authLoginHandler := NewAuthLoginHandler(loginClient, devMode)
 	institutionHandler := NewInstitutionHandler(institutionService)
-	institutionUserHandler := NewInstitutionUserHandler(institutionUserService)
+	institutionUserHandler := NewInstitutionUserHandler(institutionUserService, enforcer)
 	dataSourceHandler := NewDataSourceHandler(dataSourceService)
 
 	requireAuth := middleware.RequireAuth(validator, resolver)
@@ -51,6 +54,12 @@ func RegisterRoutes(
 
 	// Auth — requires a valid token but no specific role
 	api.GET("/auth/me", requireAuth, authHandler.Me)
+
+	api.GET("/connectors",
+		requireAuth,
+		authz.Require(enforcer, authz.ResourceConnectors, authz.ActionRead),
+		dataSourceHandler.ListConnectors,
+	)
 
 	// Institutions — protected
 	institutions := api.Group("/institutions", requireAuth)
@@ -80,10 +89,41 @@ func RegisterRoutes(
 			authz.Require(enforcer, authz.ResourceDataSources, authz.ActionCreate),
 			dataSourceHandler.Create,
 		)
-		dataSources.GET("", dataSourceHandler.List)
+		dataSources.GET("",
+			authz.Require(enforcer, authz.ResourceDataSources, authz.ActionRead),
+			dataSourceHandler.List,
+		)
 		dataSources.GET("/:id",
 			authz.Require(enforcer, authz.ResourceDataSources, authz.ActionRead),
 			dataSourceHandler.GetByID,
+		)
+		dataSources.GET("/:id/credentials",
+			authz.Require(enforcer, authz.ResourceDataSources, authz.ActionRead),
+			dataSourceHandler.GetCredentials,
+		)
+		dataSources.PUT("/:id/credentials",
+			authz.Require(enforcer, authz.ResourceDataSources, authz.ActionUpdate),
+			dataSourceHandler.StoreCredentials,
+		)
+		dataSources.POST("/:id/test",
+			authz.Require(enforcer, authz.ResourceDataSources, authz.ActionUpdate),
+			dataSourceHandler.TestConnection,
+		)
+		dataSources.POST("/:id/discover",
+			authz.Require(enforcer, authz.ResourceDataSources, authz.ActionUpdate),
+			dataSourceHandler.DiscoverSchema,
+		)
+		dataSources.GET("/:id/schema",
+			authz.Require(enforcer, authz.ResourceDataSources, authz.ActionRead),
+			dataSourceHandler.GetSchema,
+		)
+		dataSources.GET("/:id/entities",
+			authz.Require(enforcer, authz.ResourceDataSources, authz.ActionRead),
+			dataSourceHandler.ListEntities,
+		)
+		dataSources.PUT("/:id/entities",
+			authz.Require(enforcer, authz.ResourceDataSources, authz.ActionUpdate),
+			dataSourceHandler.SaveEntities,
 		)
 	}
 }

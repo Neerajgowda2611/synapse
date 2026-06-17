@@ -216,6 +216,7 @@ To support email login in the future you'd need either:
 | 404 User could not be found | Wrong login name (used email instead) |
 | 400 redirect_uri missing | `ZITADEL_REDIRECT_URI` doesn't match Zitadel Web app |
 | Login OK then back to `/login` | Opaque access token / JWT validation (fixed with id_token fallback) |
+| `failed to find key with key ID` in JWT validation | Zitadel rotated signing keys; JWKS cache was stale (backend now refreshes JWKS and retries on key miss) |
 | `user_not_provisioned` | Email not in `platform_admins` / `institution_users` / `learners` |
 | Pale/invisible UI | Dark mode CSS on body (fixed in `globals.css`) |
 

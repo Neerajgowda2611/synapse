@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/lestrrat-go/jwx/v2/jwk"
@@ -29,7 +30,7 @@ type Validator struct {
 func NewValidator(issuer string, audiences []string, jwksURL string) (*Validator, error) {
 	cache := jwk.NewCache(context.Background())
 
-	if err := cache.Register(jwksURL, jwk.WithMinRefreshInterval(15*time.Minute)); err != nil {
+	if err := cache.Register(jwksURL, jwk.WithMinRefreshInterval(5*time.Minute)); err != nil {
 		return nil, fmt.Errorf("registering JWKS URL: %w", err)
 	}
 
@@ -52,6 +53,22 @@ func NewValidator(issuer string, audiences []string, jwksURL string) (*Validator
 // Validate parses and validates a raw JWT string.
 // Returns the extracted Claims on success.
 func (v *Validator) Validate(ctx context.Context, rawToken string) (*Claims, error) {
+	claims, err := v.parseToken(ctx, rawToken)
+	if err == nil {
+		return claims, nil
+	}
+
+	// Zitadel may sign tokens with a newly rotated key before our JWKS cache refreshes.
+	if isJWKSKeyMiss(err) {
+		if _, refreshErr := v.cache.Refresh(ctx, v.jwksURL); refreshErr == nil {
+			return v.parseToken(ctx, rawToken)
+		}
+	}
+
+	return nil, err
+}
+
+func (v *Validator) parseToken(ctx context.Context, rawToken string) (*Claims, error) {
 	keySet, err := v.cache.Get(ctx, v.jwksURL)
 	if err != nil {
 		return nil, fmt.Errorf("retrieving JWKS: %w", err)
@@ -92,6 +109,14 @@ func (v *Validator) Validate(ctx context.Context, rawToken string) (*Claims, err
 		Name:          nameStr,
 		Audience:      token.Audience(),
 	}, nil
+}
+
+func isJWKSKeyMiss(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "failed to find key") || strings.Contains(msg, "no key ID")
 }
 
 func audienceMatches(got, want []string) bool {

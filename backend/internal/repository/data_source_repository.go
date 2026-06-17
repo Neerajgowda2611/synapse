@@ -18,12 +18,13 @@ func NewDataSourceRepository(db *gorm.DB) *DataSourceRepository {
 }
 
 func (r *DataSourceRepository) GetWithAssociations(ctx context.Context, id uuid.UUID) (*model.DataSource, error) {
-	return r.GetByID(ctx, id, "Institution", "ConnectorDefinition", "Credentials")
+	return r.GetByID(ctx, id, "Institution", "ConnectorDefinition")
 }
 
 func (r *DataSourceRepository) ListByInstitutionID(ctx context.Context, institutionID uuid.UUID) ([]model.DataSource, error) {
 	var dataSources []model.DataSource
 	if err := r.dbWithContext(ctx).
+		Preload("ConnectorDefinition").
 		Where("institution_id = ?", institutionID).
 		Order("created_at DESC").
 		Find(&dataSources).Error; err != nil {
@@ -35,6 +36,7 @@ func (r *DataSourceRepository) ListByInstitutionID(ctx context.Context, institut
 func (r *DataSourceRepository) ListByConnectorDefinitionID(ctx context.Context, connectorDefinitionID uuid.UUID) ([]model.DataSource, error) {
 	var dataSources []model.DataSource
 	if err := r.dbWithContext(ctx).
+		Preload("ConnectorDefinition").
 		Where("connector_definition_id = ?", connectorDefinitionID).
 		Order("created_at DESC").
 		Find(&dataSources).Error; err != nil {
@@ -78,4 +80,16 @@ func (r *DataSourceEntityRepository) ListByTargetDomain(ctx context.Context, dat
 		return nil, err
 	}
 	return entities, nil
+}
+
+func (r *DataSourceEntityRepository) ReplaceByDataSourceID(ctx context.Context, dataSourceID uuid.UUID, entities []model.DataSourceEntity) error {
+	return r.dbWithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Delete(&model.DataSourceEntity{}, "data_source_id = ?", dataSourceID).Error; err != nil {
+			return err
+		}
+		if len(entities) == 0 {
+			return nil
+		}
+		return tx.Create(&entities).Error
+	})
 }

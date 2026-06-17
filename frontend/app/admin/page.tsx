@@ -2,21 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { api } from "@/lib/api/client"
 import { clearAccessToken, getAccessToken } from "@/lib/config"
-
-interface DataSource {
-  id: string
-  name: string
-  status: string
-}
-
-interface MeResponse {
-  email: string
-  role: string
-  user_type: string
-  institution_id?: string
-}
+import { DataSource, MeResponse, getMe, listDataSources } from "@/lib/api/data-sources"
 
 export default function AdminPage() {
   const router = useRouter()
@@ -30,17 +17,15 @@ export default function AdminPage() {
       return
     }
 
-    api
-      .get<MeResponse>("/api/v1/auth/me")
+    getMe()
       .then((meData) => {
         if (meData.user_type !== "institution") {
           router.replace("/dashboard")
           return
         }
         setMe(meData)
-        return api.get<{ data: DataSource[] }>(
-          `/api/v1/data-sources?institution_id=${meData.institution_id}`
-        )
+        if (!meData.institution_id) return
+        return listDataSources(meData.institution_id)
       })
       .then((ds) => {
         if (ds) setDataSources(ds.data ?? [])
@@ -79,7 +64,15 @@ export default function AdminPage() {
         </div>
       </header>
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <h1 className="text-xl font-semibold mb-4">Data Sources</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-xl font-semibold">Data Sources</h1>
+          <button
+            onClick={() => router.push("/admin/data-sources/new")}
+            className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+          >
+            Add data source
+          </button>
+        </div>
         <div className="bg-white rounded-xl border overflow-hidden">
           {dataSources.length === 0 ? (
             <p className="text-center py-12 text-gray-400 text-sm">No data sources connected yet</p>
@@ -88,13 +81,21 @@ export default function AdminPage() {
               <thead>
                 <tr className="border-b bg-gray-50 text-left">
                   <th className="px-4 py-3">Name</th>
+                  <th className="px-4 py-3">Connector</th>
                   <th className="px-4 py-3">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {dataSources.map((ds) => (
-                  <tr key={ds.id} className="border-b">
+                  <tr
+                    key={ds.id}
+                    onClick={() => router.push(`/admin/data-sources/${ds.id}`)}
+                    className="border-b cursor-pointer hover:bg-gray-50"
+                  >
                     <td className="px-4 py-3">{ds.name}</td>
+                    <td className="px-4 py-3">
+                      {ds.connector_definition?.name ?? ds.connector_definition_id}
+                    </td>
                     <td className="px-4 py-3">{ds.status}</td>
                   </tr>
                 ))}

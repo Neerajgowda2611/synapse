@@ -57,4 +57,6 @@ export const api = {
   get: <T>(path: string) => apiClient<T>(path),
   post: <T>(path: string, body: unknown) =>
     apiClient<T>(path, { method: "POST", body: JSON.stringify(body) }),
+  put: <T>(path: string, body: unknown) =>
+    apiClient<T>(path, { method: "PUT", body: JSON.stringify(body) }),
 }

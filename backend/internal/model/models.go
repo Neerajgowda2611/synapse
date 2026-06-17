@@ -59,7 +59,6 @@ type Institution struct {
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"not null;default:now()" json:"updated_at"`
 
-	Users       []InstitutionUser `gorm:"foreignKey:InstitutionID" json:"users,omitempty"`
 	DataSources []DataSource      `gorm:"foreignKey:InstitutionID" json:"data_sources,omitempty"`
 	Learners    []Learner         `gorm:"foreignKey:InstitutionID" json:"learners,omitempty"`
 	RawRecords  []RawRecord       `gorm:"foreignKey:InstitutionID" json:"raw_records,omitempty"`
@@ -69,37 +68,41 @@ func (Institution) TableName() string {
 	return "institutions"
 }
 
-type InstitutionUser struct {
-	ID            uuid.UUID   `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
-	InstitutionID uuid.UUID   `gorm:"type:uuid;not null;index" json:"institution_id"`
-	ZitadelSub    *string     `gorm:"uniqueIndex" json:"zitadel_sub,omitempty"`
-	Name          string      `gorm:"not null" json:"name"`
-	Email         string      `gorm:"not null" json:"email"`
-	Role          string      `gorm:"not null" json:"role"`
-	Status        string      `gorm:"not null;default:active" json:"status"`
-	CreatedAt     time.Time   `gorm:"not null;default:now()" json:"created_at"`
-	UpdatedAt     time.Time   `gorm:"not null;default:now()" json:"updated_at"`
-	Institution   Institution `gorm:"foreignKey:InstitutionID" json:"institution,omitempty"`
+// User is the unified identity record for every person in Profiler.
+type User struct {
+	ID         uuid.UUID  `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	ZitadelSub *string    `gorm:"uniqueIndex"                                    json:"zitadel_sub,omitempty"`
+	Email      string     `gorm:"not null;uniqueIndex"                           json:"email"`
+	Name       string     `gorm:"not null"                                       json:"name"`
+	Status     string     `gorm:"not null;default:active"                        json:"status"`
+	CreatedAt  time.Time  `gorm:"not null;default:now()"                         json:"created_at"`
+	UpdatedAt  time.Time  `gorm:"not null;default:now()"                         json:"updated_at"`
+
+	Roles []UserRole `gorm:"foreignKey:UserID" json:"roles,omitempty"`
 }
 
-func (InstitutionUser) TableName() string {
-	return "institution_users"
+func (User) TableName() string { return "users" }
+
+// UserRole assigns a role to a User, optionally scoped to an Institution.
+// Platform roles (platform_admin, platform_viewer) have InstitutionID = nil.
+// Institution / learner roles have InstitutionID set.
+// Learner roles additionally carry a LearnerID pointing to the learners row
+// that holds the learner-specific profile data.
+type UserRole struct {
+	ID            uuid.UUID  `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	UserID        uuid.UUID  `gorm:"type:uuid;not null;index"                        json:"user_id"`
+	Role          string     `gorm:"not null"                                        json:"role"`
+	InstitutionID *uuid.UUID `gorm:"type:uuid;index"                                 json:"institution_id,omitempty"`
+	LearnerID     *uuid.UUID `gorm:"type:uuid;index"                                 json:"learner_id,omitempty"`
+	Status        string     `gorm:"not null;default:active"                         json:"status"`
+	CreatedAt     time.Time  `gorm:"not null;default:now()"                          json:"created_at"`
+	UpdatedAt     time.Time  `gorm:"not null;default:now()"                          json:"updated_at"`
+
+	User        User         `gorm:"foreignKey:UserID"        json:"user,omitempty"`
+	Institution *Institution `gorm:"foreignKey:InstitutionID" json:"institution,omitempty"`
 }
 
-type PlatformAdmin struct {
-	ID         uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
-	ZitadelSub *string   `gorm:"uniqueIndex" json:"zitadel_sub,omitempty"`
-	Email      string    `gorm:"not null;uniqueIndex" json:"email"`
-	Name       string    `gorm:"not null" json:"name"`
-	Role       string    `gorm:"not null;default:platform_admin" json:"role"`
-	Status     string    `gorm:"not null;default:active" json:"status"`
-	CreatedAt  time.Time `gorm:"not null;default:now()" json:"created_at"`
-	UpdatedAt  time.Time `gorm:"not null;default:now()" json:"updated_at"`
-}
-
-func (PlatformAdmin) TableName() string {
-	return "platform_admins"
-}
+func (UserRole) TableName() string { return "user_roles" }
 
 type ConnectorDefinition struct {
 	ID        uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
@@ -118,14 +121,14 @@ func (ConnectorDefinition) TableName() string {
 }
 
 type DataSource struct {
-	ID                    uuid.UUID           `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
-	InstitutionID         uuid.UUID           `gorm:"type:uuid;not null;index" json:"institution_id"`
-	ConnectorDefinitionID uuid.UUID           `gorm:"type:uuid;not null;index" json:"connector_definition_id"`
-	Name                  string              `gorm:"not null" json:"name"`
-	Status                string              `gorm:"not null;default:active" json:"status"`
-	LastSyncAt            *time.Time          `json:"last_sync_at,omitempty"`
-	CreatedAt             time.Time           `gorm:"not null;default:now()" json:"created_at"`
-	UpdatedAt             time.Time           `gorm:"not null;default:now()" json:"updated_at"`
+	ID                    uuid.UUID            `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	InstitutionID         uuid.UUID            `gorm:"type:uuid;not null;index" json:"institution_id"`
+	ConnectorDefinitionID uuid.UUID            `gorm:"type:uuid;not null;index" json:"connector_definition_id"`
+	Name                  string               `gorm:"not null" json:"name"`
+	Status                string               `gorm:"not null;default:active" json:"status"`
+	LastSyncAt            *time.Time           `json:"last_sync_at,omitempty"`
+	CreatedAt             time.Time            `gorm:"not null;default:now()" json:"created_at"`
+	UpdatedAt             time.Time            `gorm:"not null;default:now()" json:"updated_at"`
 	Institution           *Institution         `gorm:"foreignKey:InstitutionID" json:"institution,omitempty"`
 	ConnectorDefinition   *ConnectorDefinition `gorm:"foreignKey:ConnectorDefinitionID" json:"connector_definition,omitempty"`
 

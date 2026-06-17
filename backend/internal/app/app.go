@@ -62,11 +62,7 @@ func Start() {
 	}
 	logs.Info("JWT validator initialized", "issuer", cfg.ZitadelIssuer)
 
-	resolver := auth.NewResolver(
-		repository.NewPlatformAdminRepository(db),
-		repository.NewInstitutionUserRepository(db),
-		repository.NewLearnerRepository(db),
-	)
+	resolver := auth.NewResolver(repository.NewUserRepository(db))
 
 	enforcer, err := authz.NewEnforcer(db)
 	if err != nil {
@@ -74,6 +70,12 @@ func Start() {
 		os.Exit(1)
 	}
 	logs.Info("Casbin enforcer initialized")
+
+	if err := authz.SyncRolesFromDB(db, enforcer); err != nil {
+		logs.Error("failed to sync Casbin roles from user_roles", "error", err.Error())
+		os.Exit(1)
+	}
+	logs.Info("Casbin roles synced from user_roles")
 
 	loginClient := auth.NewLoginClient(
 		cfg.ZitadelIssuer,
