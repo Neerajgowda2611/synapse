@@ -2,18 +2,21 @@
 
 import { FormEvent, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { clearAccessToken, getAccessToken } from "@/lib/config"
+import { AdminShell } from "@/components/admin/admin-shell"
+import { Alert } from "@/components/admin/alert"
+import { ConnectorIcon } from "@/components/admin/connector-icon"
+import { LoadingState } from "@/components/admin/loading-state"
+import { useAdminAuth } from "@/hooks/use-admin-auth"
 import {
   ConnectorDefinition,
-  MeResponse,
   createDataSource,
-  getMe,
   listConnectors,
 } from "@/lib/api/data-sources"
+import { getConnectorMeta } from "@/lib/connector-meta"
 
 export default function NewDataSourcePage() {
   const router = useRouter()
-  const [me, setMe] = useState<MeResponse | null>(null)
+  const { me, loading: authLoading } = useAdminAuth()
   const [connectors, setConnectors] = useState<ConnectorDefinition[]>([])
   const [name, setName] = useState("")
   const [connectorDefinitionID, setConnectorDefinitionID] = useState("")
@@ -21,28 +24,19 @@ export default function NewDataSourcePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    if (!getAccessToken()) {
-      router.replace("/login")
-      return
-    }
+  const selectedConnector = connectors.find((c) => c.id === connectorDefinitionID)
 
-    Promise.all([getMe(), listConnectors()])
-      .then(([meData, connectorData]) => {
-        if (meData.user_type !== "institution") {
-          router.replace("/dashboard")
-          return
-        }
-        setMe(meData)
-        setConnectors(connectorData.data ?? [])
-        setConnectorDefinitionID(connectorData.data?.[0]?.id ?? "")
-      })
-      .catch(() => {
-        clearAccessToken()
-        router.replace("/login")
+  useEffect(() => {
+    if (authLoading) return
+
+    listConnectors()
+      .then((response) => {
+        const items = response.data ?? []
+        setConnectors(items)
+        setConnectorDefinitionID(items[0]?.id ?? "")
       })
       .finally(() => setLoading(false))
-  }, [router])
+  }, [authLoading])
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -67,69 +61,115 @@ export default function NewDataSourcePage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-600">Loading...</p>
-      </div>
-    )
+  if (authLoading || loading) {
+    return <LoadingState />
   }
 
+  const selectedMeta = getConnectorMeta(selectedConnector?.slug)
+
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <button
-          onClick={() => router.push("/admin")}
-          className="mb-6 text-sm text-gray-500 hover:text-gray-900"
-        >
-          Back to data sources
-        </button>
+    <AdminShell
+      email={me?.email}
+      title="Add data source"
+      description="Pick a connector type, name the integration, then configure credentials on the next screen."
+      breadcrumbs={[
+        { label: "Data sources", href: "/admin" },
+        { label: "New" },
+      ]}
+    >
+      <form onSubmit={submit} className="space-y-8">
+        <section className="rounded-2xl border border-gray-200 bg-white p-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+            1. Choose connector
+          </h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {connectors.map((connector) => {
+              const meta = getConnectorMeta(connector.slug)
+              const selected = connector.id === connectorDefinitionID
 
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h1 className="text-xl font-semibold text-gray-900">Create data source</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Register the external system before adding credentials.
-          </p>
+              return (
+                <button
+                  key={connector.id}
+                  type="button"
+                  onClick={() => setConnectorDefinitionID(connector.id)}
+                  className={`rounded-xl border p-4 text-left transition ${
+                    selected
+                      ? "border-gray-900 bg-gray-50 ring-1 ring-gray-900"
+                      : "border-gray-200 bg-white hover:border-gray-300"
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`rounded-lg border p-2 ${meta.accentBg} ${meta.accentBorder} ${meta.accent}`}
+                    >
+                      <ConnectorIcon slug={connector.slug} />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{connector.name}</p>
+                      <p className="mt-0.5 text-xs text-gray-500">{meta.typeLabel}</p>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-sm leading-relaxed text-gray-600">{meta.description}</p>
+                </button>
+              )
+            })}
+          </div>
+        </section>
 
-          <form onSubmit={submit} className="mt-6 space-y-4">
-            <label className="block">
-              <span className="text-sm font-medium text-gray-700">Name</span>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                placeholder="ABC College PostgreSQL"
-              />
-            </label>
+        <section className="rounded-2xl border border-gray-200 bg-white p-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+            2. Name this integration
+          </h2>
+          <label className="mt-4 block">
+            <span className="text-sm font-medium text-gray-700">Display name</span>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="mt-1.5 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-gray-400 focus:outline-none"
+              placeholder={
+                selectedConnector?.slug === "webhook"
+                  ? "Attendance webhook (n8n)"
+                  : "ABC College student database"
+              }
+            />
+            <p className="mt-1.5 text-xs text-gray-500">
+              A label your team will recognize — it does not affect the connection itself.
+            </p>
+          </label>
+        </section>
 
-            <label className="block">
-              <span className="text-sm font-medium text-gray-700">Connector</span>
-              <select
-                value={connectorDefinitionID}
-                onChange={(e) => setConnectorDefinitionID(e.target.value)}
-                required
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              >
-                {connectors.map((connector) => (
-                  <option key={connector.id} value={connector.id}>
-                    {connector.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+        {selectedConnector && (
+          <div className={`rounded-xl border px-4 py-3 text-sm ${selectedMeta.accentBg} ${selectedMeta.accentBorder}`}>
+            <p className={`font-medium ${selectedMeta.accent}`}>
+              {selectedConnector.slug === "webhook" ? "Next: generate ingest URL" : "Next: add database credentials"}
+            </p>
+            <p className="mt-1 text-gray-600">
+              {selectedConnector.slug === "webhook"
+                ? "You will get a URL to POST JSON payloads into Profiler."
+                : "You will enter host, database, and credentials to discover tables."}
+            </p>
+          </div>
+        )}
 
-            {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+        {error && <Alert variant="error">{error}</Alert>}
 
-            <button
-              disabled={saving}
-              className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
-            >
-              {saving ? "Creating..." : "Create data source"}
-            </button>
-          </form>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => router.push("/admin")}
+            className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-white"
+          >
+            Cancel
+          </button>
+          <button
+            disabled={saving || !connectorDefinitionID || !name.trim()}
+            className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+          >
+            {saving ? "Creating..." : "Create and continue"}
+          </button>
         </div>
-      </div>
-    </main>
+      </form>
+    </AdminShell>
   )
 }

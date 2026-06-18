@@ -32,6 +32,50 @@ func (r *RawRecordRepository) ListByEntityType(ctx context.Context, dataSourceID
 	return r.listBy(ctx, "data_source_id = ? AND entity_type = ?", []any{dataSourceID, entityType}, limit, offset)
 }
 
+type EntityTypeCount struct {
+	EntityType string `json:"entity_type"`
+	Count      int64  `json:"count"`
+}
+
+func (r *RawRecordRepository) CountByDataSourceID(ctx context.Context, dataSourceID uuid.UUID, entityType string) (int64, error) {
+	query := r.dbWithContext(ctx).Model(&model.RawRecord{}).Where("data_source_id = ?", dataSourceID)
+	if entityType != "" {
+		query = query.Where("entity_type = ?", entityType)
+	}
+	var count int64
+	if err := query.Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (r *RawRecordRepository) EntityTypeCounts(ctx context.Context, dataSourceID uuid.UUID) ([]EntityTypeCount, error) {
+	var counts []EntityTypeCount
+	err := r.dbWithContext(ctx).
+		Model(&model.RawRecord{}).
+		Select("entity_type, COUNT(*) as count").
+		Where("data_source_id = ?", dataSourceID).
+		Group("entity_type").
+		Order("entity_type ASC").
+		Scan(&counts).Error
+	if err != nil {
+		return nil, err
+	}
+	return counts, nil
+}
+
+func (r *RawRecordRepository) ListFiltered(
+	ctx context.Context,
+	dataSourceID uuid.UUID,
+	entityType string,
+	limit, offset int,
+) ([]model.RawRecord, error) {
+	if entityType != "" {
+		return r.ListByEntityType(ctx, dataSourceID, entityType, limit, offset)
+	}
+	return r.ListByDataSourceID(ctx, dataSourceID, limit, offset)
+}
+
 func (r *RawRecordRepository) GetByExternalID(ctx context.Context, dataSourceID uuid.UUID, entityType, externalID string) (*model.RawRecord, error) {
 	var record model.RawRecord
 	if err := r.dbWithContext(ctx).

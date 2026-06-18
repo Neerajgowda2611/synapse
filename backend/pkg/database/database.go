@@ -155,7 +155,9 @@ func ensureConnectorTables(db *gorm.DB) error {
 func seedConnectorDefinitions(db *gorm.DB) error {
 	return db.Exec(`
 		INSERT INTO connector_definitions (name, slug, type, version, created_at, updated_at)
-		VALUES ('PostgreSQL', 'postgres', 'database', 'v1', now(), now())
+		VALUES
+			('PostgreSQL', 'postgres', 'database', 'v1', now(), now()),
+			('Webhook', 'webhook', 'push', 'v1', now(), now())
 		ON CONFLICT (slug) DO UPDATE
 		SET name = EXCLUDED.name,
 			type = EXCLUDED.type,

@@ -164,13 +164,28 @@ func (h *DataSourceHandler) StoreCredentials(c *gin.Context) {
 		return
 	}
 
+	dataSource, err := h.service.GetByID(c.Request.Context(), id)
+	if err != nil {
+		respondDataSourceError(c, err, "failed to get data source")
+		return
+	}
+
+	if dataSource.ConnectorDefinition != nil && dataSource.ConnectorDefinition.Slug == "webhook" {
+		if err := h.service.StoreCredentials(c.Request.Context(), id, service.StoreCredentialsInput{}); err != nil {
+			respondDataSourceError(c, err, "failed to store credentials")
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"configured": true})
+		return
+	}
+
 	var req storeCredentialsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	err := h.service.StoreCredentials(c.Request.Context(), id, service.StoreCredentialsInput{
+	err = h.service.StoreCredentials(c.Request.Context(), id, service.StoreCredentialsInput{
 		Host:     req.Host,
 		Port:     req.Port,
 		Database: req.Database,
@@ -285,6 +300,25 @@ func (h *DataSourceHandler) SaveEntities(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": entities})
+}
+
+func (h *DataSourceHandler) ListRecords(c *gin.Context) {
+	id, ok := parseDataSourceID(c)
+	if !ok {
+		return
+	}
+
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	entityType := c.Query("entity_type")
+
+	result, err := h.service.ListRawRecords(c.Request.Context(), id, entityType, limit, offset)
+	if err != nil {
+		respondDataSourceError(c, err, "failed to list records")
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
 }
 
 func parseDataSourceID(c *gin.Context) (uuid.UUID, bool) {

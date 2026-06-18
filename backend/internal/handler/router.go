@@ -28,11 +28,12 @@ func RegisterRoutes(
 	credentialRepo := repository.NewConnectorCredentialRepository(db)
 	schemaRepo := repository.NewSchemaSnapshotRepository(db)
 	entityRepo := repository.NewDataSourceEntityRepository(db)
+	rawRecordRepo := repository.NewRawRecordRepository(db)
 
 	// Services
 	institutionService := service.NewInstitutionService(institutionRepo)
 	institutionUserService := service.NewInstitutionUserService(userRepo)
-	dataSourceService := service.NewDataSourceService(dataSourceRepo, institutionRepo, connectorRepo, credentialRepo, schemaRepo, entityRepo)
+	dataSourceService := service.NewDataSourceService(dataSourceRepo, institutionRepo, connectorRepo, credentialRepo, schemaRepo, entityRepo, rawRecordRepo)
 
 	// Handlers
 	authHandler := NewAuthHandler()
@@ -40,6 +41,7 @@ func RegisterRoutes(
 	institutionHandler := NewInstitutionHandler(institutionService)
 	institutionUserHandler := NewInstitutionUserHandler(institutionUserService, enforcer)
 	dataSourceHandler := NewDataSourceHandler(dataSourceService)
+	webhookHandler := NewWebhookHandler(dataSourceService)
 
 	requireAuth := middleware.RequireAuth(validator, resolver)
 
@@ -54,6 +56,12 @@ func RegisterRoutes(
 
 	// Auth — requires a valid token but no specific role
 	api.GET("/auth/me", requireAuth, authHandler.Me)
+
+	webhooks := api.Group("/webhooks")
+	{
+		webhooks.POST("/ingest/:token", webhookHandler.Ingest)
+		webhooks.POST("/ingest/:token/:entity_type", webhookHandler.Ingest)
+	}
 
 	api.GET("/connectors",
 		requireAuth,
@@ -124,6 +132,10 @@ func RegisterRoutes(
 		dataSources.PUT("/:id/entities",
 			authz.Require(enforcer, authz.ResourceDataSources, authz.ActionUpdate),
 			dataSourceHandler.SaveEntities,
+		)
+		dataSources.GET("/:id/records",
+			authz.Require(enforcer, authz.ResourceDataSources, authz.ActionRead),
+			dataSourceHandler.ListRecords,
 		)
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/profiler/backend/internal/auth"
 	"github.com/profiler/backend/internal/connector"
 	connectorpostgres "github.com/profiler/backend/internal/connector/postgres"
+	connectorwebhook "github.com/profiler/backend/internal/connector/webhook"
 	"github.com/profiler/backend/internal/model"
 	"github.com/profiler/backend/internal/repository"
 	"gorm.io/gorm"
@@ -23,6 +24,8 @@ var (
 	ErrInvalidConnectorCredentials  = errors.New("invalid connector credentials")
 	ErrDataSourceAccessDenied       = errors.New("data source access denied")
 	ErrSchemaSnapshotNotFound       = errors.New("schema snapshot not found")
+	ErrInvalidWebhookPayload        = errors.New("invalid webhook payload")
+	ErrWebhookNotFound              = errors.New("webhook not found")
 )
 
 type CreateDataSourceInput struct {
@@ -47,6 +50,10 @@ type EntitySelectionInput struct {
 	TargetDomain *string `json:"target_domain"`
 }
 
+type WebhookCredentialsView struct {
+	IngestToken string `json:"ingest_token"`
+}
+
 type DataSourceService struct {
 	repo            *repository.DataSourceRepository
 	institutionRepo *repository.InstitutionRepository
@@ -54,6 +61,7 @@ type DataSourceService struct {
 	credentialRepo  *repository.ConnectorCredentialRepository
 	schemaRepo      *repository.SchemaSnapshotRepository
 	entityRepo      *repository.DataSourceEntityRepository
+	rawRecordRepo   *repository.RawRecordRepository
 	registry        *connector.Registry
 }
 
@@ -64,10 +72,11 @@ func NewDataSourceService(
 	credentialRepo *repository.ConnectorCredentialRepository,
 	schemaRepo *repository.SchemaSnapshotRepository,
 	entityRepo *repository.DataSourceEntityRepository,
+	rawRecordRepo *repository.RawRecordRepository,
 ) *DataSourceService {
 	registry := connector.NewRegistry()
-	registry.Register("postgres", connectorpostgres.New)
-	registry.Register("postgresql", connectorpostgres.New) // alias for pre-existing connector_definitions rows
+	registry.Register("postgres", connectorpostgres.NewFromJSON)
+	registry.Register("postgresql", connectorpostgres.NewFromJSON)
 
 	return &DataSourceService{
 		repo:            repo,
@@ -76,6 +85,7 @@ func NewDataSourceService(
 		credentialRepo:  credentialRepo,
 		schemaRepo:      schemaRepo,
 		entityRepo:      entityRepo,
+		rawRecordRepo:   rawRecordRepo,
 		registry:        registry,
 	}
 }
@@ -160,8 +170,13 @@ func (s *DataSourceService) ListConnectorDefinitions(ctx context.Context) ([]mod
 }
 
 func (s *DataSourceService) StoreCredentials(ctx context.Context, dataSourceID uuid.UUID, input StoreCredentialsInput) error {
-	if _, err := s.ensureDataSourceAccess(ctx, dataSourceID); err != nil {
+	dataSource, err := s.ensureDataSourceAccess(ctx, dataSourceID)
+	if err != nil {
 		return err
+	}
+
+	if connectorwebhook.IsWebhookSlug(dataSource.ConnectorDefinition.Slug) {
+		return s.storeWebhookCredentials(ctx, dataSourceID)
 	}
 
 	config, err := input.toPostgresConfig()
@@ -180,10 +195,28 @@ func (s *DataSourceService) StoreCredentials(ctx context.Context, dataSourceID u
 	})
 }
 
-// GetCredentials returns the stored connection details for a data source.
-// The password is returned in plain text until encryption is introduced.
-func (s *DataSourceService) GetCredentials(ctx context.Context, dataSourceID uuid.UUID) (*StoreCredentialsInput, error) {
-	if _, err := s.ensureDataSourceAccess(ctx, dataSourceID); err != nil {
+func (s *DataSourceService) storeWebhookCredentials(ctx context.Context, dataSourceID uuid.UUID) error {
+	token, err := connectorwebhook.GenerateIngestToken()
+	if err != nil {
+		return err
+	}
+
+	payload, err := json.Marshal(connector.WebhookConfig{IngestToken: token})
+	if err != nil {
+		return err
+	}
+
+	return s.credentialRepo.UpsertByDataSourceID(ctx, &model.ConnectorCredential{
+		DataSourceID:     dataSourceID,
+		EncryptedPayload: model.JSONB(payload),
+	})
+}
+
+// GetCredentials returns stored credentials for a data source.
+// Postgres sources return StoreCredentialsInput; webhook sources return WebhookCredentialsView.
+func (s *DataSourceService) GetCredentials(ctx context.Context, dataSourceID uuid.UUID) (any, error) {
+	dataSource, err := s.ensureDataSourceAccess(ctx, dataSourceID)
+	if err != nil {
 		return nil, err
 	}
 
@@ -193,6 +226,14 @@ func (s *DataSourceService) GetCredentials(ctx context.Context, dataSourceID uui
 			return nil, ErrConnectorCredentialsNotFound
 		}
 		return nil, err
+	}
+
+	if connectorwebhook.IsWebhookSlug(dataSource.ConnectorDefinition.Slug) {
+		var config connector.WebhookConfig
+		if err := json.Unmarshal(credential.EncryptedPayload, &config); err != nil {
+			return nil, ErrInvalidConnectorCredentials
+		}
+		return &WebhookCredentialsView{IngestToken: config.IngestToken}, nil
 	}
 
 	var config connector.PostgresConfig
@@ -283,9 +324,12 @@ func (s *DataSourceService) ListEntities(ctx context.Context, dataSourceID uuid.
 }
 
 func (s *DataSourceService) SaveEntities(ctx context.Context, dataSourceID uuid.UUID, selections []EntitySelectionInput) ([]model.DataSourceEntity, error) {
-	if _, err := s.ensureDataSourceAccess(ctx, dataSourceID); err != nil {
+	dataSource, err := s.ensureDataSourceAccess(ctx, dataSourceID)
+	if err != nil {
 		return nil, err
 	}
+
+	sourceType := sourceTypeForSlug(dataSource.ConnectorDefinition.Slug)
 
 	entities := make([]model.DataSourceEntity, 0, len(selections))
 	seen := make(map[string]struct{}, len(selections))
@@ -303,7 +347,7 @@ func (s *DataSourceService) SaveEntities(ctx context.Context, dataSourceID uuid.
 		entities = append(entities, model.DataSourceEntity{
 			DataSourceID: dataSourceID,
 			SourceName:   sourceName,
-			SourceType:   "table",
+			SourceType:   sourceType,
 			TargetDomain: targetDomain,
 		})
 	}
@@ -312,6 +356,96 @@ func (s *DataSourceService) SaveEntities(ctx context.Context, dataSourceID uuid.
 		return nil, err
 	}
 	return s.entityRepo.ListByDataSourceID(ctx, dataSourceID)
+}
+
+func (s *DataSourceService) IngestWebhook(ctx context.Context, token, entityType string, payload json.RawMessage) (*model.RawRecord, error) {
+	if strings.TrimSpace(token) == "" {
+		return nil, ErrWebhookNotFound
+	}
+	if strings.TrimSpace(entityType) == "" {
+		entityType = "unclassified"
+	}
+
+	credential, dataSource, err := s.credentialRepo.GetWebhookDataSourceByToken(ctx, token)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrWebhookNotFound
+		}
+		return nil, err
+	}
+	_ = credential
+
+	var parsed map[string]any
+	if err := json.Unmarshal(payload, &parsed); err != nil {
+		return nil, ErrInvalidWebhookPayload
+	}
+	if parsed == nil {
+		return nil, ErrInvalidWebhookPayload
+	}
+
+	record := &model.RawRecord{
+		InstitutionID: dataSource.InstitutionID,
+		DataSourceID:  dataSource.ID,
+		EntityType:    entityType,
+		ExternalID:    connectorwebhook.InferExternalID(parsed),
+		Payload:       model.JSONB(payload),
+	}
+	if err := s.rawRecordRepo.Create(ctx, record); err != nil {
+		return nil, err
+	}
+	return record, nil
+}
+
+type RawRecordsResult struct {
+	Data       []model.RawRecord              `json:"data"`
+	Total      int64                          `json:"total"`
+	Limit      int                            `json:"limit"`
+	Offset     int                            `json:"offset"`
+	ByEntity   []repository.EntityTypeCount   `json:"by_entity_type"`
+}
+
+func (s *DataSourceService) ListRawRecords(
+	ctx context.Context,
+	dataSourceID uuid.UUID,
+	entityType string,
+	limit, offset int,
+) (*RawRecordsResult, error) {
+	if _, err := s.ensureDataSourceAccess(ctx, dataSourceID); err != nil {
+		return nil, err
+	}
+
+	if limit <= 0 {
+		limit = 50
+	}
+	if limit > 200 {
+		limit = 200
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	records, err := s.rawRecordRepo.ListFiltered(ctx, dataSourceID, entityType, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	total, err := s.rawRecordRepo.CountByDataSourceID(ctx, dataSourceID, entityType)
+	if err != nil {
+		return nil, err
+	}
+
+	byEntity, err := s.rawRecordRepo.EntityTypeCounts(ctx, dataSourceID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &RawRecordsResult{
+		Data:     records,
+		Total:    total,
+		Limit:    limit,
+		Offset:   offset,
+		ByEntity: byEntity,
+	}, nil
 }
 
 func (s *DataSourceService) connectorForDataSource(ctx context.Context, dataSourceID uuid.UUID) (connector.Connector, error) {
@@ -328,12 +462,17 @@ func (s *DataSourceService) connectorForDataSource(ctx context.Context, dataSour
 		return nil, err
 	}
 
-	var config connector.PostgresConfig
-	if err := json.Unmarshal(credential.EncryptedPayload, &config); err != nil {
+	payload := json.RawMessage(credential.EncryptedPayload)
+
+	if connectorwebhook.IsWebhookSlug(dataSource.ConnectorDefinition.Slug) {
+		return connectorwebhook.NewFromJSON(payload, dataSourceID, s.rawRecordRepo)
+	}
+
+	if _, err := connectorpostgres.NewFromJSON(payload); err != nil {
 		return nil, ErrInvalidConnectorCredentials
 	}
 
-	return s.registry.New(dataSource.ConnectorDefinition.Slug, config)
+	return s.registry.New(dataSource.ConnectorDefinition.Slug, payload)
 }
 
 func (s *DataSourceService) ensureDataSourceAccess(ctx context.Context, id uuid.UUID) (*model.DataSource, error) {
@@ -353,6 +492,13 @@ func (s *DataSourceService) ensureDataSourceAccess(ctx context.Context, id uuid.
 }
 
 func (s *DataSourceService) replaceEntitiesFromSchema(ctx context.Context, dataSourceID uuid.UUID, schema *connector.SchemaSnapshot) error {
+	dataSource, err := s.repo.GetWithAssociations(ctx, dataSourceID)
+	if err != nil {
+		return err
+	}
+
+	sourceType := sourceTypeForSlug(dataSource.ConnectorDefinition.Slug)
+
 	existing, err := s.entityRepo.ListByDataSourceID(ctx, dataSourceID)
 	if err != nil {
 		return err
@@ -368,12 +514,19 @@ func (s *DataSourceService) replaceEntitiesFromSchema(ctx context.Context, dataS
 		entities = append(entities, model.DataSourceEntity{
 			DataSourceID: dataSourceID,
 			SourceName:   table.Name,
-			SourceType:   "table",
+			SourceType:   sourceType,
 			TargetDomain: targets[table.Name],
 		})
 	}
 
 	return s.entityRepo.ReplaceByDataSourceID(ctx, dataSourceID, entities)
+}
+
+func sourceTypeForSlug(slug string) string {
+	if connectorwebhook.IsWebhookSlug(slug) {
+		return "event"
+	}
+	return "table"
 }
 
 func ensureInstitutionAccess(ctx context.Context, institutionID uuid.UUID) error {

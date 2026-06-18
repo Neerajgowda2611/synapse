@@ -23,3 +23,7 @@ type PostgresConfig struct {
 	SSLMode  string `json:"sslmode,omitempty"`
 	Schema   string `json:"schema,omitempty"`
 }
+
+type WebhookConfig struct {
+	IngestToken string `json:"ingest_token"`
+}

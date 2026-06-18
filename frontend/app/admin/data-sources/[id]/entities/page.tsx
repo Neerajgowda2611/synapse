@@ -2,11 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { clearAccessToken, getAccessToken } from "@/lib/config"
+import { AdminShell } from "@/components/admin/admin-shell"
+import { Alert } from "@/components/admin/alert"
+import { LoadingState } from "@/components/admin/loading-state"
+import { useAdminAuth } from "@/hooks/use-admin-auth"
 import {
   DataSourceEntity,
   SchemaSnapshot,
-  getMe,
+  getDataSource,
   getSchema,
   listEntities,
   saveEntities,
@@ -17,6 +20,8 @@ export default function EntitySelectionPage() {
   const router = useRouter()
   const params = useParams<{ id: string }>()
   const id = params.id
+  const { me, loading: authLoading } = useAdminAuth()
+  const [dataSourceName, setDataSourceName] = useState("")
   const [snapshot, setSnapshot] = useState<SchemaSnapshot | null>(null)
   const [entities, setEntities] = useState<DataSourceEntity[]>([])
   const [selected, setSelected] = useState<Record<string, string>>({})
@@ -26,17 +31,11 @@ export default function EntitySelectionPage() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (!getAccessToken()) {
-      router.replace("/login")
-      return
-    }
+    if (authLoading) return
 
-    Promise.all([getMe(), getSchema(id), listEntities(id)])
-      .then(([meData, schema, entityData]) => {
-        if (meData.user_type !== "institution") {
-          router.replace("/dashboard")
-          return
-        }
+    Promise.all([getDataSource(id), getSchema(id), listEntities(id)])
+      .then(([ds, schema, entityData]) => {
+        setDataSourceName(ds.name)
         setSnapshot(schema)
         setEntities(entityData.data ?? [])
         setSelected(
@@ -50,17 +49,21 @@ export default function EntitySelectionPage() {
           setError(err.message)
           return
         }
-        clearAccessToken()
-        router.replace("/login")
+        setError("Failed to load entities")
       })
       .finally(() => setLoading(false))
-  }, [id, router])
+  }, [authLoading, id])
 
   const tableNames = useMemo(() => {
     const fromSchema = snapshot?.schema_json.tables.map((table) => table.name) ?? []
     const fromEntities = entities.map((entity) => entity.source_name)
     return Array.from(new Set([...fromSchema, ...fromEntities])).sort()
   }, [entities, snapshot])
+
+  const mappedCount = useMemo(
+    () => tableNames.filter((name) => selected[name]).length,
+    [selected, tableNames]
+  )
 
   async function submit() {
     setError("")
@@ -74,7 +77,7 @@ export default function EntitySelectionPage() {
           target_domain: selected[sourceName] || undefined,
         }))
       )
-      setMessage("Entity selections saved")
+      setMessage(`Saved mappings for ${mappedCount} ${mappedCount === 1 ? "entity" : "entities"}.`)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save entities")
     } finally {
@@ -82,67 +85,91 @@ export default function EntitySelectionPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-600">Loading...</p>
-      </div>
-    )
+  if (authLoading || loading) {
+    return <LoadingState />
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <AdminShell
+      email={me?.email}
+      title="Map entities"
+      description="Assign each source table or event type to a learner profile domain."
+      breadcrumbs={[
+        { label: "Data sources", href: "/admin" },
+        { label: dataSourceName, href: `/admin/data-sources/${id}` },
+        { label: "Entities" },
+      ]}
+      action={
         <button
-          onClick={() => router.push(`/admin/data-sources/${id}`)}
-          className="mb-6 text-sm text-gray-500 hover:text-gray-900"
+          onClick={submit}
+          disabled={saving || tableNames.length === 0}
+          className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
         >
-          Back to data source
+          {saving ? "Saving..." : "Save mappings"}
         </button>
+      }
+    >
+      <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-gray-500">
+        <span>{tableNames.length} sources</span>
+        <span className="text-gray-300">·</span>
+        <span>{mappedCount} mapped</span>
+        <button
+          onClick={() => router.push(`/admin/data-sources/${id}/schema`)}
+          className="text-gray-700 underline-offset-2 hover:underline"
+        >
+          View schema
+        </button>
+      </div>
 
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900">Select entities</h1>
-            <p className="text-sm text-gray-500">Map source tables to learner profile domains.</p>
-          </div>
-          <button
-            onClick={submit}
-            disabled={saving}
-            className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
-          >
-            {saving ? "Saving..." : "Save selections"}
-          </button>
+      {error && (
+        <div className="mb-4">
+          <Alert variant="error">{error}</Alert>
         </div>
+      )}
+      {message && (
+        <div className="mb-4">
+          <Alert variant="success">{message}</Alert>
+        </div>
+      )}
 
-        {error && <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-        {message && (
-          <p className="mb-4 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">{message}</p>
-        )}
-
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          {tableNames.length === 0 ? (
-            <p className="text-center py-12 text-sm text-gray-400">
-              Discover schema before selecting entities.
-            </p>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50 text-left">
-                  <th className="px-4 py-3 font-medium text-gray-700">Source table</th>
-                  <th className="px-4 py-3 font-medium text-gray-700">Target domain</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tableNames.map((tableName) => (
-                  <tr key={tableName} className="border-b border-gray-100">
-                    <td className="px-4 py-3 text-gray-900">{tableName}</td>
-                    <td className="px-4 py-3">
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+        {tableNames.length === 0 ? (
+          <div className="px-6 py-12 text-center">
+            <p className="text-sm text-gray-500">Discover schema before mapping entities.</p>
+            <button
+              onClick={() => router.push(`/admin/data-sources/${id}`)}
+              className="mt-4 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Go to setup
+            </button>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+                <th className="px-5 py-3 font-medium">Source</th>
+                <th className="px-5 py-3 font-medium">Profile domain</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tableNames.map((tableName) => {
+                const mapped = Boolean(selected[tableName])
+                return (
+                  <tr
+                    key={tableName}
+                    className={`border-b border-gray-100 ${mapped ? "bg-emerald-50/30" : ""}`}
+                  >
+                    <td className="px-5 py-4">
+                      <p className="font-medium text-gray-900">{tableName}</p>
+                      <p className="text-xs text-gray-500">{mapped ? "Will import" : "Skipped"}</p>
+                    </td>
+                    <td className="px-5 py-4">
                       <select
                         value={selected[tableName] ?? ""}
                         onChange={(e) =>
                           setSelected((current) => ({ ...current, [tableName]: e.target.value }))
                         }
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
                       >
                         <option value="">Do not import</option>
                         {targetDomains.map((domain) => (
@@ -153,12 +180,12 @@ export default function EntitySelectionPage() {
                       </select>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+                )
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
-    </main>
+    </AdminShell>
   )
 }

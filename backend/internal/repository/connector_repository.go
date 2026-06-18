@@ -67,3 +67,29 @@ func (r *ConnectorCredentialRepository) UpsertByDataSourceID(ctx context.Context
 func (r *ConnectorCredentialRepository) DeleteByDataSourceID(ctx context.Context, dataSourceID uuid.UUID) error {
 	return r.dbWithContext(ctx).Delete(&model.ConnectorCredential{}, "data_source_id = ?", dataSourceID).Error
 }
+
+// GetWebhookDataSourceByToken resolves an active webhook data source from its ingest token.
+func (r *ConnectorCredentialRepository) GetWebhookDataSourceByToken(ctx context.Context, token string) (*model.ConnectorCredential, *model.DataSource, error) {
+	var credential model.ConnectorCredential
+	err := r.dbWithContext(ctx).
+		Where("encrypted_payload->>'ingest_token' = ?", token).
+		First(&credential).Error
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var dataSource model.DataSource
+	err = r.dbWithContext(ctx).
+		Preload("ConnectorDefinition").
+		Where("id = ? AND status = ?", credential.DataSourceID, "active").
+		First(&dataSource).Error
+	if err != nil {
+		return nil, nil, err
+	}
+	if dataSource.ConnectorDefinition == nil || dataSource.ConnectorDefinition.Slug != "webhook" {
+		return nil, nil, gorm.ErrRecordNotFound
+	}
+
+	return &credential, &dataSource, nil
+}
+
