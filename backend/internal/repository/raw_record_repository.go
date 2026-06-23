@@ -87,6 +87,13 @@ func (r *RawRecordRepository) GetByExternalID(ctx context.Context, dataSourceID 
 	return &record, nil
 }
 
+func (r *RawRecordRepository) CreateBatch(ctx context.Context, records []model.RawRecord) error {
+	if len(records) == 0 {
+		return nil
+	}
+	return r.dbWithContext(ctx).CreateInBatches(records, 200).Error
+}
+
 func (r *RawRecordRepository) listBy(ctx context.Context, condition string, args []any, limit, offset int) ([]model.RawRecord, error) {
 	var records []model.RawRecord
 	query := r.dbWithContext(ctx).Where(condition, args...).Order("created_at DESC")

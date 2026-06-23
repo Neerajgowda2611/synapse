@@ -11,37 +11,36 @@ import (
 )
 
 func (c *Connector) DiscoverSchema(ctx context.Context) (*connector.SchemaSnapshot, error) {
-	records, err := c.records.ListByDataSourceID(ctx, c.dataSourceID, 500, 0)
+	observations, err := c.observations.ListByDataSourceID(ctx, c.dataSourceID, 500, 0)
 	if err != nil {
 		return nil, err
 	}
-	if len(records) == 0 {
-		return nil, errors.New("no webhook payloads received yet; send data before discovering schema")
+	if len(observations) == 0 {
+		return nil, errors.New("no observations received yet; send at least one observation before discovering schema")
 	}
 
 	typeSamples := make(map[string][]map[string]any)
-	for _, record := range records {
+	for _, obs := range observations {
 		var payload map[string]any
-		if err := json.Unmarshal(record.Payload, &payload); err != nil {
+		if err := json.Unmarshal(obs.Payload, &payload); err != nil {
 			continue
 		}
-		entityType := record.EntityType
-		if len(typeSamples[entityType]) < 50 {
-			typeSamples[entityType] = append(typeSamples[entityType], payload)
+		if len(typeSamples[obs.SourceEventType]) < 50 {
+			typeSamples[obs.SourceEventType] = append(typeSamples[obs.SourceEventType], payload)
 		}
 	}
 
-	entityTypes := make([]string, 0, len(typeSamples))
-	for entityType := range typeSamples {
-		entityTypes = append(entityTypes, entityType)
+	eventTypes := make([]string, 0, len(typeSamples))
+	for eventType := range typeSamples {
+		eventTypes = append(eventTypes, eventType)
 	}
-	sort.Strings(entityTypes)
+	sort.Strings(eventTypes)
 
-	tables := make([]connector.Table, 0, len(entityTypes))
-	for _, entityType := range entityTypes {
-		columns := inferColumns(typeSamples[entityType])
+	tables := make([]connector.Table, 0, len(eventTypes))
+	for _, eventType := range eventTypes {
+		columns := inferColumns(typeSamples[eventType])
 		tables = append(tables, connector.Table{
-			Name:    entityType,
+			Name:    eventType,
 			Columns: columns,
 		})
 	}
@@ -109,19 +108,19 @@ func mergeTypes(types map[string]struct{}) string {
 		parts = append(parts, t)
 	}
 	sort.Strings(parts)
-	return parts[0] // simplified: primary type
+	return parts[0]
 }
 
 func (c *Connector) FetchRecords(ctx context.Context, entity string, options map[string]any) ([]map[string]any, error) {
-	records, err := c.records.ListByEntityType(ctx, c.dataSourceID, entity, 500, 0)
+	observations, err := c.observations.ListBySourceEventType(ctx, c.dataSourceID, entity, 500, 0)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]map[string]any, 0, len(records))
-	for _, record := range records {
+	result := make([]map[string]any, 0, len(observations))
+	for _, obs := range observations {
 		var payload map[string]any
-		if err := json.Unmarshal(record.Payload, &payload); err != nil {
+		if err := json.Unmarshal(obs.Payload, &payload); err != nil {
 			continue
 		}
 		result = append(result, payload)

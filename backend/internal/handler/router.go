@@ -29,11 +29,13 @@ func RegisterRoutes(
 	schemaRepo := repository.NewSchemaSnapshotRepository(db)
 	entityRepo := repository.NewDataSourceEntityRepository(db)
 	rawRecordRepo := repository.NewRawRecordRepository(db)
+	observationRepo := repository.NewObservationRepository(db)
+	syncJobRepo := repository.NewSyncJobRepository(db)
 
 	// Services
 	institutionService := service.NewInstitutionService(institutionRepo)
 	institutionUserService := service.NewInstitutionUserService(userRepo)
-	dataSourceService := service.NewDataSourceService(dataSourceRepo, institutionRepo, connectorRepo, credentialRepo, schemaRepo, entityRepo, rawRecordRepo)
+	dataSourceService := service.NewDataSourceService(dataSourceRepo, institutionRepo, connectorRepo, credentialRepo, schemaRepo, entityRepo, rawRecordRepo, observationRepo, syncJobRepo)
 
 	// Handlers
 	authHandler := NewAuthHandler()
@@ -59,8 +61,8 @@ func RegisterRoutes(
 
 	webhooks := api.Group("/webhooks")
 	{
+		// Token identifies the data source; event semantics live in the envelope body.
 		webhooks.POST("/ingest/:token", webhookHandler.Ingest)
-		webhooks.POST("/ingest/:token/:entity_type", webhookHandler.Ingest)
 	}
 
 	api.GET("/connectors",
@@ -136,6 +138,18 @@ func RegisterRoutes(
 		dataSources.GET("/:id/records",
 			authz.Require(enforcer, authz.ResourceDataSources, authz.ActionRead),
 			dataSourceHandler.ListRecords,
+		)
+		dataSources.GET("/:id/observations",
+			authz.Require(enforcer, authz.ResourceDataSources, authz.ActionRead),
+			dataSourceHandler.ListObservations,
+		)
+		dataSources.GET("/:id/sync-jobs",
+			authz.Require(enforcer, authz.ResourceDataSources, authz.ActionRead),
+			dataSourceHandler.ListSyncJobs,
+		)
+		dataSources.GET("/:id/sync-jobs/latest",
+			authz.Require(enforcer, authz.ResourceDataSources, authz.ActionRead),
+			dataSourceHandler.GetLatestSyncJob,
 		)
 	}
 }

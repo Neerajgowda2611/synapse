@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -26,13 +27,18 @@ type createDataSourceRequest struct {
 }
 
 type storeCredentialsRequest struct {
-	Host     string `json:"host" binding:"required"`
-	Port     int    `json:"port"`
-	Database string `json:"database" binding:"required"`
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
-	SSLMode  string `json:"sslmode"`
-	Schema   string `json:"schema"`
+	Host              string `json:"host"`
+	Port              int    `json:"port"`
+	Database          string `json:"database"`
+	Username          string `json:"username"`
+	Password          string `json:"password"`
+	SSLMode           string `json:"sslmode"`
+	Schema            string `json:"schema"`
+	RawStorageConsent bool   `json:"raw_storage_consent"`
+}
+
+type webhookCredentialsRequest struct {
+	RawStorageConsent bool `json:"raw_storage_consent"`
 }
 
 type saveEntitiesRequest struct {
@@ -171,7 +177,14 @@ func (h *DataSourceHandler) StoreCredentials(c *gin.Context) {
 	}
 
 	if dataSource.ConnectorDefinition != nil && dataSource.ConnectorDefinition.Slug == "webhook" {
-		if err := h.service.StoreCredentials(c.Request.Context(), id, service.StoreCredentialsInput{}); err != nil {
+		var req webhookCredentialsRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if err := h.service.StoreCredentials(c.Request.Context(), id, service.StoreCredentialsInput{
+			RawStorageConsent: req.RawStorageConsent,
+		}); err != nil {
 			respondDataSourceError(c, err, "failed to store credentials")
 			return
 		}
@@ -185,14 +198,21 @@ func (h *DataSourceHandler) StoreCredentials(c *gin.Context) {
 		return
 	}
 
+	if strings.TrimSpace(req.Host) == "" || strings.TrimSpace(req.Database) == "" ||
+		strings.TrimSpace(req.Username) == "" || req.Password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "host, database, username, and password are required"})
+		return
+	}
+
 	err = h.service.StoreCredentials(c.Request.Context(), id, service.StoreCredentialsInput{
-		Host:     req.Host,
-		Port:     req.Port,
-		Database: req.Database,
-		Username: req.Username,
-		Password: req.Password,
-		SSLMode:  req.SSLMode,
-		Schema:   req.Schema,
+		Host:              strings.TrimSpace(req.Host),
+		Port:              req.Port,
+		Database:          strings.TrimSpace(req.Database),
+		Username:          strings.TrimSpace(req.Username),
+		Password:          req.Password,
+		SSLMode:           req.SSLMode,
+		Schema:            req.Schema,
+		RawStorageConsent: req.RawStorageConsent,
 	})
 	if err != nil {
 		respondDataSourceError(c, err, "failed to store credentials")
@@ -321,6 +341,60 @@ func (h *DataSourceHandler) ListRecords(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
+func (h *DataSourceHandler) ListObservations(c *gin.Context) {
+	id, ok := parseDataSourceID(c)
+	if !ok {
+		return
+	}
+
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	sourceEventType := c.Query("source_event_type")
+
+	result, err := h.service.ListObservations(c.Request.Context(), id, sourceEventType, limit, offset)
+	if err != nil {
+		respondDataSourceError(c, err, "failed to list observations")
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+func (h *DataSourceHandler) ListSyncJobs(c *gin.Context) {
+	id, ok := parseDataSourceID(c)
+	if !ok {
+		return
+	}
+
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	jobs, err := h.service.ListSyncJobs(c.Request.Context(), id, limit)
+	if err != nil {
+		respondDataSourceError(c, err, "failed to list sync jobs")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": jobs})
+}
+
+func (h *DataSourceHandler) GetLatestSyncJob(c *gin.Context) {
+	id, ok := parseDataSourceID(c)
+	if !ok {
+		return
+	}
+
+	job, err := h.service.GetLatestSyncJob(c.Request.Context(), id)
+	if err != nil {
+		respondDataSourceError(c, err, "failed to get sync job")
+		return
+	}
+	if job == nil {
+		c.JSON(http.StatusOK, gin.H{"data": nil})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": job})
+}
+
 func parseDataSourceID(c *gin.Context) (uuid.UUID, bool) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -336,7 +410,7 @@ func respondDataSourceError(c *gin.Context, err error, fallback string) {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 	case errors.Is(err, service.ErrDataSourceAccessDenied):
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
-	case errors.Is(err, service.ErrInvalidDataSource), errors.Is(err, service.ErrInvalidConnectorCredentials), errors.Is(err, service.ErrConnectorCredentialsNotFound):
+	case errors.Is(err, service.ErrInvalidDataSource), errors.Is(err, service.ErrInvalidConnectorCredentials), errors.Is(err, service.ErrConnectorCredentialsNotFound), errors.Is(err, service.ErrRawStorageConsentRequired):
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	default:
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fallback})

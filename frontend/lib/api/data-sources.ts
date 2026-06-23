@@ -15,7 +15,22 @@ export interface DataSource {
   connector_definition_id: string
   name: string
   status: string
+  raw_storage_consent_at?: string
+  raw_storage_consented_by?: string
+  last_sync_at?: string
   connector_definition?: ConnectorDefinition
+}
+
+export interface SyncJob {
+  id: string
+  data_source_id: string
+  status: string
+  records_processed: number
+  records_failed: number
+  started_at?: string
+  completed_at?: string
+  error_message?: string
+  created_at: string
 }
 
 export interface MeResponse {
@@ -122,18 +137,20 @@ export function storeCredentials(
     password?: string
     sslmode?: string
     schema?: string
+    raw_storage_consent: boolean
   }
 ) {
   return api.put<{ configured: boolean }>(`/api/v1/data-sources/${id}/credentials`, body)
 }
 
-export function generateWebhookCredentials(id: string) {
-  return api.put<{ configured: boolean }>(`/api/v1/data-sources/${id}/credentials`, {})
+export function generateWebhookCredentials(id: string, rawStorageConsent: boolean) {
+  return api.put<{ configured: boolean }>(`/api/v1/data-sources/${id}/credentials`, {
+    raw_storage_consent: rawStorageConsent,
+  })
 }
 
-export function webhookIngestURL(token: string, entityType?: string) {
-  const base = `${appConfig.apiUrl}/api/v1/webhooks/ingest/${token}`
-  return entityType ? `${base}/${entityType}` : base
+export function webhookIngestURL(token: string) {
+  return `${appConfig.apiUrl}/api/v1/webhooks/ingest/${token}`
 }
 
 export function testConnection(id: string) {
@@ -171,8 +188,35 @@ export interface RawRecord {
   created_at: string
 }
 
+export interface Observation {
+  id: string
+  data_source_id: string
+  source_id: string
+  idempotency_key: string
+  source_connector: string
+  source_event_type: string
+  ingestion_altitude: string
+  occurred_at: string
+  received_at: string
+  payload: Record<string, unknown>
+  payload_schema?: string
+  description?: string
+  status: string
+  observation_type?: string
+  domain?: string
+  binding_id?: string
+  binding_version?: string
+  quarantine_reason?: string
+  created_at: string
+}
+
 export interface EntityTypeCount {
   entity_type: string
+  count: number
+}
+
+export interface SourceEventTypeCount {
+  source_event_type: string
   count: number
 }
 
@@ -182,6 +226,14 @@ export interface RawRecordsResponse {
   limit: number
   offset: number
   by_entity_type: EntityTypeCount[]
+}
+
+export interface ObservationsResponse {
+  data: Observation[]
+  total: number
+  limit: number
+  offset: number
+  by_source_event_type: SourceEventTypeCount[]
 }
 
 export function listRawRecords(
@@ -196,4 +248,26 @@ export function listRawRecords(
   return api.get<RawRecordsResponse>(
     `/api/v1/data-sources/${id}/records${query ? `?${query}` : ""}`
   )
+}
+
+export function listObservations(
+  id: string,
+  params?: { limit?: number; offset?: number; source_event_type?: string }
+) {
+  const search = new URLSearchParams()
+  if (params?.limit) search.set("limit", String(params.limit))
+  if (params?.offset) search.set("offset", String(params.offset))
+  if (params?.source_event_type) search.set("source_event_type", params.source_event_type)
+  const query = search.toString()
+  return api.get<ObservationsResponse>(
+    `/api/v1/data-sources/${id}/observations${query ? `?${query}` : ""}`
+  )
+}
+
+export function getLatestSyncJob(id: string) {
+  return api.get<{ data: SyncJob | null }>(`/api/v1/data-sources/${id}/sync-jobs/latest`)
+}
+
+export function listSyncJobs(id: string, limit = 20) {
+  return api.get<{ data: SyncJob[] }>(`/api/v1/data-sources/${id}/sync-jobs?limit=${limit}`)
 }

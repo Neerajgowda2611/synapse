@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/profiler/backend/internal/model"
@@ -61,4 +62,29 @@ func (r *SyncJobRepository) GetLatestByDataSourceID(ctx context.Context, dataSou
 		return nil, err
 	}
 	return &job, nil
+}
+
+func (r *SyncJobRepository) UpdateProgress(
+	ctx context.Context,
+	id uuid.UUID,
+	status string,
+	recordsProcessed, recordsFailed int,
+	completedAt *time.Time,
+	errorMessage *string,
+) error {
+	updates := map[string]any{
+		"status":            status,
+		"records_processed": recordsProcessed,
+		"records_failed":    recordsFailed,
+	}
+	if completedAt != nil {
+		updates["completed_at"] = *completedAt
+	}
+	if errorMessage != nil {
+		updates["error_message"] = *errorMessage
+	}
+	return r.dbWithContext(ctx).
+		Model(&model.SyncJob{}).
+		Where("id = ?", id).
+		Updates(updates).Error
 }

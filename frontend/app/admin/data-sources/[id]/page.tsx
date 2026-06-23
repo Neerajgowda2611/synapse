@@ -49,6 +49,7 @@ export default function DataSourceDetailPage() {
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)
   const [discovering, setDiscovering] = useState(false)
+  const [consentAccepted, setConsentAccepted] = useState(false)
 
   const slug = dataSource?.connector_definition?.slug
   const isWebhook = slug === "webhook"
@@ -60,6 +61,9 @@ export default function DataSourceDetailPage() {
     Promise.all([getDataSource(id), getCredentials(id).catch(() => null)])
       .then(([ds, creds]) => {
         setDataSource(ds)
+        if (ds.raw_storage_consent_at) {
+          setConsentAccepted(true)
+        }
         if (creds) {
           applyCredentials(creds)
           setHasCredentials(true)
@@ -121,7 +125,9 @@ export default function DataSourceDetailPage() {
       {
         id: "data" as const,
         label: "Collected data",
-        description: "Browse raw records received from this connector.",
+        description: isWebhook
+          ? "Browse observations received from this webhook."
+          : "Browse raw records synced from this connector.",
         status: "upcoming" as const,
       },
     ],
@@ -134,7 +140,7 @@ export default function DataSourceDetailPage() {
     setSaving(true)
     try {
       if (isWebhook) {
-        await generateWebhookCredentials(id)
+        await generateWebhookCredentials(id, consentAccepted)
         const creds = await getCredentials(id)
         applyCredentials(creds)
         setHasCredentials(true)
@@ -152,6 +158,7 @@ export default function DataSourceDetailPage() {
         password: form.password,
         sslmode: form.sslmode,
         schema: form.schema,
+        raw_storage_consent: consentAccepted,
       })
       setHasCredentials(true)
       setVerified(false)
@@ -195,7 +202,15 @@ export default function DataSourceDetailPage() {
     setDiscovering(true)
     try {
       await discoverSchema(id)
-      setMessage("Schema discovered — review tables and map entities.")
+      if (isWebhook) {
+        setMessage("Schema discovered — review tables and map entities.")
+      } else {
+        setMessage(
+          "Schema saved. Raw import started for all discovered tables — check Collected data for progress."
+        )
+        setActiveStep("data")
+      }
+      if (!isWebhook) return
       router.push(`/admin/data-sources/${id}/schema`)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to discover schema")
@@ -208,8 +223,7 @@ export default function DataSourceDetailPage() {
     return <LoadingState />
   }
 
-  const baseIngestURL = webhookToken ? webhookIngestURL(webhookToken) : ""
-  const typedIngestURL = webhookToken ? webhookIngestURL(webhookToken, "attendance") : ""
+  const ingestURL = webhookToken ? webhookIngestURL(webhookToken) : ""
   const activeMeta = setupSteps.find((step) => step.id === activeStep)
 
   return (
@@ -268,21 +282,28 @@ export default function DataSourceDetailPage() {
                     {webhookToken ? (
                       <>
                         <CopyField
-                          label="Default ingest URL (entity: unclassified)"
-                          value={baseIngestURL}
-                        />
-                        <CopyField
-                          label="Typed ingest URL (example: attendance)"
-                          value={typedIngestURL}
+                          label="Ingest URL"
+                          value={ingestURL}
                         />
                         <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                           <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                            Example request
+                            Example request — wrap your event in the observation envelope
                           </p>
                           <pre className="mt-2 overflow-x-auto font-mono text-xs leading-relaxed text-gray-700">
-{`curl -X POST '${typedIngestURL}' \\
+{`curl -X POST '${ingestURL}' \\
   -H 'Content-Type: application/json' \\
-  -d '{"student_id":"045","status":"present"}'`}
+  -d '{
+    "source_id": "evt-001",
+    "idempotency_key": "myapp:evt-001",
+    "source_connector": "myapp",
+    "source_event_type": "attendance.checkin",
+    "ingestion_altitude": "observation",
+    "occurred_at": "2026-06-22T09:00:00Z",
+    "payload": {
+      "student_id": "S-22",
+      "present": true
+    }
+  }'`}
                           </pre>
                         </div>
                         <p className="text-xs text-amber-700">
@@ -297,11 +318,16 @@ export default function DataSourceDetailPage() {
                         </p>
                       </div>
                     )}
+                    <RawStorageConsent
+                      checked={consentAccepted}
+                      onChange={setConsentAccepted}
+                      disabled={Boolean(dataSource?.raw_storage_consent_at)}
+                    />
                     <StepActions>
                       <button
                         type="button"
                         onClick={generateOrSaveCredentials}
-                        disabled={saving}
+                        disabled={saving || !consentAccepted}
                         className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
                       >
                         {saving
@@ -338,10 +364,15 @@ export default function DataSourceDetailPage() {
                         </label>
                       ))}
                     </div>
+                    <RawStorageConsent
+                      checked={consentAccepted}
+                      onChange={setConsentAccepted}
+                      disabled={Boolean(dataSource?.raw_storage_consent_at)}
+                    />
                     <StepActions>
                       <button
                         type="submit"
-                        disabled={saving}
+                        disabled={saving || !consentAccepted}
                         className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
                       >
                         {saving ? "Saving..." : "Save credentials"}
@@ -386,7 +417,7 @@ export default function DataSourceDetailPage() {
                 <p className="text-sm text-gray-600">
                   {isWebhook
                     ? "Send at least one payload to your ingest URL, then discover schema to infer fields from received events."
-                    : "Scan the connected database and store a schema snapshot of available tables and columns."}
+                    : "Scan the connected database and store a schema snapshot. All discovered tables will be imported as raw JSON records automatically."}
                 </p>
                 {!hasCredentials && (
                   <p className="text-sm text-amber-700">Save credentials before discovering schema.</p>
@@ -432,8 +463,9 @@ export default function DataSourceDetailPage() {
             {activeStep === "data" && (
               <div className="space-y-5">
                 <p className="text-sm text-gray-600">
-                  Browse raw records stored for this data source. Webhook payloads appear here
-                  immediately; database sync data will appear once sync jobs are enabled.
+                  {isWebhook
+                    ? "Browse observations stored for this webhook. Events appear here as soon as apps POST to your ingest URL."
+                    : "Browse raw records stored for this data source. Database sync data appears once import jobs complete."}
                 </p>
                 <StepActions>
                   <button
@@ -466,4 +498,38 @@ export default function DataSourceDetailPage() {
 
 function StepActions({ children }: { children: ReactNode }) {
   return <div className="flex flex-wrap gap-2 border-t border-gray-100 pt-5">{children}</div>
+}
+
+function RawStorageConsent({
+  checked,
+  onChange,
+  disabled,
+}: {
+  checked: boolean
+  onChange: (value: boolean) => void
+  disabled?: boolean
+}) {
+  return (
+    <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4">
+      <p className="text-sm text-gray-800">
+        Profiler stores a complete copy of incoming source data as JSON in our database for
+        processing, audit, and future transformation into learner profiles.
+      </p>
+      <label className="mt-3 flex items-start gap-2 text-sm text-gray-800">
+        <input
+          type="checkbox"
+          checked={checked}
+          disabled={disabled}
+          onChange={(e) => onChange(e.target.checked)}
+          className="mt-0.5 rounded border-gray-300"
+        />
+        <span>
+          I understand and consent to raw data storage in Profiler&apos;s database.
+          {disabled && (
+            <span className="mt-1 block text-xs text-gray-500">Consent recorded for this data source.</span>
+          )}
+        </span>
+      </label>
+    </div>
+  )
 }

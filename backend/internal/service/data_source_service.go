@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/profiler/backend/internal/auth"
@@ -26,6 +27,7 @@ var (
 	ErrSchemaSnapshotNotFound       = errors.New("schema snapshot not found")
 	ErrInvalidWebhookPayload        = errors.New("invalid webhook payload")
 	ErrWebhookNotFound              = errors.New("webhook not found")
+	ErrRawStorageConsentRequired    = errors.New("raw storage consent is required")
 )
 
 type CreateDataSourceInput struct {
@@ -36,13 +38,14 @@ type CreateDataSourceInput struct {
 }
 
 type StoreCredentialsInput struct {
-	Host     string `json:"host"`
-	Port     int    `json:"port"`
-	Database string `json:"database"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-	SSLMode  string `json:"sslmode,omitempty"`
-	Schema   string `json:"schema,omitempty"`
+	Host              string `json:"host"`
+	Port              int    `json:"port"`
+	Database          string `json:"database"`
+	Username          string `json:"username"`
+	Password          string `json:"password"`
+	SSLMode           string `json:"sslmode,omitempty"`
+	Schema            string `json:"schema,omitempty"`
+	RawStorageConsent bool   `json:"raw_storage_consent"`
 }
 
 type EntitySelectionInput struct {
@@ -55,14 +58,16 @@ type WebhookCredentialsView struct {
 }
 
 type DataSourceService struct {
-	repo            *repository.DataSourceRepository
-	institutionRepo *repository.InstitutionRepository
-	connectorRepo   *repository.ConnectorDefinitionRepository
-	credentialRepo  *repository.ConnectorCredentialRepository
-	schemaRepo      *repository.SchemaSnapshotRepository
-	entityRepo      *repository.DataSourceEntityRepository
-	rawRecordRepo   *repository.RawRecordRepository
-	registry        *connector.Registry
+	repo             *repository.DataSourceRepository
+	institutionRepo  *repository.InstitutionRepository
+	connectorRepo    *repository.ConnectorDefinitionRepository
+	credentialRepo   *repository.ConnectorCredentialRepository
+	schemaRepo       *repository.SchemaSnapshotRepository
+	entityRepo       *repository.DataSourceEntityRepository
+	rawRecordRepo    *repository.RawRecordRepository
+	observationRepo  *repository.ObservationRepository
+	syncService      *SyncService
+	registry         *connector.Registry
 }
 
 func NewDataSourceService(
@@ -73,10 +78,14 @@ func NewDataSourceService(
 	schemaRepo *repository.SchemaSnapshotRepository,
 	entityRepo *repository.DataSourceEntityRepository,
 	rawRecordRepo *repository.RawRecordRepository,
+	observationRepo *repository.ObservationRepository,
+	syncJobRepo *repository.SyncJobRepository,
 ) *DataSourceService {
 	registry := connector.NewRegistry()
 	registry.Register("postgres", connectorpostgres.NewFromJSON)
 	registry.Register("postgresql", connectorpostgres.NewFromJSON)
+
+	syncService := NewSyncService(repo, credentialRepo, schemaRepo, syncJobRepo, rawRecordRepo, registry)
 
 	return &DataSourceService{
 		repo:            repo,
@@ -86,6 +95,8 @@ func NewDataSourceService(
 		schemaRepo:      schemaRepo,
 		entityRepo:      entityRepo,
 		rawRecordRepo:   rawRecordRepo,
+		observationRepo: observationRepo,
+		syncService:     syncService,
 		registry:        registry,
 	}
 }
@@ -175,8 +186,15 @@ func (s *DataSourceService) StoreCredentials(ctx context.Context, dataSourceID u
 		return err
 	}
 
+	if !input.RawStorageConsent {
+		return ErrRawStorageConsentRequired
+	}
+
 	if connectorwebhook.IsWebhookSlug(dataSource.ConnectorDefinition.Slug) {
-		return s.storeWebhookCredentials(ctx, dataSourceID)
+		if err := s.storeWebhookCredentials(ctx, dataSourceID); err != nil {
+			return err
+		}
+		return s.recordRawStorageConsent(ctx, dataSourceID)
 	}
 
 	config, err := input.toPostgresConfig()
@@ -189,10 +207,14 @@ func (s *DataSourceService) StoreCredentials(ctx context.Context, dataSourceID u
 		return err
 	}
 
-	return s.credentialRepo.UpsertByDataSourceID(ctx, &model.ConnectorCredential{
+	if err := s.credentialRepo.UpsertByDataSourceID(ctx, &model.ConnectorCredential{
 		DataSourceID:     dataSourceID,
 		EncryptedPayload: model.JSONB(payload),
-	})
+	}); err != nil {
+		return err
+	}
+
+	return s.recordRawStorageConsent(ctx, dataSourceID)
 }
 
 func (s *DataSourceService) storeWebhookCredentials(ctx context.Context, dataSourceID uuid.UUID) error {
@@ -298,6 +320,14 @@ func (s *DataSourceService) DiscoverSchema(ctx context.Context, dataSourceID uui
 		return nil, err
 	}
 
+	dataSource, err := s.repo.GetWithAssociations(ctx, dataSourceID)
+	if err == nil &&
+		dataSource.RawStorageConsentAt != nil &&
+		dataSource.ConnectorDefinition != nil &&
+		connectorpostgres.IsPostgresSlug(dataSource.ConnectorDefinition.Slug) {
+		s.syncService.StartInitialImportAsync(dataSourceID, snapshot.ID)
+	}
+
 	return snapshot, nil
 }
 
@@ -358,42 +388,124 @@ func (s *DataSourceService) SaveEntities(ctx context.Context, dataSourceID uuid.
 	return s.entityRepo.ListByDataSourceID(ctx, dataSourceID)
 }
 
-func (s *DataSourceService) IngestWebhook(ctx context.Context, token, entityType string, payload json.RawMessage) (*model.RawRecord, error) {
+// IngestObservationEnvelopeResult is returned by IngestObservationEnvelope.
+// Duplicate is true when an event with the same idempotency_key already exists.
+type IngestObservationEnvelopeResult struct {
+	Observation *model.Observation
+	Duplicate   bool
+}
+
+func (s *DataSourceService) IngestObservationEnvelope(ctx context.Context, token string, envelope *connectorwebhook.ObservationEnvelope) (*IngestObservationEnvelopeResult, error) {
 	if strings.TrimSpace(token) == "" {
 		return nil, ErrWebhookNotFound
 	}
-	if strings.TrimSpace(entityType) == "" {
-		entityType = "unclassified"
-	}
 
-	credential, dataSource, err := s.credentialRepo.GetWebhookDataSourceByToken(ctx, token)
+	_, dataSource, err := s.credentialRepo.GetWebhookDataSourceByToken(ctx, token)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrWebhookNotFound
 		}
 		return nil, err
 	}
-	_ = credential
 
-	var parsed map[string]any
-	if err := json.Unmarshal(payload, &parsed); err != nil {
-		return nil, ErrInvalidWebhookPayload
-	}
-	if parsed == nil {
-		return nil, ErrInvalidWebhookPayload
+	if dataSource.RawStorageConsentAt == nil {
+		return nil, ErrRawStorageConsentRequired
 	}
 
-	record := &model.RawRecord{
-		InstitutionID: dataSource.InstitutionID,
-		DataSourceID:  dataSource.ID,
-		EntityType:    entityType,
-		ExternalID:    connectorwebhook.InferExternalID(parsed),
-		Payload:       model.JSONB(payload),
-	}
-	if err := s.rawRecordRepo.Create(ctx, record); err != nil {
+	if err := envelope.Validate(); err != nil {
 		return nil, err
 	}
-	return record, nil
+
+	existing, err := s.observationRepo.GetByIdempotencyKey(ctx, dataSource.ID, envelope.IdempotencyKey)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+	if existing != nil {
+		return &IngestObservationEnvelopeResult{Observation: existing, Duplicate: true}, nil
+	}
+
+	now := time.Now().UTC()
+	occurredAt := envelope.OccurredAt.UTC()
+
+	observation := &model.Observation{
+		DataSourceID:      dataSource.ID,
+		SourceID:          envelope.SourceID,
+		IdempotencyKey:    envelope.IdempotencyKey,
+		SourceConnector:   envelope.SourceConnector,
+		SourceEventType:   envelope.SourceEventType,
+		IngestionAltitude: envelope.IngestionAltitude,
+		OccurredAt:        occurredAt,
+		ReceivedAt:        now,
+		Payload:           model.JSONB(envelope.Payload),
+		PayloadSchema:     envelope.PayloadSchema,
+		Description:       envelope.Description,
+		Attestation:       model.JSONB(envelope.Attestation),
+		Status:            model.ObservationStatusReceived,
+	}
+	if err := s.observationRepo.Create(ctx, observation); err != nil {
+		// Handle race: another request inserted the same idempotency_key concurrently
+		if dup, dupErr := s.observationRepo.GetByIdempotencyKey(ctx, dataSource.ID, envelope.IdempotencyKey); dupErr == nil {
+			return &IngestObservationEnvelopeResult{Observation: dup, Duplicate: true}, nil
+		}
+		return nil, err
+	}
+	return &IngestObservationEnvelopeResult{Observation: observation, Duplicate: false}, nil
+}
+
+type ObservationsResult struct {
+	Data            []model.Observation                  `json:"data"`
+	Total           int64                                `json:"total"`
+	Limit           int                                  `json:"limit"`
+	Offset          int                                  `json:"offset"`
+	BySourceEvent   []repository.SourceEventTypeCount    `json:"by_source_event_type"`
+}
+
+func (s *DataSourceService) ListObservations(
+	ctx context.Context,
+	dataSourceID uuid.UUID,
+	sourceEventType string,
+	limit, offset int,
+) (*ObservationsResult, error) {
+	dataSource, err := s.ensureDataSourceAccess(ctx, dataSourceID)
+	if err != nil {
+		return nil, err
+	}
+	if dataSource.ConnectorDefinition == nil || !connectorwebhook.IsWebhookSlug(dataSource.ConnectorDefinition.Slug) {
+		return nil, ErrInvalidDataSource
+	}
+
+	if limit <= 0 {
+		limit = 50
+	}
+	if limit > 200 {
+		limit = 200
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	observations, err := s.observationRepo.ListFiltered(ctx, dataSourceID, sourceEventType, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	total, err := s.observationRepo.CountByDataSourceID(ctx, dataSourceID, sourceEventType)
+	if err != nil {
+		return nil, err
+	}
+
+	byEvent, err := s.observationRepo.SourceEventTypeCounts(ctx, dataSourceID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ObservationsResult{
+		Data:          observations,
+		Total:         total,
+		Limit:         limit,
+		Offset:        offset,
+		BySourceEvent: byEvent,
+	}, nil
 }
 
 type RawRecordsResult struct {
@@ -448,6 +560,35 @@ func (s *DataSourceService) ListRawRecords(
 	}, nil
 }
 
+func (s *DataSourceService) ListSyncJobs(ctx context.Context, dataSourceID uuid.UUID, limit int) ([]model.SyncJob, error) {
+	if _, err := s.ensureDataSourceAccess(ctx, dataSourceID); err != nil {
+		return nil, err
+	}
+	return s.syncService.ListSyncJobs(ctx, dataSourceID, limit)
+}
+
+func (s *DataSourceService) GetLatestSyncJob(ctx context.Context, dataSourceID uuid.UUID) (*model.SyncJob, error) {
+	if _, err := s.ensureDataSourceAccess(ctx, dataSourceID); err != nil {
+		return nil, err
+	}
+	job, err := s.syncService.GetLatestSyncJob(ctx, dataSourceID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return job, nil
+}
+
+func (s *DataSourceService) recordRawStorageConsent(ctx context.Context, dataSourceID uuid.UUID) error {
+	consentedBy := "unknown"
+	if ac := auth.FromContext(ctx); ac != nil && ac.Email != "" {
+		consentedBy = ac.Email
+	}
+	return s.repo.RecordRawStorageConsent(ctx, dataSourceID, consentedBy, time.Now())
+}
+
 func (s *DataSourceService) connectorForDataSource(ctx context.Context, dataSourceID uuid.UUID) (connector.Connector, error) {
 	dataSource, err := s.ensureDataSourceAccess(ctx, dataSourceID)
 	if err != nil {
@@ -465,7 +606,7 @@ func (s *DataSourceService) connectorForDataSource(ctx context.Context, dataSour
 	payload := json.RawMessage(credential.EncryptedPayload)
 
 	if connectorwebhook.IsWebhookSlug(dataSource.ConnectorDefinition.Slug) {
-		return connectorwebhook.NewFromJSON(payload, dataSourceID, s.rawRecordRepo)
+		return connectorwebhook.NewFromJSON(payload, dataSourceID, s.observationRepo)
 	}
 
 	if _, err := connectorpostgres.NewFromJSON(payload); err != nil {

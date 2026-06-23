@@ -127,6 +127,8 @@ type DataSource struct {
 	Name                  string               `gorm:"not null" json:"name"`
 	Status                string               `gorm:"not null;default:active" json:"status"`
 	LastSyncAt            *time.Time           `json:"last_sync_at,omitempty"`
+	RawStorageConsentAt   *time.Time           `json:"raw_storage_consent_at,omitempty"`
+	RawStorageConsentedBy *string              `json:"raw_storage_consented_by,omitempty"`
 	CreatedAt             time.Time            `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt             time.Time            `gorm:"not null;default:now()" json:"updated_at"`
 	Institution           *Institution         `gorm:"foreignKey:InstitutionID" json:"institution,omitempty"`
@@ -138,6 +140,7 @@ type DataSource struct {
 	MappingDefinitions []MappingDefinition  `gorm:"foreignKey:DataSourceID" json:"mapping_definitions,omitempty"`
 	SyncJobs           []SyncJob            `gorm:"foreignKey:DataSourceID" json:"sync_jobs,omitempty"`
 	RawRecords         []RawRecord          `gorm:"foreignKey:DataSourceID" json:"raw_records,omitempty"`
+	Observations       []Observation        `gorm:"foreignKey:DataSourceID" json:"observations,omitempty"`
 	LearnerIdentities  []LearnerIdentity    `gorm:"foreignKey:DataSourceID" json:"learner_identities,omitempty"`
 }
 
@@ -221,21 +224,60 @@ func (SyncJob) TableName() string {
 }
 
 type RawRecord struct {
-	ID            uuid.UUID   `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
-	InstitutionID uuid.UUID   `gorm:"type:uuid;not null;index" json:"institution_id"`
-	DataSourceID  uuid.UUID   `gorm:"type:uuid;not null;index" json:"data_source_id"`
-	SyncJobID     *uuid.UUID  `gorm:"type:uuid;index" json:"sync_job_id,omitempty"`
-	EntityType    string      `gorm:"not null" json:"entity_type"`
-	ExternalID    *string     `json:"external_id,omitempty"`
-	Payload       JSONB       `gorm:"type:jsonb;not null" json:"payload"`
-	CreatedAt     time.Time   `gorm:"not null;default:now()" json:"created_at"`
-	Institution   Institution `gorm:"foreignKey:InstitutionID" json:"institution,omitempty"`
-	DataSource    DataSource  `gorm:"foreignKey:DataSourceID" json:"data_source,omitempty"`
-	SyncJob       *SyncJob    `gorm:"foreignKey:SyncJobID" json:"sync_job,omitempty"`
+	ID            uuid.UUID  `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	InstitutionID uuid.UUID  `gorm:"type:uuid;not null;index" json:"institution_id"`
+	DataSourceID  uuid.UUID  `gorm:"type:uuid;not null;index" json:"data_source_id"`
+	SyncJobID     *uuid.UUID `gorm:"type:uuid;index" json:"sync_job_id,omitempty"`
+	EntityType    string     `gorm:"not null" json:"entity_type"`
+	ExternalID    *string    `json:"external_id,omitempty"`
+	Payload       JSONB      `gorm:"type:jsonb;not null" json:"payload"`
+	CreatedAt     time.Time  `gorm:"not null;default:now()" json:"created_at"`
+
+	Institution Institution `gorm:"foreignKey:InstitutionID" json:"institution,omitempty"`
+	DataSource  DataSource  `gorm:"foreignKey:DataSourceID" json:"data_source,omitempty"`
+	SyncJob     *SyncJob    `gorm:"foreignKey:SyncJobID" json:"sync_job,omitempty"`
 }
 
 func (RawRecord) TableName() string {
 	return "raw_records"
+}
+
+// Observation stores a parsed webhook observation envelope (Stage 1 dump).
+// Webhook ingest writes here directly; Postgres sync uses raw_records instead.
+type Observation struct {
+	ID                uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	DataSourceID      uuid.UUID `gorm:"type:uuid;not null;index" json:"data_source_id"`
+	SourceID          string    `gorm:"not null" json:"source_id"`
+	IdempotencyKey    string    `gorm:"not null" json:"idempotency_key"`
+	SourceConnector   string    `gorm:"not null" json:"source_connector"`
+	SourceEventType   string    `gorm:"not null" json:"source_event_type"`
+	IngestionAltitude string    `gorm:"not null" json:"ingestion_altitude"`
+	OccurredAt        time.Time `gorm:"not null" json:"occurred_at"`
+	ReceivedAt        time.Time `gorm:"not null" json:"received_at"`
+	Payload           JSONB     `gorm:"type:jsonb;not null" json:"payload"`
+	PayloadSchema     *string   `json:"payload_schema,omitempty"`
+	Description       *string   `json:"description,omitempty"`
+	Attestation       JSONB     `gorm:"type:jsonb" json:"attestation,omitempty"`
+	// Filled later by binding/canonicalization pipeline; null until then.
+	Status            string  `gorm:"not null;default:received" json:"status"`
+	ObservationType   *string `json:"observation_type,omitempty"`
+	Domain            *string `json:"domain,omitempty"`
+	BindingID         *string `json:"binding_id,omitempty"`
+	BindingVersion    *string `json:"binding_version,omitempty"`
+	QuarantineReason  *string `json:"quarantine_reason,omitempty"`
+	CreatedAt         time.Time `gorm:"not null;default:now()" json:"created_at"`
+
+	DataSource DataSource `gorm:"foreignKey:DataSourceID" json:"data_source,omitempty"`
+}
+
+const (
+	ObservationStatusReceived      = "received"
+	ObservationStatusCanonicalized = "canonicalized"
+	ObservationStatusQuarantined   = "quarantined"
+)
+
+func (Observation) TableName() string {
+	return "observations"
 }
 
 type Learner struct {

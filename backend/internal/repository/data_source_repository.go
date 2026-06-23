@@ -52,6 +52,17 @@ func (r *DataSourceRepository) UpdateLastSyncAt(ctx context.Context, id uuid.UUI
 		Update("last_sync_at", syncedAt).Error
 }
 
+func (r *DataSourceRepository) RecordRawStorageConsent(ctx context.Context, id uuid.UUID, consentedBy string, consentedAt time.Time) error {
+	return r.dbWithContext(ctx).
+		Model(&model.DataSource{}).
+		Where("id = ?", id).
+		Updates(map[string]any{
+			"raw_storage_consent_at":   consentedAt,
+			"raw_storage_consented_by": consentedBy,
+			"updated_at":               consentedAt,
+		}).Error
+}
+
 type DataSourceEntityRepository struct {
 	*BaseRepository[model.DataSourceEntity]
 }

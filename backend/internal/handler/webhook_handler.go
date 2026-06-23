@@ -1,11 +1,13 @@
 package handler
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	connectorwebhook "github.com/profiler/backend/internal/connector/webhook"
 	"github.com/profiler/backend/internal/service"
 )
 
@@ -19,11 +21,13 @@ func NewWebhookHandler(service *service.DataSourceService) *WebhookHandler {
 
 func (h *WebhookHandler) Ingest(c *gin.Context) {
 	token := c.Param("token")
-	entityType := c.Param("entity_type")
+
+	// Cap body at 1 MB to prevent oversized payloads
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 1<<20)
 
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to read request body"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to read request body (max 1 MB)"})
 		return
 	}
 	if len(body) == 0 {
@@ -31,22 +35,32 @@ func (h *WebhookHandler) Ingest(c *gin.Context) {
 		return
 	}
 
-	record, err := h.service.IngestWebhook(c.Request.Context(), token, entityType, body)
+	var envelope connectorwebhook.ObservationEnvelope
+	if err := json.Unmarshal(body, &envelope); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "request body must be valid JSON"})
+		return
+	}
+
+	result, err := h.service.IngestObservationEnvelope(c.Request.Context(), token, &envelope)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrWebhookNotFound):
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		case errors.Is(err, service.ErrInvalidWebhookPayload):
+		case errors.Is(err, service.ErrRawStorageConsentRequired):
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		case connectorwebhook.IsEnvelopeValidationError(err):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to ingest webhook payload"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to ingest observation"})
 		}
 		return
 	}
 
 	c.JSON(http.StatusAccepted, gin.H{
-		"id":          record.ID,
-		"entity_type": record.EntityType,
-		"external_id": record.ExternalID,
+		"id":                result.Observation.ID,
+		"source_id":         result.Observation.SourceID,
+		"source_event_type": result.Observation.SourceEventType,
+		"received_at":       result.Observation.ReceivedAt,
+		"duplicate":         result.Duplicate,
 	})
 }
