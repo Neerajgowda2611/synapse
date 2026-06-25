@@ -199,7 +199,7 @@ export interface Observation {
   occurred_at: string
   received_at: string
   payload: Record<string, unknown>
-  payload_schema?: string
+  payload_schema?: Record<string, unknown>
   description?: string
   status: string
   observation_type?: string

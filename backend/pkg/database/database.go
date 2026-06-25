@@ -180,7 +180,7 @@ func ensureConnectorTables(db *gorm.DB) error {
 			occurred_at timestamptz NOT NULL,
 			received_at timestamptz NOT NULL,
 			payload jsonb NOT NULL,
-			payload_schema text,
+			payload_schema jsonb,
 			description text,
 			attestation jsonb,
 			status text NOT NULL DEFAULT 'received',
@@ -201,6 +201,14 @@ func ensureConnectorTables(db *gorm.DB) error {
 		`CREATE UNIQUE INDEX IF NOT EXISTS idx_observations_idempotency ON observations (data_source_id, idempotency_key)`,
 		`CREATE INDEX IF NOT EXISTS idx_observations_data_source_id ON observations (data_source_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_observations_connector_event ON observations (data_source_id, source_connector, source_event_type)`,
+		// payload_schema: JSON object skeleton (was text version labels in early builds)
+		`ALTER TABLE observations ALTER COLUMN payload_schema TYPE jsonb USING (
+			CASE
+				WHEN payload_schema IS NULL THEN NULL
+				WHEN payload_schema::text LIKE '{%' THEN payload_schema::text::jsonb
+				ELSE NULL
+			END
+		)`,
 		// Remove webhook envelope columns mistakenly added to raw_records (webhooks use observations table)
 		`DROP INDEX IF EXISTS idx_raw_records_idempotency`,
 		`DROP INDEX IF EXISTS idx_raw_records_connector_event`,

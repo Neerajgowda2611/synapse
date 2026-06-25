@@ -437,7 +437,7 @@ func (s *DataSourceService) IngestObservationEnvelope(ctx context.Context, token
 		OccurredAt:        occurredAt,
 		ReceivedAt:        now,
 		Payload:           model.JSONB(envelope.Payload),
-		PayloadSchema:     envelope.PayloadSchema,
+		PayloadSchema:     model.JSONB(envelope.PayloadSchema),
 		Description:       envelope.Description,
 		Attestation:       model.JSONB(envelope.Attestation),
 		Status:            model.ObservationStatusReceived,

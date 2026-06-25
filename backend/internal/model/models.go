@@ -255,7 +255,7 @@ type Observation struct {
 	OccurredAt        time.Time `gorm:"not null" json:"occurred_at"`
 	ReceivedAt        time.Time `gorm:"not null" json:"received_at"`
 	Payload           JSONB     `gorm:"type:jsonb;not null" json:"payload"`
-	PayloadSchema     *string   `json:"payload_schema,omitempty"`
+	PayloadSchema     JSONB     `gorm:"type:jsonb" json:"payload_schema,omitempty"`
 	Description       *string   `json:"description,omitempty"`
 	Attestation       JSONB     `gorm:"type:jsonb" json:"attestation,omitempty"`
 	// Filled later by binding/canonicalization pipeline; null until then.

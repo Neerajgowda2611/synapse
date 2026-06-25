@@ -19,7 +19,7 @@ type ObservationEnvelope struct {
 	IngestionAltitude string          `json:"ingestion_altitude"`
 	OccurredAt        time.Time       `json:"occurred_at"`
 	Payload           json.RawMessage `json:"payload"`
-	PayloadSchema     *string         `json:"payload_schema,omitempty"`
+	PayloadSchema     json.RawMessage `json:"payload_schema,omitempty"`
 	Description       *string         `json:"description,omitempty"`
 	Attestation       json.RawMessage `json:"attestation,omitempty"`
 }
@@ -32,7 +32,8 @@ var (
 	ErrMissingIngestionAltitude = errors.New("ingestion_altitude is required")
 	ErrMissingOccurredAt        = errors.New("occurred_at is required")
 	ErrMissingPayload           = errors.New("payload is required")
-	ErrPayloadMustBeObject      = errors.New("payload must be a JSON object")
+	ErrPayloadMustBeObject       = errors.New("payload must be a JSON object")
+	ErrPayloadSchemaMustBeObject = errors.New("payload_schema must be a JSON object")
 	ErrSignalNotSupported       = errors.New("ingestion_altitude 'signal' is not supported yet; use 'observation'")
 	ErrInvalidIngestionAltitude = errors.New("ingestion_altitude must be 'observation'")
 )
@@ -48,6 +49,7 @@ func IsEnvelopeValidationError(err error) bool {
 		errors.Is(err, ErrMissingOccurredAt) ||
 		errors.Is(err, ErrMissingPayload) ||
 		errors.Is(err, ErrPayloadMustBeObject) ||
+		errors.Is(err, ErrPayloadSchemaMustBeObject) ||
 		errors.Is(err, ErrSignalNotSupported) ||
 		errors.Is(err, ErrInvalidIngestionAltitude)
 }
@@ -96,6 +98,16 @@ func (e *ObservationEnvelope) Validate() error {
 	}
 	if probe == nil {
 		return ErrPayloadMustBeObject
+	}
+
+	if len(e.PayloadSchema) > 0 {
+		var schemaProbe map[string]any
+		if err := json.Unmarshal(e.PayloadSchema, &schemaProbe); err != nil {
+			return ErrPayloadSchemaMustBeObject
+		}
+		if schemaProbe == nil {
+			return ErrPayloadSchemaMustBeObject
+		}
 	}
 
 	return nil

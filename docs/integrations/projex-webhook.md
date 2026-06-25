@@ -5,7 +5,7 @@ Single reference for the **Projex** team: how to push observations to Profiler (
 This doc maps each observation from the Projex catalog (§6.2) to **example** observation envelope payloads. Projex keeps its own field names inside `payload`; Profiler stores them verbatim and maps to signals later via bindings.
 
 > **Important — examples are not the contract**  
-> Every JSON example below is **illustrative only**. Field names, nesting, and which related objects you include will depend on Projex’s real database schema and joins. The **actual** payload shapes will be defined and agreed with the Projex team during onboarding (via `payload_schema` versions). Do not treat these samples as copy-paste production schemas.
+> Every JSON example below is **illustrative only**. Field names, nesting, and which related objects you include will depend on Projex’s real database schema and joins. The **actual** payload shapes will be defined and agreed with the Projex team during onboarding. Do not treat these samples as copy-paste production schemas.
 
 ---
 
@@ -36,7 +36,7 @@ All fields below are required unless marked optional.
 | `ingestion_altitude` | string | Always `"observation"` for now. (`"signal"` reserved for future use.)                                   |
 | `occurred_at`        | string | When it happened — ISO 8601 UTC.                                                                        |
 | `payload`            | object | Your native event fields, any names, any shape. Stored verbatim.                                        |
-| `payload_schema`     | string | *(optional)* Version pointer (e.g. `projex.task.created@1`).                                            |
+| `payload_schema`     | object | *(optional)* **Skeleton** of `payload` — same keys/nesting, values are type placeholders (e.g. `"string"`, `"number"`). |
 | `description`        | string | *(optional)* One-line summary of the event.                                                             |
 | `attestation`        | object | *(optional)* Reserved for attested signals — omit for now.                                              |
 
@@ -46,6 +46,7 @@ All fields below are required unless marked optional.
 - Wrap your data in the envelope; put native fields in `payload`.
 - Do not rename fields to match Profiler.
 - `payload` must be a JSON **object** (not an array or scalar).
+- If sent, `payload_schema` must also be a JSON **object** — a structural mirror of `payload`, not a version string.
 - All timestamps ISO 8601 UTC.
 - Reuse the same `idempotency_key` on retries — Profiler deduplicates automatically.
 
@@ -98,7 +99,7 @@ Both cases return `202` — retries are safe.
 
 | Status | When                                                                                            |
 | ------ | ----------------------------------------------------------------------------------------------- |
-| 400    | Missing required field, `payload` is not an object, `ingestion_altitude` is not `"observation"` |
+| 400    | Missing required field, `payload` or `payload_schema` is not an object, `ingestion_altitude` is not `"observation"` |
 | 403    | Data source exists but raw-storage consent has not been given                                   |
 | 404    | Token not found or data source is not active                                                    |
 | 500    | Unexpected server error                                                                         |
@@ -165,7 +166,6 @@ After sending at least one event, run **Discover schema** in the Profiler admin 
 | `ingestion_altitude`      | `"observation"` (always, for now)                                                                |
 | User id in `payload`      | `user_id` — Projex’s own user identifier (Profiler resolves to a person later)                   |
 | `idempotency_key` pattern | `projex:{source_event_type}:{source_id}`                                                         |
-| `payload_schema` pattern  | `projex.{source_event_type}@1` — **example version tag only**; real version agreed at onboarding |
 
 
 **When to push:** Emit an observation **as soon as the event happens** in Projex (or on a reliable outbox retry). One envelope per logical event — do not batch multiple events in one POST.
@@ -288,6 +288,35 @@ Example nested objects ( **not** prescriptive — adapt to Projex’s schema):
 
 Profiler stores whatever you send; bindings are written against the **actual** Projex payload shape you register at onboarding.
 
+### `payload_schema` — skeleton of `payload`
+
+`payload_schema` is **not** a version label. It is a JSON **object** with the same shape as `payload`, where leaf values are **type placeholders** (`"string"`, `"number"`, `"boolean"`, `"object"`, …). Nested objects use the same keys as `payload` but only describe structure.
+
+```json
+{
+  "source_id": "sub-abc",
+  "source_event_type": "milestone.submitted",
+  "payload_schema": {
+    "submission_id": "string",
+    "milestone_id": "string",
+    "milestone": { "id": "string", "title": "string" },
+    "project": { "id": "string", "name": "string" },
+    "user_id": "string",
+    "submitted_at": "string"
+  },
+  "payload": {
+    "submission_id": "sub-abc",
+    "milestone_id": "ms-1001",
+    "milestone": { "id": "ms-1001", "title": "Phase 1 delivery" },
+    "project": { "id": "proj-42", "name": "Capstone Alpha" },
+    "user_id": "u_99",
+    "submitted_at": "2026-06-28T18:30:00Z"
+  }
+}
+```
+
+Send `payload_schema` on every event (recommended) so Profiler knows the contract without inferring from samples alone.
+
 ---
 
 ## Examples (illustrative — one per event type)
@@ -306,7 +335,13 @@ Emitted when a milestone is created with a due date.
   "source_event_type": "milestone.defined",
   "ingestion_altitude": "observation",
   "occurred_at": "2026-06-22T10:00:00Z",
-  "payload_schema": "projex.milestone.defined@1",
+  "payload_schema": {
+    "milestone_id": "string",
+    "project_id": "string",
+    "project": { "id": "string", "name": "string", "term": "string" },
+    "title": "string",
+    "due_at": "string"
+  },
   "description": "Milestone defined on project Alpha",
   "payload": {
     "milestone_id": "ms-1001",
@@ -338,15 +373,26 @@ Emitted when work is submitted against a milestone.
 
 ```json
 {
-  "source_id": "ms-sub-8892",
-  "idempotency_key": "projex:milestone.submitted:ms-sub-8892",
+  "source_id": "sub-abc",
+  "idempotency_key": "projex:milestone.submitted:sub-abc",
   "source_connector": "projex",
   "source_event_type": "milestone.submitted",
   "ingestion_altitude": "observation",
   "occurred_at": "2026-06-28T18:30:00Z",
-  "payload_schema": "projex.milestone.submitted@1",
+  "payload_schema": {
+    "submission_id": "string",
+    "milestone_id": "string",
+    "milestone": { "id": "string", "title": "string" },
+    "project_id": "string",
+    "project": { "id": "string", "name": "string", "term": "string" },
+    "user_id": "string",
+    "submitted_at": "string",
+    "due_at": "string"
+  },
   "payload": {
+    "submission_id": "sub-abc",
     "milestone_id": "ms-1001",
+    "milestone": { "id": "ms-1001", "title": "Phase 1 delivery" },
     "project_id": "proj-42",
     "project": {
       "id": "proj-42",
@@ -378,7 +424,12 @@ Emitted when work is submitted against a milestone.
   "source_event_type": "task.created",
   "ingestion_altitude": "observation",
   "occurred_at": "2026-06-22T11:00:00Z",
-  "payload_schema": "projex.task.created@1",
+  "payload_schema": {
+    "task_id": "string",
+    "project_id": "string",
+    "project": { "id": "string", "name": "string" },
+    "title": "string"
+  },
   "payload": {
     "task_id": "task-5001",
     "project_id": "proj-42",
@@ -413,7 +464,12 @@ Emitted when work is submitted against a milestone.
   "source_event_type": "task.assigned",
   "ingestion_altitude": "observation",
   "occurred_at": "2026-06-22T11:05:00Z",
-  "payload_schema": "projex.task.assigned@1",
+  "payload_schema": {
+    "assignment_id": "string",
+    "task_id": "string",
+    "project_id": "string",
+    "assignee_user_id": "string"
+  },
   "payload": {
     "assignment_id": "assign-771",
     "task_id": "task-5001",
@@ -486,6 +542,7 @@ One shared function for **all** event types. It builds the envelope:
 
 - Outer fields: `source_id`, `source_event_type`, `occurred_at`, …
 - Inner `payload`: your Projex data
+- `payload_schema`: object skeleton matching `payload` shape (type placeholders)
 - `idempotency_key`: `projex:task.created:task-5001` (so retries don’t duplicate)
 
 *Like putting a letter in the right envelope with the right address.*
@@ -582,6 +639,13 @@ Also write down what you **actually** send per event type and share with Profile
 3. Send-queue + background worker
 4. Hooks on existing Projex actions
 5. Rich payloads + document field list for Profiler
+
+---
+
+## Related docs
+
+- **[Projex implementation guide](profiler_projex.md)** — DB schema, code layout, cron, UI (build like Ship-ee)
+- [Ship-ee implementation (Mentorship)](profiler_mentorship.md) — live reference implementation
 
 ---
 

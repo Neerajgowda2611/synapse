@@ -36,7 +36,7 @@ All fields below are required unless marked optional.
 | `ingestion_altitude` | string | Always `"observation"` for now. (`"signal"` reserved for future use.)                                                               |
 | `occurred_at`        | string | When it happened — ISO 8601 UTC.                                                                                                    |
 | `payload`            | object | Your native event fields, any names, any shape. Stored verbatim.                                                                    |
-| `payload_schema`     | string | *(optional)* Version pointer (e.g. `mentorship.session.booked@1`).                                                                  |
+| `payload_schema`     | object | *(optional)* **Skeleton** of `payload` — same keys/nesting, values are type placeholders (e.g. `"string"`). |
 | `description`        | string | *(optional)* One-line summary of the event.                                                                                         |
 | `attestation`        | object | *(optional)* Reserved for attested signals — omit for now; put mentor attestations in `payload` until signal altitude is supported. |
 
@@ -46,6 +46,7 @@ All fields below are required unless marked optional.
 - Wrap your data in the envelope; put native fields in `payload`.
 - Do not rename fields to match Profiler.
 - `payload` must be a JSON **object** (not an array or scalar).
+- If sent, `payload_schema` must be a JSON **object** — structural mirror of `payload`, not a version string.
 - All timestamps ISO 8601 UTC.
 - Reuse the same `idempotency_key` on retries — Profiler deduplicates automatically.
 
@@ -98,7 +99,7 @@ Both cases return `202` — retries are safe.
 
 | Status | When                                                                                            |
 | ------ | ----------------------------------------------------------------------------------------------- |
-| 400    | Missing required field, `payload` is not an object, `ingestion_altitude` is not `"observation"` |
+| 400    | Missing required field, `payload` or `payload_schema` is not an object, `ingestion_altitude` is not `"observation"` |
 | 403    | Data source exists but raw-storage consent has not been given                                   |
 | 404    | Token not found or data source is not active                                                    |
 | 500    | Unexpected server error                                                                         |
@@ -165,7 +166,6 @@ After sending at least one event, run **Discover schema** in the Profiler admin 
 | `ingestion_altitude`      | `"observation"` (always, for now)                                                                                  |
 | User ids in `payload`     | `mentee_user_id`, `mentor_user_id`, `user_id` — Mentorship’s own identifiers (Profiler resolves to a person later) |
 | `idempotency_key` pattern | `mentorship:{source_event_type}:{source_id}`                                                                       |
-| `payload_schema` pattern  | `mentorship.{source_event_type}@1` — **example version tag only**; real version agreed at onboarding               |
 
 
 **When to push:** Emit an observation **as soon as the event happens** in Mentorship (or on a reliable outbox retry). One envelope per logical event — do not batch multiple events in one POST.
@@ -295,7 +295,12 @@ Emitted when a mentee requests a mentorship session (`session_requested_at`).
   "source_event_type": "session.requested",
   "ingestion_altitude": "observation",
   "occurred_at": "2026-06-22T09:15:00Z",
-  "payload_schema": "mentorship.session.requested@1",
+  "payload_schema": {
+    "request_id": "string",
+    "session_id": "string",
+    "mentee_user_id": "string",
+    "session_requested_at": "string"
+  },
   "description": "Mentee requested a session",
   "payload": {
     "request_id": "req-4401",
@@ -338,7 +343,13 @@ Emitted when a session slot is confirmed.
   "source_event_type": "session.booked",
   "ingestion_altitude": "observation",
   "occurred_at": "2026-06-22T10:30:00Z",
-  "payload_schema": "mentorship.session.booked@1",
+  "payload_schema": {
+    "booking_id": "string",
+    "session_id": "string",
+    "mentor_user_id": "string",
+    "mentee_user_id": "string",
+    "booked_at": "string"
+  },
   "payload": {
     "booking_id": "book-8821",
     "session_id": "sess-901",
@@ -382,7 +393,12 @@ Emitted when check-in is recorded (attended or not).
   "source_event_type": "session.attended",
   "ingestion_altitude": "observation",
   "occurred_at": "2026-06-25T14:05:00Z",
-  "payload_schema": "mentorship.session.attended@1",
+  "payload_schema": {
+    "checkin_id": "string",
+    "session_id": "string",
+    "attended": "boolean",
+    "mentee_checked_in_at": "string"
+  },
   "payload": {
     "checkin_id": "checkin-3310",
     "session_id": "sess-901",
