@@ -222,6 +222,16 @@ func ensureConnectorTables(db *gorm.DB) error {
 		`ALTER TABLE raw_records DROP COLUMN IF EXISTS payload_schema`,
 		`ALTER TABLE raw_records DROP COLUMN IF EXISTS description`,
 		`ALTER TABLE raw_records DROP COLUMN IF EXISTS attestation`,
+		// Drop legacy v1 learner domain tables (replaced by observations/raw_records pipeline)
+		`DROP TABLE IF EXISTS learner_attendance_records`,
+		`DROP TABLE IF EXISTS learner_assessments`,
+		`DROP TABLE IF EXISTS learner_payments`,
+		`DROP TABLE IF EXISTS learner_skills`,
+		`DROP TABLE IF EXISTS learner_certifications`,
+		`DROP TABLE IF EXISTS learner_projects`,
+		`DROP TABLE IF EXISTS learner_placements`,
+		`DROP TABLE IF EXISTS learner_education`,
+		`DROP TABLE IF EXISTS learner_profiles`,
 	}
 
 	for _, statement := range statements {
