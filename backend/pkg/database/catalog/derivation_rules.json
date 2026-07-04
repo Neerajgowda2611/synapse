@@ -1,0 +1,948 @@
+[
+  {
+    "rule_id": "message_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "message_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "message_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "message_rate",
+      "input_observation_types": [
+        "mentorship_message_event"
+      ],
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 3
+      },
+      "value_from": {
+        "constant": 1.0
+      },
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved"
+    }
+  },
+  {
+    "rule_id": "note_activity_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "note_activity_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "note_activity_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "note_activity_rate",
+      "input_observation_types": [
+        "mentorship_note_event"
+      ],
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 3
+      },
+      "value_from": {
+        "constant": 1.0
+      },
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved"
+    }
+  },
+  {
+    "rule_id": "task_completion_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "task_completion_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "task_completion_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "task_completion_rate",
+      "input_observation_types": [
+        "mentorship_task_event"
+      ],
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 3
+      },
+      "value_from": {
+        "constant": 1.0
+      },
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved"
+    }
+  },
+  {
+    "rule_id": "session_activity_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "session_activity_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "session_activity_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "session_activity_rate",
+      "input_observation_types": [
+        "mentorship_session_lifecycle"
+      ],
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 3
+      },
+      "value_from": {
+        "constant": 1.0
+      },
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved"
+    }
+  },
+  {
+    "rule_id": "cadence_compliance_rate",
+    "version": "1.0.0",
+    "primitive": "mean",
+    "output_signal_type": "cadence_compliance_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "cadence_compliance_rate",
+      "version": "1.0.0",
+      "primitive": "mean",
+      "output_signal_type": "cadence_compliance_rate",
+      "input_observation_types": [
+        "mentorship_session_cadence"
+      ],
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 3
+      },
+      "value_from": {
+        "field": "is_compliant"
+      },
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved"
+    }
+  },
+  {
+    "rule_id": "mentor_role_assignment_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "mentor_role_assignment_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "mentor_role_assignment_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "mentor_role_assignment_rate",
+      "input_observation_types": [
+        "mentor_role_assigned"
+      ],
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 2
+      },
+      "value_from": {
+        "constant": 1.0
+      },
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved"
+    }
+  },
+  {
+    "rule_id": "comment_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "comment_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "comment_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "comment_rate",
+      "input_observation_types": [
+        "projex_comment_posted"
+      ],
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 2
+      },
+      "value_from": {
+        "constant": 1.0
+      },
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved"
+    }
+  },
+  {
+    "rule_id": "milestone_definition_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "milestone_definition_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "milestone_definition_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "milestone_definition_rate",
+      "input_observation_types": [
+        "projex_milestone_defined"
+      ],
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 2
+      },
+      "value_from": {
+        "constant": 1.0
+      },
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved"
+    }
+  },
+  {
+    "rule_id": "projex_task_activity_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "projex_task_activity_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "projex_task_activity_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "projex_task_activity_rate",
+      "input_observation_types": [
+        "projex_task_event"
+      ],
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 3
+      },
+      "value_from": {
+        "constant": 1.0
+      },
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved"
+    }
+  },
+  {
+    "rule_id": "projex_role_change_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "projex_role_change_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "projex_role_change_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "projex_role_change_rate",
+      "input_observation_types": [
+        "projex_role_assigned"
+      ],
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 2
+      },
+      "value_from": {
+        "constant": 1.0
+      },
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved"
+    }
+  },
+  {
+    "rule_id": "contribution_snapshot_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "contribution_snapshot_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "contribution_snapshot_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "contribution_snapshot_rate",
+      "input_observation_types": [
+        "projex_contribution_counted"
+      ],
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 2
+      },
+      "value_from": {
+        "constant": 1.0
+      },
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved"
+    }
+  },
+  {
+    "rule_id": "contribution_tasks_completed",
+    "version": "1.0.0",
+    "primitive": "passthrough",
+    "output_signal_type": "contribution_tasks_completed",
+    "status": "approved",
+    "spec": {
+      "rule_id": "contribution_tasks_completed",
+      "version": "1.0.0",
+      "primitive": "passthrough",
+      "output_signal_type": "contribution_tasks_completed",
+      "input_observation_types": [
+        "projex_contribution_counted"
+      ],
+      "bindings": {
+        "value": "tasks_completed"
+      },
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved"
+    }
+  },
+  {
+    "rule_id": "contribution_comments_posted",
+    "version": "1.0.0",
+    "primitive": "passthrough",
+    "output_signal_type": "contribution_comments_posted",
+    "status": "approved",
+    "spec": {
+      "rule_id": "contribution_comments_posted",
+      "version": "1.0.0",
+      "primitive": "passthrough",
+      "output_signal_type": "contribution_comments_posted",
+      "input_observation_types": [
+        "projex_contribution_counted"
+      ],
+      "bindings": {
+        "value": "comments_posted"
+      },
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved"
+    }
+  },
+  {
+    "rule_id": "application_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "application_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "application_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "application_rate",
+      "input_observation_types": [
+        "placement_application_submitted"
+      ],
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 2
+      },
+      "value_from": {
+        "constant": 1.0
+      },
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved"
+    }
+  },
+  {
+    "rule_id": "experience_add_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "experience_add_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "experience_add_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "experience_add_rate",
+      "input_observation_types": [
+        "placement_experience_added"
+      ],
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 2
+      },
+      "value_from": {
+        "constant": 1.0
+      },
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved"
+    }
+  },
+  {
+    "rule_id": "project_add_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "project_add_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "project_add_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "project_add_rate",
+      "input_observation_types": [
+        "placement_project_added"
+      ],
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 2
+      },
+      "value_from": {
+        "constant": 1.0
+      },
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved"
+    }
+  },
+  {
+    "rule_id": "profile_update_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "profile_update_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "profile_update_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "profile_update_rate",
+      "input_observation_types": [
+        "placement_profile_field_updated"
+      ],
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 2
+      },
+      "value_from": {
+        "constant": 1.0
+      },
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved"
+    }
+  },
+  {
+    "rule_id": "certificate_add_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "certificate_add_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "certificate_add_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "certificate_add_rate",
+      "input_observation_types": [
+        "placement_certificate_added"
+      ],
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 2
+      },
+      "value_from": {
+        "constant": 1.0
+      },
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved"
+    }
+  },
+  {
+    "rule_id": "interview_schedule_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "interview_schedule_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "interview_schedule_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "interview_schedule_rate",
+      "input_observation_types": [
+        "placement_interview_scheduled"
+      ],
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 2
+      },
+      "value_from": {
+        "constant": 1.0
+      },
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved"
+    }
+  },
+  {
+    "rule_id": "offer_received_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "offer_received_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "offer_received_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "offer_received_rate",
+      "input_observation_types": [
+        "placement_offer_received"
+      ],
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 2
+      },
+      "value_from": {
+        "constant": 1.0
+      },
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved"
+    }
+  },
+  {
+    "rule_id": "recruiter_response_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "recruiter_response_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "recruiter_response_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "recruiter_response_rate",
+      "input_observation_types": [
+        "placement_application_recruiter_responded"
+      ],
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 2
+      },
+      "value_from": {
+        "constant": 1.0
+      },
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved"
+    }
+  },
+  {
+    "rule_id": "skill_declaration_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "skill_declaration_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "skill_declaration_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "skill_declaration_rate",
+      "input_observation_types": [
+        "placement_skill_declared"
+      ],
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 2
+      },
+      "value_from": {
+        "constant": 1.0
+      },
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved"
+    }
+  },
+  {
+    "rule_id": "session_notes_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "session_notes_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "session_notes_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "session_notes_rate",
+      "input_observation_types": [
+        "mentorship_session_notes_posted"
+      ],
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved",
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 2
+      },
+      "value_from": {
+        "constant": 1.0
+      }
+    }
+  },
+  {
+    "rule_id": "help_seeking_latency",
+    "version": "1.0.0",
+    "primitive": "timeliness",
+    "output_signal_type": "help_seeking_latency",
+    "status": "approved",
+    "spec": {
+      "rule_id": "help_seeking_latency",
+      "version": "1.0.0",
+      "primitive": "timeliness",
+      "output_signal_type": "help_seeking_latency",
+      "input_observation_types": [
+        "mentorship_help_request"
+      ],
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved",
+      "bindings": {
+        "event_ts": "struggle_detected_at",
+        "ref_ts": "session_booked_at"
+      }
+    }
+  },
+  {
+    "rule_id": "help_request_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "help_request_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "help_request_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "help_request_rate",
+      "input_observation_types": [
+        "mentorship_help_request"
+      ],
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved",
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 2
+      },
+      "value_from": {
+        "constant": 1.0
+      }
+    }
+  },
+  {
+    "rule_id": "milestone_submission_lead_days",
+    "version": "1.0.0",
+    "primitive": "timeliness",
+    "output_signal_type": "milestone_submission_lead_days",
+    "status": "approved",
+    "spec": {
+      "rule_id": "milestone_submission_lead_days",
+      "version": "1.0.0",
+      "primitive": "timeliness",
+      "output_signal_type": "milestone_submission_lead_days",
+      "input_observation_types": [
+        "projex_milestone_submitted"
+      ],
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved",
+      "bindings": {
+        "event_ts": "submitted_at",
+        "ref_ts": "due_at"
+      }
+    }
+  },
+  {
+    "rule_id": "milestone_submission_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "milestone_submission_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "milestone_submission_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "milestone_submission_rate",
+      "input_observation_types": [
+        "projex_milestone_submitted"
+      ],
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved",
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 2
+      },
+      "value_from": {
+        "constant": 1.0
+      }
+    }
+  },
+  {
+    "rule_id": "projex_self_claim_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "projex_self_claim_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "projex_self_claim_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "projex_self_claim_rate",
+      "input_observation_types": [
+        "projex_task_self_claimed"
+      ],
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved",
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 2
+      },
+      "value_from": {
+        "constant": 1.0
+      }
+    }
+  },
+  {
+    "rule_id": "profile_completeness_snapshot",
+    "version": "1.0.0",
+    "primitive": "passthrough",
+    "output_signal_type": "profile_completeness_snapshot",
+    "status": "approved",
+    "spec": {
+      "rule_id": "profile_completeness_snapshot",
+      "version": "1.0.0",
+      "primitive": "passthrough",
+      "output_signal_type": "profile_completeness_snapshot",
+      "input_observation_types": [
+        "placement_profile_completeness_updated"
+      ],
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved",
+      "bindings": {
+        "value": "completeness_percent"
+      }
+    }
+  },
+  {
+    "rule_id": "profile_completeness_trend",
+    "version": "1.0.0",
+    "primitive": "mean",
+    "output_signal_type": "profile_completeness_trend",
+    "status": "approved",
+    "spec": {
+      "rule_id": "profile_completeness_trend",
+      "version": "1.0.0",
+      "primitive": "mean",
+      "output_signal_type": "profile_completeness_trend",
+      "input_observation_types": [
+        "placement_profile_completeness_updated"
+      ],
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved",
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 3
+      },
+      "value_from": {
+        "field": "completeness_percent"
+      }
+    }
+  },
+  {
+    "rule_id": "job_view_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "job_view_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "job_view_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "job_view_rate",
+      "input_observation_types": [
+        "placement_job_viewed"
+      ],
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved",
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 2
+      },
+      "value_from": {
+        "constant": 1.0
+      }
+    }
+  },
+  {
+    "rule_id": "job_save_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "job_save_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "job_save_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "job_save_rate",
+      "input_observation_types": [
+        "placement_job_saved"
+      ],
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved",
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 2
+      },
+      "value_from": {
+        "constant": 1.0
+      }
+    }
+  },
+  {
+    "rule_id": "skill_endorsement_rate",
+    "version": "1.0.0",
+    "primitive": "rate",
+    "output_signal_type": "skill_endorsement_rate",
+    "status": "approved",
+    "spec": {
+      "rule_id": "skill_endorsement_rate",
+      "version": "1.0.0",
+      "primitive": "rate",
+      "output_signal_type": "skill_endorsement_rate",
+      "input_observation_types": [
+        "placement_skill_endorsed"
+      ],
+      "inference_method": "rule",
+      "base_confidence": 1.0,
+      "status": "approved",
+      "params": {
+        "window_days": 90
+      },
+      "window": {
+        "kind": "all",
+        "min_n": 1,
+        "target_n": 2
+      },
+      "value_from": {
+        "constant": 1.0
+      }
+    }
+  }
+]

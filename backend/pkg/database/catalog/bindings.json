@@ -2917,5 +2917,479 @@
       "status": "approved",
       "approved_by": "profiling-core"
     }
+  },
+  {
+    "binding_id": "mentorship.session.notes_posted",
+    "source_connector": "mentorship",
+    "source_event_type": "session.notes_posted",
+    "observation_type": "mentorship_session_notes_posted",
+    "status": "approved",
+    "version": 1,
+    "spec": {
+      "binding_id": "mentorship.session.notes_posted",
+      "version": "1.0.0",
+      "source_connector": "mentorship",
+      "match": {
+        "source_event_type": "session.notes_posted",
+        "payload_equals": {}
+      },
+      "observation_type": "mentorship_session_notes_posted",
+      "ingestion_altitude": "observation",
+      "domain": "mentorship",
+      "field_mappings": [
+        {
+          "canonical_field": "session_id",
+          "source_path": "session.id",
+          "transform": "rename",
+          "params": {},
+          "required": true,
+          "default": null
+        },
+        {
+          "canonical_field": "mentor_id",
+          "source_path": "mentor.id",
+          "transform": "rename",
+          "params": {},
+          "required": true,
+          "default": null
+        }
+      ],
+      "entity_resolution": {
+        "subject_source_path": "mentee.id",
+        "email_source_path": "mentee.gmailId",
+        "namespace": "mentorship",
+        "strategy": "auto"
+      },
+      "status": "approved",
+      "approved_by": "profiling-core"
+    }
+  },
+  {
+    "binding_id": "mentorship.help.requested",
+    "source_connector": "mentorship",
+    "source_event_type": "help.requested",
+    "observation_type": "mentorship_help_request",
+    "status": "approved",
+    "version": 1,
+    "spec": {
+      "binding_id": "mentorship.help.requested",
+      "version": "1.0.0",
+      "source_connector": "mentorship",
+      "match": {
+        "source_event_type": "help.requested",
+        "payload_equals": {}
+      },
+      "observation_type": "mentorship_help_request",
+      "ingestion_altitude": "observation",
+      "domain": "mentorship",
+      "field_mappings": [
+        {
+          "canonical_field": "session_id",
+          "source_path": "session.id",
+          "transform": "rename",
+          "params": {},
+          "required": true,
+          "default": null
+        },
+        {
+          "canonical_field": "struggle_detected_at",
+          "source_path": "struggleDetectedAt",
+          "transform": "cast",
+          "params": {
+            "to": "datetime"
+          },
+          "required": false,
+          "default": null
+        },
+        {
+          "canonical_field": "session_booked_at",
+          "source_path": "bookedAt",
+          "transform": "cast",
+          "params": {
+            "to": "datetime"
+          },
+          "required": false,
+          "default": null
+        }
+      ],
+      "entity_resolution": {
+        "subject_source_path": "mentee.id",
+        "email_source_path": "mentee.gmailId",
+        "namespace": "mentorship",
+        "strategy": "auto"
+      },
+      "status": "approved",
+      "approved_by": "profiling-core"
+    }
+  },
+  {
+    "binding_id": "projex.milestone.submitted",
+    "source_connector": "projex",
+    "source_event_type": "milestone.submitted",
+    "observation_type": "projex_milestone_submitted",
+    "status": "approved",
+    "version": 1,
+    "spec": {
+      "binding_id": "projex.milestone.submitted",
+      "version": "1.0.0",
+      "source_connector": "projex",
+      "match": {
+        "source_event_type": "milestone.submitted",
+        "payload_equals": {}
+      },
+      "observation_type": "projex_milestone_submitted",
+      "ingestion_altitude": "observation",
+      "domain": "projects",
+      "field_mappings": [
+        {
+          "canonical_field": "submission_id",
+          "source_path": "submission_id",
+          "transform": "rename",
+          "params": {},
+          "required": true,
+          "default": null
+        },
+        {
+          "canonical_field": "milestone_id",
+          "source_path": "milestone_id",
+          "transform": "rename",
+          "params": {},
+          "required": true,
+          "default": null
+        },
+        {
+          "canonical_field": "submitted_at",
+          "source_path": "submitted_at",
+          "transform": "cast",
+          "params": {
+            "to": "datetime"
+          },
+          "required": true,
+          "default": null
+        },
+        {
+          "canonical_field": "due_at",
+          "source_path": "due_at",
+          "transform": "cast",
+          "params": {
+            "to": "datetime"
+          },
+          "required": true,
+          "default": null
+        },
+        {
+          "canonical_field": "project_id",
+          "source_path": "project.id",
+          "transform": "rename",
+          "params": {},
+          "required": true,
+          "default": null
+        },
+        {
+          "canonical_field": "cohort_id",
+          "source_path": "cohort.id",
+          "transform": "rename",
+          "params": {},
+          "required": false,
+          "default": null
+        },
+        {
+          "canonical_field": "organization_id",
+          "source_path": "organization.id",
+          "transform": "rename",
+          "params": {},
+          "required": false,
+          "default": null
+        }
+      ],
+      "entity_resolution": {
+        "subject_source_path": "user_id",
+        "email_source_path": "user.email",
+        "namespace": "projex",
+        "strategy": "auto"
+      },
+      "status": "approved",
+      "approved_by": "profiling-core"
+    }
+  },
+  {
+    "binding_id": "projex.task.self_claimed",
+    "source_connector": "projex",
+    "source_event_type": "task.self_claimed",
+    "observation_type": "projex_task_self_claimed",
+    "status": "approved",
+    "version": 1,
+    "spec": {
+      "binding_id": "projex.task.self_claimed",
+      "version": "1.0.0",
+      "source_connector": "projex",
+      "match": {
+        "source_event_type": "task.self_claimed",
+        "payload_equals": {}
+      },
+      "observation_type": "projex_task_self_claimed",
+      "ingestion_altitude": "observation",
+      "domain": "projects",
+      "field_mappings": [
+        {
+          "canonical_field": "task_id",
+          "source_path": "task_id",
+          "transform": "rename",
+          "params": {},
+          "required": true,
+          "default": null
+        },
+        {
+          "canonical_field": "claimed_at",
+          "source_path": "claimed_at",
+          "transform": "cast",
+          "params": {
+            "to": "datetime"
+          },
+          "required": true,
+          "default": null
+        },
+        {
+          "canonical_field": "project_id",
+          "source_path": "project.id",
+          "transform": "rename",
+          "params": {},
+          "required": true,
+          "default": null
+        },
+        {
+          "canonical_field": "cohort_id",
+          "source_path": "cohort.id",
+          "transform": "rename",
+          "params": {},
+          "required": false,
+          "default": null
+        },
+        {
+          "canonical_field": "organization_id",
+          "source_path": "organization.id",
+          "transform": "rename",
+          "params": {},
+          "required": false,
+          "default": null
+        }
+      ],
+      "entity_resolution": {
+        "subject_source_path": "user_id",
+        "email_source_path": "user.email",
+        "namespace": "projex",
+        "strategy": "auto"
+      },
+      "status": "approved",
+      "approved_by": "profiling-core"
+    }
+  },
+  {
+    "binding_id": "vtu_placements.profile.completeness_updated",
+    "source_connector": "vtu_placements",
+    "source_event_type": "profile.completeness_updated",
+    "observation_type": "placement_profile_completeness_updated",
+    "status": "approved",
+    "version": 1,
+    "spec": {
+      "binding_id": "vtu_placements.profile.completeness_updated",
+      "version": "1.0.0",
+      "source_connector": "vtu_placements",
+      "match": {
+        "source_event_type": "profile.completeness_updated",
+        "payload_equals": {}
+      },
+      "observation_type": "placement_profile_completeness_updated",
+      "ingestion_altitude": "observation",
+      "domain": "placements",
+      "field_mappings": [
+        {
+          "canonical_field": "completeness_percent",
+          "source_path": "completeness_percent",
+          "transform": "cast",
+          "params": {
+            "to": "float"
+          },
+          "required": true,
+          "default": null
+        },
+        {
+          "canonical_field": "updated_at",
+          "source_path": "updated_at",
+          "transform": "cast",
+          "params": {
+            "to": "datetime"
+          },
+          "required": true,
+          "default": null
+        }
+      ],
+      "entity_resolution": {
+        "subject_source_path": "student.id",
+        "email_source_path": "student.email",
+        "namespace": "vtu_placements",
+        "strategy": "auto"
+      },
+      "status": "approved",
+      "approved_by": "profiling-core"
+    }
+  },
+  {
+    "binding_id": "vtu_placements.job.viewed",
+    "source_connector": "vtu_placements",
+    "source_event_type": "job.viewed",
+    "observation_type": "placement_job_viewed",
+    "status": "approved",
+    "version": 1,
+    "spec": {
+      "binding_id": "vtu_placements.job.viewed",
+      "version": "1.0.0",
+      "source_connector": "vtu_placements",
+      "match": {
+        "source_event_type": "job.viewed",
+        "payload_equals": {}
+      },
+      "observation_type": "placement_job_viewed",
+      "ingestion_altitude": "observation",
+      "domain": "placements",
+      "field_mappings": [
+        {
+          "canonical_field": "job_id",
+          "source_path": "job_id",
+          "transform": "cast",
+          "params": {
+            "to": "str"
+          },
+          "required": true,
+          "default": null
+        },
+        {
+          "canonical_field": "viewed_at",
+          "source_path": "viewed_at",
+          "transform": "cast",
+          "params": {
+            "to": "datetime"
+          },
+          "required": true,
+          "default": null
+        }
+      ],
+      "entity_resolution": {
+        "subject_source_path": "student.id",
+        "email_source_path": "student.email",
+        "namespace": "vtu_placements",
+        "strategy": "auto"
+      },
+      "status": "approved",
+      "approved_by": "profiling-core"
+    }
+  },
+  {
+    "binding_id": "vtu_placements.job.saved",
+    "source_connector": "vtu_placements",
+    "source_event_type": "job.saved",
+    "observation_type": "placement_job_saved",
+    "status": "approved",
+    "version": 1,
+    "spec": {
+      "binding_id": "vtu_placements.job.saved",
+      "version": "1.0.0",
+      "source_connector": "vtu_placements",
+      "match": {
+        "source_event_type": "job.saved",
+        "payload_equals": {}
+      },
+      "observation_type": "placement_job_saved",
+      "ingestion_altitude": "observation",
+      "domain": "placements",
+      "field_mappings": [
+        {
+          "canonical_field": "job_id",
+          "source_path": "job_id",
+          "transform": "cast",
+          "params": {
+            "to": "str"
+          },
+          "required": true,
+          "default": null
+        },
+        {
+          "canonical_field": "saved_at",
+          "source_path": "saved_at",
+          "transform": "cast",
+          "params": {
+            "to": "datetime"
+          },
+          "required": true,
+          "default": null
+        }
+      ],
+      "entity_resolution": {
+        "subject_source_path": "student.id",
+        "email_source_path": "student.email",
+        "namespace": "vtu_placements",
+        "strategy": "auto"
+      },
+      "status": "approved",
+      "approved_by": "profiling-core"
+    }
+  },
+  {
+    "binding_id": "vtu_placements.skill.endorsed",
+    "source_connector": "vtu_placements",
+    "source_event_type": "skill.endorsed",
+    "observation_type": "placement_skill_endorsed",
+    "status": "approved",
+    "version": 1,
+    "spec": {
+      "binding_id": "vtu_placements.skill.endorsed",
+      "version": "1.0.0",
+      "source_connector": "vtu_placements",
+      "match": {
+        "source_event_type": "skill.endorsed",
+        "payload_equals": {}
+      },
+      "observation_type": "placement_skill_endorsed",
+      "ingestion_altitude": "observation",
+      "domain": "placements",
+      "field_mappings": [
+        {
+          "canonical_field": "skill_id",
+          "source_path": "skill.id",
+          "transform": "cast",
+          "params": {
+            "to": "str"
+          },
+          "required": false,
+          "default": null
+        },
+        {
+          "canonical_field": "skill_label",
+          "source_path": "skill.label",
+          "transform": "rename",
+          "params": {},
+          "required": true,
+          "default": null
+        },
+        {
+          "canonical_field": "endorser_id",
+          "source_path": "endorser.id",
+          "transform": "cast",
+          "params": {
+            "to": "str"
+          },
+          "required": false,
+          "default": null
+        }
+      ],
+      "entity_resolution": {
+        "subject_source_path": "student.id",
+        "email_source_path": "student.email",
+        "namespace": "vtu_placements",
+        "strategy": "auto"
+      },
+      "status": "approved",
+      "approved_by": "profiling-core"
+    }
   }
 ]

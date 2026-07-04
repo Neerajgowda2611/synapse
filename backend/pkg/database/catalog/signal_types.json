@@ -1,0 +1,299 @@
+[
+  {
+    "signal_type": "message_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Message rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "note_activity_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Mentorship note activity rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "task_completion_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Mentorship task completion rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "session_activity_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Mentorship session activity rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "cadence_compliance_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Cadence compliance rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "mentor_role_assignment_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Mentor role assignment rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "comment_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Projex comment rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "milestone_definition_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Projex milestone definition rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "projex_task_activity_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Projex task activity rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "projex_role_change_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Projex role change rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "contribution_snapshot_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Contribution snapshot rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "contribution_tasks_completed",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Contribution tasks completed",
+      "shape": "point_event",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "contribution_comments_posted",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Contribution comments posted",
+      "shape": "point_event",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "application_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Placement application rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "experience_add_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Experience add rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "project_add_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Project add rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "profile_update_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Profile update rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "certificate_add_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Certificate add rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "interview_schedule_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Interview schedule rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "offer_received_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Offer received rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "recruiter_response_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Recruiter response rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "skill_declaration_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Skill declaration rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "session_notes_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Session notes rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "help_seeking_latency",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Help-seeking latency",
+      "shape": "point_event",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "help_request_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Help request rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "milestone_submission_lead_days",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Milestone submission lead time",
+      "shape": "point_event",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "milestone_submission_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Milestone submission rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "projex_self_claim_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Projex self-claim rate",
+      "shape": "trend",
+      "polarity": "bipolar"
+    }
+  },
+  {
+    "signal_type": "profile_completeness_snapshot",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Profile completeness snapshot",
+      "shape": "point_event",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "profile_completeness_trend",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Profile completeness trend",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "job_view_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Job view rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "job_save_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Job save rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  },
+  {
+    "signal_type": "skill_endorsement_rate",
+    "version": "1.0.0",
+    "spec": {
+      "name": "Skill endorsement rate",
+      "shape": "trend",
+      "polarity": "positive"
+    }
+  }
+]

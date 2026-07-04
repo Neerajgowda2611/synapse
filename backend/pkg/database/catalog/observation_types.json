@@ -663,5 +663,183 @@
         "required": false
       }
     ]
+  },
+  {
+    "observation_type": "mentorship_session_notes_posted",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "session_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "mentor_id",
+        "type": "str",
+        "required": true
+      }
+    ]
+  },
+  {
+    "observation_type": "mentorship_help_request",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "session_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "struggle_detected_at",
+        "type": "datetime",
+        "required": false
+      },
+      {
+        "name": "session_booked_at",
+        "type": "datetime",
+        "required": false
+      }
+    ]
+  },
+  {
+    "observation_type": "projex_milestone_submitted",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "submission_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "milestone_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "submitted_at",
+        "type": "datetime",
+        "required": true
+      },
+      {
+        "name": "due_at",
+        "type": "datetime",
+        "required": true
+      },
+      {
+        "name": "project_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "cohort_id",
+        "type": "str",
+        "required": false
+      },
+      {
+        "name": "organization_id",
+        "type": "str",
+        "required": false
+      }
+    ]
+  },
+  {
+    "observation_type": "projex_task_self_claimed",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "task_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "claimed_at",
+        "type": "datetime",
+        "required": true
+      },
+      {
+        "name": "project_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "cohort_id",
+        "type": "str",
+        "required": false
+      },
+      {
+        "name": "organization_id",
+        "type": "str",
+        "required": false
+      }
+    ]
+  },
+  {
+    "observation_type": "placement_profile_completeness_updated",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "completeness_percent",
+        "type": "float",
+        "required": true
+      },
+      {
+        "name": "updated_at",
+        "type": "datetime",
+        "required": true
+      }
+    ]
+  },
+  {
+    "observation_type": "placement_job_viewed",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "job_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "viewed_at",
+        "type": "datetime",
+        "required": true
+      }
+    ]
+  },
+  {
+    "observation_type": "placement_job_saved",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "job_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "saved_at",
+        "type": "datetime",
+        "required": true
+      }
+    ]
+  },
+  {
+    "observation_type": "placement_skill_endorsed",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "skill_id",
+        "type": "str",
+        "required": false
+      },
+      {
+        "name": "skill_label",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "endorser_id",
+        "type": "str",
+        "required": false
+      }
+    ]
   }
 ]

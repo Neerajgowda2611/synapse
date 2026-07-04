@@ -111,6 +111,31 @@ func Start() {
 		)
 	}
 
+	derivationService := service.NewDerivationService(
+		repository.NewCanonicalObservationRepository(db),
+		repository.NewDerivationRuleRegistryRepository(db),
+		repository.NewDerivationRunRepository(db),
+		repository.NewSignalRepository(db),
+		repository.NewDerivationSkipRepository(db),
+		repository.NewSignalObservationRepository(db),
+	)
+	router.observationService.SetDerivationService(derivationService)
+
+	var derivationWorker *worker.DerivationWorker
+	if cfg.DerivationWorkerEnabled {
+		derivationWorker = worker.NewDerivationWorker(
+			derivationService,
+			cfg.DerivationWorkerInterval,
+			cfg.DerivationWorkerConcurrency,
+		)
+		derivationWorker.Start()
+		logs.Info(
+			"derivation background worker started",
+			"interval", cfg.DerivationWorkerInterval.String(),
+			"concurrency", cfg.DerivationWorkerConcurrency,
+		)
+	}
+
 	srv := &http.Server{
 		Addr:         cfg.ServerAddress(),
 		Handler:      router.Engine,
@@ -136,6 +161,10 @@ func Start() {
 	if observationWorker != nil {
 		observationWorker.Stop()
 		logs.Info("observation background worker stopped")
+	}
+	if derivationWorker != nil {
+		derivationWorker.Stop()
+		logs.Info("derivation background worker stopped")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

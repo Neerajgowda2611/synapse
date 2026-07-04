@@ -76,7 +76,7 @@ func seedPolicies(e *casbin.Enforcer) error {
 		{auth.RoleInstitutionViewer, "*", ResourceSyncJobs, ActionRead},
 		{auth.RoleInstitutionViewer, "*", ResourceMappings, ActionRead},
 
-		// Learner — own profile only (handler must also enforce learner_id == ctx.LearnerID)
+		// Learner — own profile only (handler must also enforce user_id == ctx.UserID)
 		{auth.RoleLearner, "*", ResourceProfile, ActionRead},
 	}
 

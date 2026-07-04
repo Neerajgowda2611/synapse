@@ -22,7 +22,6 @@ type AuthContext struct {
 	UserType      UserType
 	Role          string
 	InstitutionID *uuid.UUID
-	LearnerID     *uuid.UUID
 }
 
 // Domain returns the Casbin domain for this user.

@@ -21,7 +21,6 @@ type meResponse struct {
 	UserType      string  `json:"user_type"`
 	Role          string  `json:"role"`
 	InstitutionID *string `json:"institution_id,omitempty"`
-	LearnerID     *string `json:"learner_id,omitempty"`
 }
 
 // Me returns the authenticated caller's identity and role.
@@ -44,11 +43,6 @@ func (h *AuthHandler) Me(c *gin.Context) {
 	if ac.InstitutionID != nil {
 		s := ac.InstitutionID.String()
 		resp.InstitutionID = &s
-	}
-
-	if ac.LearnerID != nil {
-		s := ac.LearnerID.String()
-		resp.LearnerID = &s
 	}
 
 	c.JSON(http.StatusOK, resp)

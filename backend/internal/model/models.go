@@ -60,7 +60,6 @@ type Institution struct {
 	UpdatedAt time.Time `gorm:"not null;default:now()" json:"updated_at"`
 
 	DataSources []DataSource `gorm:"foreignKey:InstitutionID" json:"data_sources,omitempty"`
-	Learners    []Learner    `gorm:"foreignKey:InstitutionID" json:"learners,omitempty"`
 	RawRecords  []RawRecord  `gorm:"foreignKey:InstitutionID" json:"raw_records,omitempty"`
 }
 
@@ -87,14 +86,11 @@ func (User) TableName() string { return "users" }
 // UserRole assigns a role to a User, optionally scoped to an Institution.
 // Platform roles (platform_admin, platform_viewer) have InstitutionID = nil.
 // Institution / learner roles have InstitutionID set.
-// Learner roles additionally carry a LearnerID pointing to the learners row
-// that holds the learner-specific profile data.
 type UserRole struct {
 	ID            uuid.UUID  `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
 	UserID        uuid.UUID  `gorm:"type:uuid;not null;index"                        json:"user_id"`
 	Role          string     `gorm:"not null"                                        json:"role"`
 	InstitutionID *uuid.UUID `gorm:"type:uuid;index"                                 json:"institution_id,omitempty"`
-	LearnerID     *uuid.UUID `gorm:"type:uuid;index"                                 json:"learner_id,omitempty"`
 	Status        string     `gorm:"not null;default:active"                         json:"status"`
 	CreatedAt     time.Time  `gorm:"not null;default:now()"                          json:"created_at"`
 	UpdatedAt     time.Time  `gorm:"not null;default:now()"                          json:"updated_at"`
@@ -142,8 +138,7 @@ type DataSource struct {
 	SyncJobs           []SyncJob            `gorm:"foreignKey:DataSourceID" json:"sync_jobs,omitempty"`
 	RawRecords         []RawRecord          `gorm:"foreignKey:DataSourceID" json:"raw_records,omitempty"`
 	Observations       []Observation        `gorm:"foreignKey:DataSourceID" json:"observations,omitempty"`
-	UserIdentities     []UserIdentity       `gorm:"foreignKey:DataSourceID" json:"user_identities,omitempty"`
-	LearnerIdentities  []LearnerIdentity    `gorm:"foreignKey:DataSourceID" json:"learner_identities,omitempty"`
+	UserIdentities []UserIdentity `gorm:"foreignKey:DataSourceID" json:"user_identities,omitempty"`
 }
 
 func (DataSource) TableName() string {
@@ -357,35 +352,96 @@ func (CanonicalObservation) TableName() string {
 	return "canonical_observations"
 }
 
-type Learner struct {
-	ID                 uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
-	InstitutionID      uuid.UUID `gorm:"type:uuid;not null;index" json:"institution_id"`
-	ZitadelSub         *string   `gorm:"uniqueIndex" json:"zitadel_sub,omitempty"`
-	Email              *string   `gorm:"uniqueIndex" json:"email,omitempty"`
-	CanonicalLearnerID *string   `json:"canonical_learner_id,omitempty"`
-	Status             string    `gorm:"not null;default:active" json:"status"`
-	CreatedAt          time.Time `gorm:"not null;default:now()" json:"created_at"`
-	UpdatedAt          time.Time `gorm:"not null;default:now()" json:"updated_at"`
-	Institution        Institution
-
-	Identities []LearnerIdentity `gorm:"foreignKey:LearnerID" json:"identities,omitempty"`
+type SignalTypeRegistry struct {
+	SignalType string    `gorm:"primaryKey" json:"signal_type"`
+	Version    string    `gorm:"not null;default:1.0.0" json:"version"`
+	Spec       JSONB     `gorm:"type:jsonb;not null" json:"spec"`
+	CreatedAt  time.Time `gorm:"not null;default:now()" json:"created_at"`
+	UpdatedAt  time.Time `gorm:"not null;default:now()" json:"updated_at"`
 }
 
-func (Learner) TableName() string {
-	return "learners"
+func (SignalTypeRegistry) TableName() string {
+	return "signal_type_registry"
 }
 
-type LearnerIdentity struct {
-	ID           uuid.UUID  `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
-	LearnerID    uuid.UUID  `gorm:"type:uuid;not null;index" json:"learner_id"`
-	DataSourceID uuid.UUID  `gorm:"type:uuid;not null;index" json:"data_source_id"`
-	ExternalID   string     `gorm:"not null" json:"external_id"`
-	ExternalType *string    `json:"external_type,omitempty"`
-	CreatedAt    time.Time  `gorm:"not null;default:now()" json:"created_at"`
-	Learner      Learner    `gorm:"foreignKey:LearnerID" json:"learner,omitempty"`
-	DataSource   DataSource `gorm:"foreignKey:DataSourceID" json:"data_source,omitempty"`
+type DerivationRuleRegistry struct {
+	RuleID           string    `gorm:"primaryKey" json:"rule_id"`
+	Version          string    `gorm:"not null;default:1.0.0" json:"version"`
+	Primitive        string    `gorm:"not null" json:"primitive"`
+	OutputSignalType string    `gorm:"not null" json:"output_signal_type"`
+	Status           string    `gorm:"not null;default:candidate;index" json:"status"`
+	Spec             JSONB     `gorm:"type:jsonb;not null" json:"spec"`
+	CreatedAt        time.Time `gorm:"not null;default:now()" json:"created_at"`
+	UpdatedAt        time.Time `gorm:"not null;default:now()" json:"updated_at"`
 }
 
-func (LearnerIdentity) TableName() string {
-	return "learner_identities"
+const (
+	DerivationRuleStatusCandidate  = "candidate"
+	DerivationRuleStatusApproved   = "approved"
+	DerivationRuleStatusDeprecated = "deprecated"
+)
+
+func (DerivationRuleRegistry) TableName() string {
+	return "derivation_rule_registry"
+}
+
+type DerivationRun struct {
+	ID        uuid.UUID  `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	AsOf      time.Time  `gorm:"not null;index" json:"as_of"`
+	UserID    *uuid.UUID `gorm:"type:uuid;index" json:"user_id,omitempty"`
+	NSignals  int        `gorm:"not null;default:0" json:"n_signals"`
+	NSkips    int        `gorm:"not null;default:0" json:"n_skips"`
+	Notes     *string    `json:"notes,omitempty"`
+	CreatedAt time.Time  `gorm:"not null;default:now()" json:"created_at"`
+}
+
+func (DerivationRun) TableName() string {
+	return "derivation_runs"
+}
+
+type Signal struct {
+	ID                   uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	RunID                uuid.UUID `gorm:"type:uuid;not null;index" json:"run_id"`
+	SignalType           string    `gorm:"not null;index" json:"signal_type"`
+	UserID               uuid.UUID `gorm:"type:uuid;not null;index" json:"user_id"`
+	Value                JSONB     `gorm:"type:jsonb;not null" json:"value"`
+	Domain               *string   `gorm:"index" json:"domain,omitempty"`
+	DerivedAt            time.Time `gorm:"not null;index" json:"derived_at"`
+	InferenceMethod      string    `gorm:"not null;default:rule" json:"inference_method"`
+	DerivedFrom          JSONB     `gorm:"type:jsonb;not null" json:"derived_from"`
+	RuleID               string    `gorm:"not null;index" json:"rule_id"`
+	RuleVersion          string    `gorm:"not null;default:1.0.0" json:"rule_version"`
+	DerivationConfidence float64   `gorm:"not null;default:1" json:"derivation_confidence"`
+	CreatedAt            time.Time `gorm:"not null;default:now()" json:"created_at"`
+}
+
+func (Signal) TableName() string {
+	return "signals"
+}
+
+type DerivationSkip struct {
+	ID               uuid.UUID  `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	RunID            uuid.UUID  `gorm:"type:uuid;not null;index" json:"run_id"`
+	RuleID           string     `gorm:"not null;index" json:"rule_id"`
+	OutputSignalType string     `gorm:"not null;index" json:"output_signal_type"`
+	UserID           *uuid.UUID `gorm:"type:uuid;index" json:"user_id,omitempty"`
+	Reason           string     `gorm:"not null" json:"reason"`
+	ObservationIDs   JSONB      `gorm:"type:jsonb;not null" json:"observation_ids"`
+	CreatedAt        time.Time  `gorm:"not null;default:now()" json:"created_at"`
+}
+
+func (DerivationSkip) TableName() string {
+	return "derivation_skips"
+}
+
+type SignalObservation struct {
+	ID                     uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	SignalID               uuid.UUID `gorm:"type:uuid;not null;index" json:"signal_id"`
+	CanonicalObservationID uuid.UUID `gorm:"type:uuid;not null;index" json:"canonical_observation_id"`
+	RuleID                 string    `gorm:"index" json:"rule_id"`
+	CreatedAt              time.Time `gorm:"not null;default:now()" json:"created_at"`
+}
+
+func (SignalObservation) TableName() string {
+	return "signal_observations"
 }

@@ -80,7 +80,6 @@ func buildAuthContext(user *model.User, roles []model.UserRole) (*AuthContext, e
 	default:
 		ac.UserType = UserTypeLearner
 		ac.InstitutionID = primary.InstitutionID
-		ac.LearnerID = primary.LearnerID
 	}
 
 	return ac, nil

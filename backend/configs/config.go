@@ -25,6 +25,9 @@ type Config struct {
 	ObservationWorkerEnabled     bool
 	ObservationWorkerInterval    time.Duration
 	ObservationWorkerConcurrency int
+	DerivationWorkerEnabled      bool
+	DerivationWorkerInterval     time.Duration
+	DerivationWorkerConcurrency  int
 }
 
 func Load(configPath string) (*Config, error) {
@@ -68,6 +71,9 @@ func Load(configPath string) (*Config, error) {
 		ObservationWorkerEnabled:     getEnvBool("OBSERVATION_WORKER_ENABLED", true),
 		ObservationWorkerInterval:    getEnvDuration("OBSERVATION_WORKER_INTERVAL", 5*time.Minute),
 		ObservationWorkerConcurrency: getEnvInt("OBSERVATION_WORKER_CONCURRENCY", 5),
+		DerivationWorkerEnabled:      getEnvBool("DERIVATION_WORKER_ENABLED", true),
+		DerivationWorkerInterval:     getEnvDuration("DERIVATION_WORKER_INTERVAL", 5*time.Minute),
+		DerivationWorkerConcurrency:  getEnvInt("DERIVATION_WORKER_CONCURRENCY", 5),
 	}, nil
 }
 

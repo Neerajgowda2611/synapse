@@ -23,6 +23,7 @@ type ObservationService struct {
 	canonicalRepo    *repository.CanonicalObservationRepository
 	userRepo         *repository.UserRepository
 	userIdentityRepo *repository.UserIdentityRepository
+	derivationSvc    *DerivationService
 }
 
 func NewObservationService(
@@ -69,6 +70,10 @@ func (s *ObservationService) ProcessObservation(ctx context.Context, observation
 	}
 
 	return s.processClaimed(ctx, observationID)
+}
+
+func (s *ObservationService) SetDerivationService(derivationSvc *DerivationService) {
+	s.derivationSvc = derivationSvc
 }
 
 func (s *ObservationService) processClaimed(ctx context.Context, observationID uuid.UUID) error {
@@ -146,6 +151,9 @@ func (s *ObservationService) processClaimed(ctx context.Context, observationID u
 
 	if err := s.observationRepo.MarkCanonicalized(ctx, obs.ID, binding.BindingID, binding.Version, canonical.ObservationType); err != nil {
 		return err
+	}
+	if s.derivationSvc != nil {
+		s.derivationSvc.DeriveForCanonicalObservationAsync(canonical.ID)
 	}
 
 	return nil

@@ -40,6 +40,10 @@ func InitDB(databaseURL string) (*gorm.DB, error) {
 		return nil, err
 	}
 
+	if err := dropLegacyTables(db); err != nil {
+		return nil, err
+	}
+
 	if err := ensureConnectorTables(db); err != nil {
 		return nil, err
 	}
@@ -49,6 +53,10 @@ func InitDB(databaseURL string) (*gorm.DB, error) {
 	}
 
 	if err := seedObservationCatalog(db); err != nil {
+		return nil, err
+	}
+
+	if err := seedSignalCatalog(db); err != nil {
 		return nil, err
 	}
 
@@ -68,8 +76,23 @@ func migrate(db *gorm.DB) error {
 		&model.Institution{},
 		&model.User{},
 		&model.UserRole{},
-		&model.Learner{},
 	)
+}
+
+func dropLegacyTables(db *gorm.DB) error {
+	statements := []string{
+		`DROP TABLE IF EXISTS learner_identities CASCADE`,
+		`DROP TABLE IF EXISTS learners CASCADE`,
+		`ALTER TABLE user_roles DROP COLUMN IF EXISTS learner_id`,
+		// Leftover from an old migration tool; schema is managed in code now.
+		`DROP TABLE IF EXISTS schema_migrations CASCADE`,
+	}
+	for _, stmt := range statements {
+		if err := db.Exec(stmt).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func ensureUUIDExtension(db *gorm.DB) error {
@@ -268,6 +291,82 @@ func ensureConnectorTables(db *gorm.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_canonical_observations_raw_id ON canonical_observations (raw_observation_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_canonical_observations_user_id ON canonical_observations (user_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_canonical_observations_type ON canonical_observations (observation_type)`,
+		`CREATE TABLE IF NOT EXISTS signal_type_registry (
+			signal_type text PRIMARY KEY,
+			version text NOT NULL DEFAULT '1.0.0',
+			spec jsonb NOT NULL,
+			created_at timestamptz NOT NULL DEFAULT now(),
+			updated_at timestamptz NOT NULL DEFAULT now()
+		)`,
+		`CREATE TABLE IF NOT EXISTS derivation_rule_registry (
+			rule_id text PRIMARY KEY,
+			version text NOT NULL DEFAULT '1.0.0',
+			primitive text NOT NULL,
+			output_signal_type text NOT NULL,
+			status text NOT NULL DEFAULT 'candidate',
+			spec jsonb NOT NULL,
+			created_at timestamptz NOT NULL DEFAULT now(),
+			updated_at timestamptz NOT NULL DEFAULT now()
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_derivation_rule_registry_status ON derivation_rule_registry (status)`,
+		`CREATE TABLE IF NOT EXISTS derivation_runs (
+			id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+			as_of timestamptz NOT NULL,
+			user_id uuid,
+			n_signals integer NOT NULL DEFAULT 0,
+			n_skips integer NOT NULL DEFAULT 0,
+			notes text,
+			created_at timestamptz NOT NULL DEFAULT now(),
+			CONSTRAINT fk_derivation_runs_user FOREIGN KEY (user_id) REFERENCES users(id)
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_derivation_runs_as_of ON derivation_runs (as_of)`,
+		`CREATE INDEX IF NOT EXISTS idx_derivation_runs_user_id ON derivation_runs (user_id)`,
+		`CREATE TABLE IF NOT EXISTS signals (
+			id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+			run_id uuid NOT NULL,
+			signal_type text NOT NULL,
+			user_id uuid NOT NULL,
+			value jsonb NOT NULL,
+			domain text,
+			derived_at timestamptz NOT NULL,
+			inference_method text NOT NULL DEFAULT 'rule',
+			derived_from jsonb NOT NULL DEFAULT '[]'::jsonb,
+			rule_id text NOT NULL,
+			rule_version text NOT NULL DEFAULT '1.0.0',
+			derivation_confidence double precision NOT NULL DEFAULT 1,
+			created_at timestamptz NOT NULL DEFAULT now(),
+			CONSTRAINT fk_signals_run FOREIGN KEY (run_id) REFERENCES derivation_runs(id) ON DELETE CASCADE,
+			CONSTRAINT fk_signals_user FOREIGN KEY (user_id) REFERENCES users(id),
+			CONSTRAINT fk_signals_signal_type FOREIGN KEY (signal_type) REFERENCES signal_type_registry(signal_type),
+			CONSTRAINT fk_signals_rule FOREIGN KEY (rule_id) REFERENCES derivation_rule_registry(rule_id)
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_signals_user_type ON signals (user_id, signal_type)`,
+		`CREATE INDEX IF NOT EXISTS idx_signals_derived_at ON signals (derived_at)`,
+		`CREATE TABLE IF NOT EXISTS derivation_skips (
+			id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+			run_id uuid NOT NULL,
+			rule_id text NOT NULL,
+			output_signal_type text NOT NULL,
+			user_id uuid,
+			reason text NOT NULL,
+			observation_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+			created_at timestamptz NOT NULL DEFAULT now(),
+			CONSTRAINT fk_derivation_skips_run FOREIGN KEY (run_id) REFERENCES derivation_runs(id) ON DELETE CASCADE,
+			CONSTRAINT fk_derivation_skips_user FOREIGN KEY (user_id) REFERENCES users(id)
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_derivation_skips_user_rule ON derivation_skips (user_id, rule_id)`,
+		`CREATE TABLE IF NOT EXISTS signal_observations (
+			id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+			signal_id uuid NOT NULL,
+			canonical_observation_id uuid NOT NULL,
+			rule_id text,
+			created_at timestamptz NOT NULL DEFAULT now(),
+			CONSTRAINT fk_signal_observations_signal FOREIGN KEY (signal_id) REFERENCES signals(id) ON DELETE CASCADE,
+			CONSTRAINT fk_signal_observations_canonical FOREIGN KEY (canonical_observation_id) REFERENCES canonical_observations(id) ON DELETE CASCADE
+		)`,
+		`ALTER TABLE signal_observations ADD COLUMN IF NOT EXISTS rule_id text`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_signal_observations_unique ON signal_observations (signal_id, canonical_observation_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_signal_observations_canonical_rule ON signal_observations (canonical_observation_id, rule_id)`,
 	}
 
 	for _, statement := range statements {
@@ -308,5 +407,40 @@ func ensureObservationIndexes(db *gorm.DB) error {
 	if err := db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_canonical_observations_raw_id_unique ON canonical_observations (raw_observation_id)`).Error; err != nil {
 		return err
 	}
-	return db.Exec(`CREATE INDEX IF NOT EXISTS idx_observations_status_received_at ON observations (status, received_at)`).Error
+	if err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_observations_status_received_at ON observations (status, received_at)`).Error; err != nil {
+		return err
+	}
+	if err := db.Exec(`
+		UPDATE signal_observations so
+		SET rule_id = s.rule_id
+		FROM signals s
+		WHERE so.signal_id = s.id
+		  AND (so.rule_id IS NULL OR so.rule_id = '')
+	`).Error; err != nil {
+		return err
+	}
+	if err := db.Exec(`
+		DELETE FROM signal_observations so
+		USING (
+			SELECT id
+			FROM (
+				SELECT id,
+				       ROW_NUMBER() OVER (
+				         PARTITION BY canonical_observation_id, rule_id
+				         ORDER BY created_at ASC, id ASC
+				       ) AS rn
+				FROM signal_observations
+				WHERE rule_id IS NOT NULL AND rule_id <> ''
+			) ranked
+			WHERE ranked.rn > 1
+		) dup
+		WHERE so.id = dup.id
+	`).Error; err != nil {
+		return err
+	}
+	return db.Exec(`
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_signal_observations_canonical_rule_unique
+		ON signal_observations (canonical_observation_id, rule_id)
+		WHERE rule_id IS NOT NULL AND rule_id <> ''
+	`).Error
 }
