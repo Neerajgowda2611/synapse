@@ -58,16 +58,17 @@ type WebhookCredentialsView struct {
 }
 
 type DataSourceService struct {
-	repo             *repository.DataSourceRepository
-	institutionRepo  *repository.InstitutionRepository
-	connectorRepo    *repository.ConnectorDefinitionRepository
-	credentialRepo   *repository.ConnectorCredentialRepository
-	schemaRepo       *repository.SchemaSnapshotRepository
-	entityRepo       *repository.DataSourceEntityRepository
-	rawRecordRepo    *repository.RawRecordRepository
-	observationRepo  *repository.ObservationRepository
-	syncService      *SyncService
-	registry         *connector.Registry
+	repo            *repository.DataSourceRepository
+	institutionRepo *repository.InstitutionRepository
+	connectorRepo   *repository.ConnectorDefinitionRepository
+	credentialRepo  *repository.ConnectorCredentialRepository
+	schemaRepo      *repository.SchemaSnapshotRepository
+	entityRepo      *repository.DataSourceEntityRepository
+	rawRecordRepo   *repository.RawRecordRepository
+	observationRepo *repository.ObservationRepository
+	observationSvc  *ObservationService
+	syncService     *SyncService
+	registry        *connector.Registry
 }
 
 func NewDataSourceService(
@@ -80,12 +81,18 @@ func NewDataSourceService(
 	rawRecordRepo *repository.RawRecordRepository,
 	observationRepo *repository.ObservationRepository,
 	syncJobRepo *repository.SyncJobRepository,
+	bindingRepo *repository.BindingRegistryRepository,
+	typeRegistryRepo *repository.ObservationTypeRegistryRepository,
+	canonicalObservationRepo *repository.CanonicalObservationRepository,
+	userRepo *repository.UserRepository,
+	userIdentityRepo *repository.UserIdentityRepository,
 ) *DataSourceService {
 	registry := connector.NewRegistry()
 	registry.Register("postgres", connectorpostgres.NewFromJSON)
 	registry.Register("postgresql", connectorpostgres.NewFromJSON)
 
 	syncService := NewSyncService(repo, credentialRepo, schemaRepo, syncJobRepo, rawRecordRepo, registry)
+	observationService := NewObservationService(observationRepo, bindingRepo, typeRegistryRepo, canonicalObservationRepo, userRepo, userIdentityRepo)
 
 	return &DataSourceService{
 		repo:            repo,
@@ -96,9 +103,14 @@ func NewDataSourceService(
 		entityRepo:      entityRepo,
 		rawRecordRepo:   rawRecordRepo,
 		observationRepo: observationRepo,
+		observationSvc:  observationService,
 		syncService:     syncService,
 		registry:        registry,
 	}
+}
+
+func (s *DataSourceService) ObservationService() *ObservationService {
+	return s.observationSvc
 }
 
 func (s *DataSourceService) Create(ctx context.Context, input CreateDataSourceInput) (*model.DataSource, error) {
@@ -449,15 +461,18 @@ func (s *DataSourceService) IngestObservationEnvelope(ctx context.Context, token
 		}
 		return nil, err
 	}
+	if s.observationSvc != nil {
+		s.observationSvc.ProcessObservationAsync(observation.ID)
+	}
 	return &IngestObservationEnvelopeResult{Observation: observation, Duplicate: false}, nil
 }
 
 type ObservationsResult struct {
-	Data            []model.Observation                  `json:"data"`
-	Total           int64                                `json:"total"`
-	Limit           int                                  `json:"limit"`
-	Offset          int                                  `json:"offset"`
-	BySourceEvent   []repository.SourceEventTypeCount    `json:"by_source_event_type"`
+	Data          []model.Observation               `json:"data"`
+	Total         int64                             `json:"total"`
+	Limit         int                               `json:"limit"`
+	Offset        int                               `json:"offset"`
+	BySourceEvent []repository.SourceEventTypeCount `json:"by_source_event_type"`
 }
 
 func (s *DataSourceService) ListObservations(
@@ -509,11 +524,11 @@ func (s *DataSourceService) ListObservations(
 }
 
 type RawRecordsResult struct {
-	Data       []model.RawRecord              `json:"data"`
-	Total      int64                          `json:"total"`
-	Limit      int                            `json:"limit"`
-	Offset     int                            `json:"offset"`
-	ByEntity   []repository.EntityTypeCount   `json:"by_entity_type"`
+	Data     []model.RawRecord            `json:"data"`
+	Total    int64                        `json:"total"`
+	Limit    int                          `json:"limit"`
+	Offset   int                          `json:"offset"`
+	ByEntity []repository.EntityTypeCount `json:"by_entity_type"`
 }
 
 func (s *DataSourceService) ListRawRecords(

@@ -21,6 +21,8 @@ import (
 	"github.com/profiler/backend/internal/logs"
 	"github.com/profiler/backend/internal/middleware"
 	"github.com/profiler/backend/internal/repository"
+	"github.com/profiler/backend/internal/service"
+	"github.com/profiler/backend/internal/worker"
 	"github.com/profiler/backend/pkg/database"
 )
 
@@ -94,9 +96,24 @@ func Start() {
 
 	router := newRouter(db, validator, resolver, enforcer, loginClient, cfg.CORSAllowOrigins, cfg.AppEnv != "production")
 
+	var observationWorker *worker.ObservationWorker
+	if cfg.ObservationWorkerEnabled {
+		observationWorker = worker.NewObservationWorker(
+			router.observationService,
+			cfg.ObservationWorkerInterval,
+			cfg.ObservationWorkerConcurrency,
+		)
+		observationWorker.Start()
+		logs.Info(
+			"observation background worker started",
+			"interval", cfg.ObservationWorkerInterval.String(),
+			"concurrency", cfg.ObservationWorkerConcurrency,
+		)
+	}
+
 	srv := &http.Server{
 		Addr:         cfg.ServerAddress(),
-		Handler:      router,
+		Handler:      router.Engine,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
@@ -115,6 +132,11 @@ func Start() {
 	<-quit
 
 	logs.Info("server shutting down")
+
+	if observationWorker != nil {
+		observationWorker.Stop()
+		logs.Info("observation background worker stopped")
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -135,7 +157,7 @@ func newRouter(
 	loginClient *auth.LoginClient,
 	corsAllowOrigin string,
 	devMode bool,
-) *gin.Engine {
+) *routerBundle {
 	router := gin.New()
 	router.Use(middleware.Recovery())
 	router.Use(middleware.RequestLogger())
@@ -145,7 +167,15 @@ func newRouter(
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
-	handler.RegisterRoutes(router, db, validator, resolver, enforcer, loginClient, devMode)
+	observationService := handler.RegisterRoutes(router, db, validator, resolver, enforcer, loginClient, devMode)
 
-	return router
+	return &routerBundle{
+		Engine:             router,
+		observationService: observationService,
+	}
+}
+
+type routerBundle struct {
+	*gin.Engine
+	observationService *service.ObservationService
 }

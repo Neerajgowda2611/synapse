@@ -4,23 +4,27 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	Port                  string
-	AppEnv                string
-	DatabaseURL           string
-	ZitadelIssuer         string
-	ZitadelAudience       string
-	ZitadelJWKSURL        string
-	ZitadelWebClientID    string
-	ZitadelServiceToken   string
-	ZitadelLoginClientID  string
-	ZitadelRedirectURI    string
-	FrontendURL           string
-	CORSAllowOrigins      string
+	Port                         string
+	AppEnv                       string
+	DatabaseURL                  string
+	ZitadelIssuer                string
+	ZitadelAudience              string
+	ZitadelJWKSURL               string
+	ZitadelWebClientID           string
+	ZitadelServiceToken          string
+	ZitadelLoginClientID         string
+	ZitadelRedirectURI           string
+	FrontendURL                  string
+	CORSAllowOrigins             string
+	ObservationWorkerEnabled     bool
+	ObservationWorkerInterval    time.Duration
+	ObservationWorkerConcurrency int
 }
 
 func Load(configPath string) (*Config, error) {
@@ -49,18 +53,21 @@ func Load(configPath string) (*Config, error) {
 	}
 
 	return &Config{
-		Port:                 port,
-		AppEnv:               getEnv("APP_ENV", "development"),
-		DatabaseURL:          os.Getenv("DATABASE_URL"),
-		ZitadelIssuer:        issuer,
-		ZitadelAudience:      audience,
-		ZitadelJWKSURL:       jwksURL,
-		ZitadelWebClientID:   webClientID,
-		ZitadelServiceToken:  os.Getenv("ZITADEL_SERVICE_USER_TOKEN"),
-		ZitadelLoginClientID: os.Getenv("ZITADEL_LOGIN_CLIENT_ID"),
-		ZitadelRedirectURI:   getEnv("ZITADEL_REDIRECT_URI", frontendURL+"/auth/callback"),
-		FrontendURL:          frontendURL,
-		CORSAllowOrigins:     getEnv("CORS_ALLOW_ORIGINS", frontendURL),
+		Port:                         port,
+		AppEnv:                       getEnv("APP_ENV", "development"),
+		DatabaseURL:                  os.Getenv("DATABASE_URL"),
+		ZitadelIssuer:                issuer,
+		ZitadelAudience:              audience,
+		ZitadelJWKSURL:               jwksURL,
+		ZitadelWebClientID:           webClientID,
+		ZitadelServiceToken:          os.Getenv("ZITADEL_SERVICE_USER_TOKEN"),
+		ZitadelLoginClientID:         os.Getenv("ZITADEL_LOGIN_CLIENT_ID"),
+		ZitadelRedirectURI:           getEnv("ZITADEL_REDIRECT_URI", frontendURL+"/auth/callback"),
+		FrontendURL:                  frontendURL,
+		CORSAllowOrigins:             getEnv("CORS_ALLOW_ORIGINS", frontendURL),
+		ObservationWorkerEnabled:     getEnvBool("OBSERVATION_WORKER_ENABLED", true),
+		ObservationWorkerInterval:    getEnvDuration("OBSERVATION_WORKER_INTERVAL", 5*time.Minute),
+		ObservationWorkerConcurrency: getEnvInt("OBSERVATION_WORKER_CONCURRENCY", 5),
 	}, nil
 }
 
@@ -86,4 +93,40 @@ func getEnv(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+func getEnvBool(key string, fallback bool) bool {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+	parsed, err := strconv.ParseBool(value)
+	if err != nil {
+		return fallback
+	}
+	return parsed
+}
+
+func getEnvInt(key string, fallback int) int {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		return fallback
+	}
+	return parsed
+}
+
+func getEnvDuration(key string, fallback time.Duration) time.Duration {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+	parsed, err := time.ParseDuration(value)
+	if err != nil {
+		return fallback
+	}
+	return parsed
 }

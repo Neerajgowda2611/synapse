@@ -1,0 +1,667 @@
+[
+  {
+    "observation_type": "mentorship_session_lifecycle",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "session_id",
+        "type": "str",
+        "required": false
+      },
+      {
+        "name": "session_event",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "session_status",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "scheduled_start_at",
+        "type": "datetime",
+        "required": false
+      },
+      {
+        "name": "scheduled_end_at",
+        "type": "datetime",
+        "required": false
+      },
+      {
+        "name": "session_mode",
+        "type": "str",
+        "required": false
+      },
+      {
+        "name": "mentor_id",
+        "type": "str",
+        "required": true
+      }
+    ]
+  },
+  {
+    "observation_type": "mentorship_session_cadence",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "session_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "frequency",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "is_compliant",
+        "type": "bool",
+        "required": true
+      },
+      {
+        "name": "weekly_count",
+        "type": "float",
+        "required": true
+      },
+      {
+        "name": "monthly_count",
+        "type": "float",
+        "required": true
+      },
+      {
+        "name": "required_count",
+        "type": "float",
+        "required": true
+      },
+      {
+        "name": "mentor_id",
+        "type": "str",
+        "required": true
+      }
+    ]
+  },
+  {
+    "observation_type": "mentorship_note_event",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "note_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "note_event",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "note_title",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "mentor_id",
+        "type": "str",
+        "required": true
+      }
+    ]
+  },
+  {
+    "observation_type": "mentorship_message_event",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "message_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "message_sent_at",
+        "type": "datetime",
+        "required": true
+      },
+      {
+        "name": "sender_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "mentor_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "is_group",
+        "type": "bool",
+        "required": true
+      }
+    ]
+  },
+  {
+    "observation_type": "mentorship_task_event",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "task_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "task_event",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "task_status",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "task_title",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "mentor_id",
+        "type": "str",
+        "required": true
+      }
+    ]
+  },
+  {
+    "observation_type": "mentor_role_assigned",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "mentor_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "mentor_name",
+        "type": "str",
+        "required": false
+      },
+      {
+        "name": "organization_id",
+        "type": "str",
+        "required": true
+      }
+    ]
+  },
+  {
+    "observation_type": "projex_comment_posted",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "comment_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "task_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "task_status",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "project_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "cohort_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "organization_id",
+        "type": "str",
+        "required": true
+      }
+    ]
+  },
+  {
+    "observation_type": "projex_milestone_defined",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "milestone_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "milestone_start_date",
+        "type": "datetime",
+        "required": true
+      },
+      {
+        "name": "milestone_end_date",
+        "type": "datetime",
+        "required": true
+      },
+      {
+        "name": "submission_type",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "project_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "cohort_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "organization_id",
+        "type": "str",
+        "required": true
+      }
+    ]
+  },
+  {
+    "observation_type": "projex_contribution_counted",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "period_start",
+        "type": "datetime",
+        "required": true
+      },
+      {
+        "name": "period_end",
+        "type": "datetime",
+        "required": true
+      },
+      {
+        "name": "comments_posted",
+        "type": "int",
+        "required": false
+      },
+      {
+        "name": "tasks_completed",
+        "type": "int",
+        "required": false
+      },
+      {
+        "name": "project_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "cohort_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "organization_id",
+        "type": "str",
+        "required": true
+      }
+    ]
+  },
+  {
+    "observation_type": "projex_role_assigned",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "member_user_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "new_role",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "previous_role",
+        "type": "str",
+        "required": false
+      },
+      {
+        "name": "project_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "cohort_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "organization_id",
+        "type": "str",
+        "required": true
+      }
+    ]
+  },
+  {
+    "observation_type": "projex_task_event",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "task_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "task_event",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "task_status",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "task_title",
+        "type": "str",
+        "required": false
+      },
+      {
+        "name": "project_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "cohort_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "organization_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "from_status",
+        "type": "str",
+        "required": false
+      },
+      {
+        "name": "to_status",
+        "type": "str",
+        "required": false
+      }
+    ]
+  },
+  {
+    "observation_type": "placement_application_submitted",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "application_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "job_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "company_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "application_status",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "submitted_at",
+        "type": "datetime",
+        "required": true
+      }
+    ]
+  },
+  {
+    "observation_type": "placement_experience_added",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "experience_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "experience_type",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "title",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "source",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "start_date",
+        "type": "datetime",
+        "required": false
+      },
+      {
+        "name": "end_date",
+        "type": "datetime",
+        "required": false
+      },
+      {
+        "name": "is_ongoing",
+        "type": "bool",
+        "required": true
+      }
+    ]
+  },
+  {
+    "observation_type": "placement_project_added",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "experience_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "project_title",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "source",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "start_date",
+        "type": "datetime",
+        "required": false
+      },
+      {
+        "name": "end_date",
+        "type": "datetime",
+        "required": false
+      },
+      {
+        "name": "is_ongoing",
+        "type": "bool",
+        "required": true
+      }
+    ]
+  },
+  {
+    "observation_type": "placement_profile_field_updated",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "updated_at",
+        "type": "datetime",
+        "required": true
+      },
+      {
+        "name": "changed_title",
+        "type": "str",
+        "required": false
+      },
+      {
+        "name": "changed_description",
+        "type": "str",
+        "required": false
+      },
+      {
+        "name": "profile_video_url",
+        "type": "str",
+        "required": false
+      }
+    ]
+  },
+  {
+    "observation_type": "placement_certificate_added",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "certificate_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "title",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "source",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "start_date",
+        "type": "datetime",
+        "required": false
+      },
+      {
+        "name": "end_date",
+        "type": "datetime",
+        "required": false
+      },
+      {
+        "name": "is_ongoing",
+        "type": "bool",
+        "required": true
+      }
+    ]
+  },
+  {
+    "observation_type": "placement_interview_scheduled",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "application_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "job_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "stage_title",
+        "type": "str",
+        "required": true
+      }
+    ]
+  },
+  {
+    "observation_type": "placement_offer_received",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "application_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "job_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "offer_status",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "job_title",
+        "type": "str",
+        "required": false
+      }
+    ]
+  },
+  {
+    "observation_type": "placement_application_recruiter_responded",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "application_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "job_id",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "new_status",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "previous_status",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "response_duration_seconds",
+        "type": "float",
+        "required": true
+      }
+    ]
+  },
+  {
+    "observation_type": "placement_skill_declared",
+    "version": "1.0.0",
+    "fields": [
+      {
+        "name": "skill_label",
+        "type": "str",
+        "required": true
+      },
+      {
+        "name": "skill_value",
+        "type": "str",
+        "required": false
+      },
+      {
+        "name": "skill_id",
+        "type": "str",
+        "required": false
+      }
+    ]
+  }
+]

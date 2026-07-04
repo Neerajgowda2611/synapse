@@ -146,6 +146,18 @@ func (r *UserRepository) ListByInstitutionID(ctx context.Context, institutionID 
 	return roles, err
 }
 
+func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
+	var user model.User
+	if err := r.dbCtx(ctx).Where("email = ?", email).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *UserRepository) Create(ctx context.Context, user *model.User) error {
+	return r.dbCtx(ctx).Create(user).Error
+}
+
 // IsDuplicateKey detects Postgres unique-constraint violation errors.
 func IsDuplicateKey(err error) bool {
 	if err == nil {

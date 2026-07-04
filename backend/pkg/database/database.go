@@ -48,10 +48,22 @@ func InitDB(databaseURL string) (*gorm.DB, error) {
 		return nil, err
 	}
 
+	if err := seedObservationCatalog(db); err != nil {
+		return nil, err
+	}
+
+	if err := ensureObservationIndexes(db); err != nil {
+		return nil, err
+	}
+
 	return db, nil
 }
 
 func migrate(db *gorm.DB) error {
+	// Core platform tables only. Observation-layer tables (user_identities,
+	// binding_registry, canonical_observations) are created in ensureConnectorTables
+	// via raw SQL — AutoMigrate would follow FKs into data_sources/connector_definitions
+	// and conflict with manually named indexes.
 	return db.AutoMigrate(
 		&model.Institution{},
 		&model.User{},
@@ -191,47 +203,71 @@ func ensureConnectorTables(db *gorm.DB) error {
 			quarantine_reason text,
 			created_at timestamptz NOT NULL DEFAULT now()
 		)`,
-		`ALTER TABLE observations DROP COLUMN IF EXISTS institution_id`,
 		`ALTER TABLE observations ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'received'`,
 		`ALTER TABLE observations ADD COLUMN IF NOT EXISTS observation_type text`,
 		`ALTER TABLE observations ADD COLUMN IF NOT EXISTS domain text`,
 		`ALTER TABLE observations ADD COLUMN IF NOT EXISTS binding_id text`,
 		`ALTER TABLE observations ADD COLUMN IF NOT EXISTS binding_version text`,
 		`ALTER TABLE observations ADD COLUMN IF NOT EXISTS quarantine_reason text`,
+		`ALTER TABLE observations ADD COLUMN IF NOT EXISTS shape_signature text`,
+		`ALTER TABLE observations ADD COLUMN IF NOT EXISTS processing_started_at timestamptz`,
 		`CREATE UNIQUE INDEX IF NOT EXISTS idx_observations_idempotency ON observations (data_source_id, idempotency_key)`,
 		`CREATE INDEX IF NOT EXISTS idx_observations_data_source_id ON observations (data_source_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_observations_connector_event ON observations (data_source_id, source_connector, source_event_type)`,
-		// payload_schema: JSON object skeleton (was text version labels in early builds)
-		`ALTER TABLE observations ALTER COLUMN payload_schema TYPE jsonb USING (
-			CASE
-				WHEN payload_schema IS NULL THEN NULL
-				WHEN payload_schema::text LIKE '{%' THEN payload_schema::text::jsonb
-				ELSE NULL
-			END
+		`CREATE INDEX IF NOT EXISTS idx_observations_status ON observations (data_source_id, status)`,
+		`CREATE INDEX IF NOT EXISTS idx_observations_shape_signature ON observations (shape_signature)`,
+		`CREATE TABLE IF NOT EXISTS user_identities (
+			id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+			user_id uuid NOT NULL,
+			data_source_id uuid NOT NULL,
+			external_id text NOT NULL,
+			namespace text,
+			created_at timestamptz NOT NULL DEFAULT now(),
+			updated_at timestamptz NOT NULL DEFAULT now(),
+			CONSTRAINT fk_user_identities_user FOREIGN KEY (user_id) REFERENCES users(id),
+			CONSTRAINT fk_user_identities_data_source FOREIGN KEY (data_source_id) REFERENCES data_sources(id)
 		)`,
-		// Remove webhook envelope columns mistakenly added to raw_records (webhooks use observations table)
-		`DROP INDEX IF EXISTS idx_raw_records_idempotency`,
-		`DROP INDEX IF EXISTS idx_raw_records_connector_event`,
-		`ALTER TABLE raw_records DROP COLUMN IF EXISTS source_id`,
-		`ALTER TABLE raw_records DROP COLUMN IF EXISTS idempotency_key`,
-		`ALTER TABLE raw_records DROP COLUMN IF EXISTS source_connector`,
-		`ALTER TABLE raw_records DROP COLUMN IF EXISTS source_event_type`,
-		`ALTER TABLE raw_records DROP COLUMN IF EXISTS ingestion_altitude`,
-		`ALTER TABLE raw_records DROP COLUMN IF EXISTS occurred_at`,
-		`ALTER TABLE raw_records DROP COLUMN IF EXISTS received_at`,
-		`ALTER TABLE raw_records DROP COLUMN IF EXISTS payload_schema`,
-		`ALTER TABLE raw_records DROP COLUMN IF EXISTS description`,
-		`ALTER TABLE raw_records DROP COLUMN IF EXISTS attestation`,
-		// Drop legacy v1 learner domain tables (replaced by observations/raw_records pipeline)
-		`DROP TABLE IF EXISTS learner_attendance_records`,
-		`DROP TABLE IF EXISTS learner_assessments`,
-		`DROP TABLE IF EXISTS learner_payments`,
-		`DROP TABLE IF EXISTS learner_skills`,
-		`DROP TABLE IF EXISTS learner_certifications`,
-		`DROP TABLE IF EXISTS learner_projects`,
-		`DROP TABLE IF EXISTS learner_placements`,
-		`DROP TABLE IF EXISTS learner_education`,
-		`DROP TABLE IF EXISTS learner_profiles`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_identities_source_external ON user_identities (data_source_id, external_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_user_identities_user_id ON user_identities (user_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_user_identities_namespace ON user_identities (namespace)`,
+		`CREATE TABLE IF NOT EXISTS observation_type_registry (
+			observation_type text PRIMARY KEY,
+			version text NOT NULL DEFAULT '1.0.0',
+			fields jsonb NOT NULL,
+			created_at timestamptz NOT NULL DEFAULT now(),
+			updated_at timestamptz NOT NULL DEFAULT now()
+		)`,
+		`CREATE TABLE IF NOT EXISTS binding_registry (
+			id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+			binding_id text NOT NULL UNIQUE,
+			source_connector text NOT NULL,
+			source_event_type text NOT NULL,
+			observation_type text NOT NULL,
+			spec jsonb NOT NULL,
+			status text NOT NULL DEFAULT 'candidate',
+			version integer NOT NULL DEFAULT 1,
+			proposed_by text,
+			sample_observation_ids jsonb,
+			created_at timestamptz NOT NULL DEFAULT now(),
+			updated_at timestamptz NOT NULL DEFAULT now()
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_binding_registry_lookup ON binding_registry (source_connector, source_event_type, status)`,
+		`CREATE TABLE IF NOT EXISTS canonical_observations (
+			id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+			raw_observation_id uuid NOT NULL,
+			observation_type text NOT NULL,
+			user_id uuid NOT NULL,
+			fields jsonb NOT NULL,
+			binding_id text NOT NULL,
+			binding_version integer NOT NULL DEFAULT 1,
+			occurred_at timestamptz NOT NULL,
+			created_at timestamptz NOT NULL DEFAULT now(),
+			CONSTRAINT fk_canonical_raw_observation FOREIGN KEY (raw_observation_id) REFERENCES observations(id),
+			CONSTRAINT fk_canonical_user FOREIGN KEY (user_id) REFERENCES users(id)
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_canonical_observations_raw_id ON canonical_observations (raw_observation_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_canonical_observations_user_id ON canonical_observations (user_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_canonical_observations_type ON canonical_observations (observation_type)`,
 	}
 
 	for _, statement := range statements {
@@ -255,4 +291,22 @@ func seedConnectorDefinitions(db *gorm.DB) error {
 			version = EXCLUDED.version,
 			updated_at = now()
 	`).Error
+}
+
+func ensureObservationIndexes(db *gorm.DB) error {
+	// Remove duplicate canonical rows (e.g. from pre-claim races) before unique index.
+	if err := db.Exec(`
+		DELETE FROM canonical_observations
+		WHERE id NOT IN (
+			SELECT DISTINCT ON (raw_observation_id) id
+			FROM canonical_observations
+			ORDER BY raw_observation_id, created_at ASC, id ASC
+		)
+	`).Error; err != nil {
+		return err
+	}
+	if err := db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_canonical_observations_raw_id_unique ON canonical_observations (raw_observation_id)`).Error; err != nil {
+		return err
+	}
+	return db.Exec(`CREATE INDEX IF NOT EXISTS idx_observations_status_received_at ON observations (status, received_at)`).Error
 }

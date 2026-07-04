@@ -19,7 +19,7 @@ func RegisterRoutes(
 	enforcer *casbin.Enforcer,
 	loginClient *auth.LoginClient,
 	devMode bool,
-) {
+) *service.ObservationService {
 	// Repositories
 	institutionRepo := repository.NewInstitutionRepository(db)
 	userRepo := repository.NewUserRepository(db)
@@ -31,11 +31,30 @@ func RegisterRoutes(
 	rawRecordRepo := repository.NewRawRecordRepository(db)
 	observationRepo := repository.NewObservationRepository(db)
 	syncJobRepo := repository.NewSyncJobRepository(db)
+	bindingRepo := repository.NewBindingRegistryRepository(db)
+	typeRegistryRepo := repository.NewObservationTypeRegistryRepository(db)
+	canonicalObservationRepo := repository.NewCanonicalObservationRepository(db)
+	userIdentityRepo := repository.NewUserIdentityRepository(db)
 
 	// Services
 	institutionService := service.NewInstitutionService(institutionRepo)
 	institutionUserService := service.NewInstitutionUserService(userRepo)
-	dataSourceService := service.NewDataSourceService(dataSourceRepo, institutionRepo, connectorRepo, credentialRepo, schemaRepo, entityRepo, rawRecordRepo, observationRepo, syncJobRepo)
+	dataSourceService := service.NewDataSourceService(
+		dataSourceRepo,
+		institutionRepo,
+		connectorRepo,
+		credentialRepo,
+		schemaRepo,
+		entityRepo,
+		rawRecordRepo,
+		observationRepo,
+		syncJobRepo,
+		bindingRepo,
+		typeRegistryRepo,
+		canonicalObservationRepo,
+		userRepo,
+		userIdentityRepo,
+	)
 
 	// Handlers
 	authHandler := NewAuthHandler()
@@ -152,4 +171,5 @@ func RegisterRoutes(
 			dataSourceHandler.GetLatestSyncJob,
 		)
 	}
+	return dataSourceService.ObservationService()
 }

@@ -59,9 +59,9 @@ type Institution struct {
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"not null;default:now()" json:"updated_at"`
 
-	DataSources []DataSource      `gorm:"foreignKey:InstitutionID" json:"data_sources,omitempty"`
-	Learners    []Learner         `gorm:"foreignKey:InstitutionID" json:"learners,omitempty"`
-	RawRecords  []RawRecord       `gorm:"foreignKey:InstitutionID" json:"raw_records,omitempty"`
+	DataSources []DataSource `gorm:"foreignKey:InstitutionID" json:"data_sources,omitempty"`
+	Learners    []Learner    `gorm:"foreignKey:InstitutionID" json:"learners,omitempty"`
+	RawRecords  []RawRecord  `gorm:"foreignKey:InstitutionID" json:"raw_records,omitempty"`
 }
 
 func (Institution) TableName() string {
@@ -70,15 +70,16 @@ func (Institution) TableName() string {
 
 // User is the unified identity record for every person in Profiler.
 type User struct {
-	ID         uuid.UUID  `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
-	ZitadelSub *string    `gorm:"uniqueIndex"                                    json:"zitadel_sub,omitempty"`
-	Email      string     `gorm:"not null;uniqueIndex"                           json:"email"`
-	Name       string     `gorm:"not null"                                       json:"name"`
-	Status     string     `gorm:"not null;default:active"                        json:"status"`
-	CreatedAt  time.Time  `gorm:"not null;default:now()"                         json:"created_at"`
-	UpdatedAt  time.Time  `gorm:"not null;default:now()"                         json:"updated_at"`
+	ID         uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	ZitadelSub *string   `gorm:"uniqueIndex"                                    json:"zitadel_sub,omitempty"`
+	Email      string    `gorm:"not null;uniqueIndex"                           json:"email"`
+	Name       string    `gorm:"not null"                                       json:"name"`
+	Status     string    `gorm:"not null;default:active"                        json:"status"`
+	CreatedAt  time.Time `gorm:"not null;default:now()"                         json:"created_at"`
+	UpdatedAt  time.Time `gorm:"not null;default:now()"                         json:"updated_at"`
 
-	Roles []UserRole `gorm:"foreignKey:UserID" json:"roles,omitempty"`
+	Roles      []UserRole     `gorm:"foreignKey:UserID" json:"roles,omitempty"`
+	Identities []UserIdentity `gorm:"foreignKey:UserID" json:"identities,omitempty"`
 }
 
 func (User) TableName() string { return "users" }
@@ -141,6 +142,7 @@ type DataSource struct {
 	SyncJobs           []SyncJob            `gorm:"foreignKey:DataSourceID" json:"sync_jobs,omitempty"`
 	RawRecords         []RawRecord          `gorm:"foreignKey:DataSourceID" json:"raw_records,omitempty"`
 	Observations       []Observation        `gorm:"foreignKey:DataSourceID" json:"observations,omitempty"`
+	UserIdentities     []UserIdentity       `gorm:"foreignKey:DataSourceID" json:"user_identities,omitempty"`
 	LearnerIdentities  []LearnerIdentity    `gorm:"foreignKey:DataSourceID" json:"learner_identities,omitempty"`
 }
 
@@ -259,25 +261,100 @@ type Observation struct {
 	Description       *string   `json:"description,omitempty"`
 	Attestation       JSONB     `gorm:"type:jsonb" json:"attestation,omitempty"`
 	// Filled later by binding/canonicalization pipeline; null until then.
-	Status            string  `gorm:"not null;default:received" json:"status"`
-	ObservationType   *string `json:"observation_type,omitempty"`
-	Domain            *string `json:"domain,omitempty"`
-	BindingID         *string `json:"binding_id,omitempty"`
-	BindingVersion    *string `json:"binding_version,omitempty"`
-	QuarantineReason  *string `json:"quarantine_reason,omitempty"`
-	CreatedAt         time.Time `gorm:"not null;default:now()" json:"created_at"`
+	Status           string    `gorm:"not null;default:received" json:"status"`
+	ObservationType  *string   `json:"observation_type,omitempty"`
+	Domain           *string   `json:"domain,omitempty"`
+	BindingID        *string   `json:"binding_id,omitempty"`
+	BindingVersion   *string   `json:"binding_version,omitempty"`
+	QuarantineReason *string   `json:"quarantine_reason,omitempty"`
+	ShapeSignature   *string   `json:"shape_signature,omitempty"`
+	CreatedAt        time.Time `gorm:"not null;default:now()" json:"created_at"`
 
 	DataSource DataSource `gorm:"foreignKey:DataSourceID" json:"data_source,omitempty"`
 }
 
 const (
 	ObservationStatusReceived      = "received"
+	ObservationStatusProcessing    = "processing"
 	ObservationStatusCanonicalized = "canonicalized"
 	ObservationStatusQuarantined   = "quarantined"
 )
 
 func (Observation) TableName() string {
 	return "observations"
+}
+
+type UserIdentity struct {
+	ID           uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	UserID       uuid.UUID `gorm:"type:uuid;not null;index" json:"user_id"`
+	DataSourceID uuid.UUID `gorm:"type:uuid;not null;index" json:"data_source_id"`
+	ExternalID   string    `gorm:"not null" json:"external_id"`
+	Namespace    *string   `json:"namespace,omitempty"`
+	CreatedAt    time.Time `gorm:"not null;default:now()" json:"created_at"`
+	UpdatedAt    time.Time `gorm:"not null;default:now()" json:"updated_at"`
+
+	User       User       `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	DataSource DataSource `gorm:"foreignKey:DataSourceID" json:"data_source,omitempty"`
+}
+
+func (UserIdentity) TableName() string {
+	return "user_identities"
+}
+
+type ObservationTypeRegistry struct {
+	ObservationType string    `gorm:"primaryKey" json:"observation_type"`
+	Version         string    `gorm:"not null;default:1.0.0" json:"version"`
+	Fields          JSONB     `gorm:"type:jsonb;not null" json:"fields"`
+	CreatedAt       time.Time `gorm:"not null;default:now()" json:"created_at"`
+	UpdatedAt       time.Time `gorm:"not null;default:now()" json:"updated_at"`
+}
+
+func (ObservationTypeRegistry) TableName() string {
+	return "observation_type_registry"
+}
+
+type BindingRegistry struct {
+	ID                   uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	BindingID            string    `gorm:"not null;uniqueIndex" json:"binding_id"`
+	SourceConnector      string    `gorm:"not null;index" json:"source_connector"`
+	SourceEventType      string    `gorm:"not null;index" json:"source_event_type"`
+	ObservationType      string    `gorm:"not null" json:"observation_type"`
+	Spec                 JSONB     `gorm:"type:jsonb;not null" json:"spec"`
+	Status               string    `gorm:"not null;default:candidate;index" json:"status"`
+	Version              int       `gorm:"not null;default:1" json:"version"`
+	ProposedBy           *string   `json:"proposed_by,omitempty"`
+	SampleObservationIDs JSONB     `gorm:"type:jsonb" json:"sample_observation_ids,omitempty"`
+	CreatedAt            time.Time `gorm:"not null;default:now()" json:"created_at"`
+	UpdatedAt            time.Time `gorm:"not null;default:now()" json:"updated_at"`
+}
+
+const (
+	BindingStatusCandidate  = "candidate"
+	BindingStatusApproved   = "approved"
+	BindingStatusDeprecated = "deprecated"
+)
+
+func (BindingRegistry) TableName() string {
+	return "binding_registry"
+}
+
+type CanonicalObservation struct {
+	ID               uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	RawObservationID uuid.UUID `gorm:"type:uuid;not null;index" json:"raw_observation_id"`
+	ObservationType  string    `gorm:"not null;index" json:"observation_type"`
+	UserID           uuid.UUID `gorm:"type:uuid;not null;index" json:"user_id"`
+	Fields           JSONB     `gorm:"type:jsonb;not null" json:"fields"`
+	BindingID        string    `gorm:"not null" json:"binding_id"`
+	BindingVersion   int       `gorm:"not null;default:1" json:"binding_version"`
+	OccurredAt       time.Time `gorm:"not null" json:"occurred_at"`
+	CreatedAt        time.Time `gorm:"not null;default:now()" json:"created_at"`
+
+	RawObservation Observation `gorm:"foreignKey:RawObservationID" json:"raw_observation,omitempty"`
+	User           User        `gorm:"foreignKey:UserID" json:"user,omitempty"`
+}
+
+func (CanonicalObservation) TableName() string {
+	return "canonical_observations"
 }
 
 type Learner struct {
