@@ -1,0 +1,170 @@
+[
+  {
+    "signal_type": "submission_lead_days",
+    "spec": {
+      "kind": "clip_scale",
+      "lo": -7.0,
+      "hi": 7.0
+    }
+  },
+  {
+    "signal_type": "submission_regularity",
+    "spec": {
+      "kind": "identity",
+      "lo": 0.0,
+      "hi": 1.0
+    }
+  },
+  {
+    "signal_type": "cadence_compliance_rate",
+    "spec": {
+      "kind": "identity",
+      "lo": 0.0,
+      "hi": 1.0
+    }
+  },
+  {
+    "signal_type": "mean_quiz_score",
+    "spec": {
+      "kind": "clip_scale",
+      "lo": 0.0,
+      "hi": 100.0
+    }
+  },
+  {
+    "signal_type": "quiz_score_vs_baseline",
+    "spec": {
+      "kind": "clip_scale",
+      "lo": -3.0,
+      "hi": 3.0
+    }
+  },
+  {
+    "signal_type": "quiz_score_trend",
+    "spec": {
+      "kind": "clip_scale",
+      "lo": -5.0,
+      "hi": 5.0
+    }
+  },
+  {
+    "signal_type": "leadtime_trend",
+    "spec": {
+      "kind": "clip_scale",
+      "lo": -3.0,
+      "hi": 3.0
+    }
+  },
+  {
+    "signal_type": "quiz_recovery_trend",
+    "spec": {
+      "kind": "clip_scale",
+      "lo": -5.0,
+      "hi": 5.0
+    }
+  },
+  {
+    "signal_type": "task_completion_rate",
+    "spec": {
+      "kind": "clip_scale",
+      "lo": 0.0,
+      "hi": 0.5
+    }
+  },
+  {
+    "signal_type": "self_claim_rate",
+    "spec": {
+      "kind": "clip_scale",
+      "lo": 0.0,
+      "hi": 0.05
+    }
+  },
+  {
+    "signal_type": "milestone_definition_rate",
+    "spec": {
+      "kind": "clip_scale",
+      "lo": 0.0,
+      "hi": 0.03
+    }
+  },
+  {
+    "signal_type": "application_rate",
+    "spec": {
+      "kind": "clip_scale",
+      "lo": 0.0,
+      "hi": 0.05
+    }
+  },
+  {
+    "signal_type": "stretch_milestone_rate",
+    "spec": {
+      "kind": "clip_scale",
+      "lo": 0.0,
+      "hi": 0.03
+    }
+  },
+  {
+    "signal_type": "project_add_rate",
+    "spec": {
+      "kind": "clip_scale",
+      "lo": 0.0,
+      "hi": 0.1
+    }
+  },
+  {
+    "signal_type": "experience_add_rate",
+    "spec": {
+      "kind": "clip_scale",
+      "lo": 0.0,
+      "hi": 0.1
+    }
+  },
+  {
+    "signal_type": "message_rate",
+    "spec": {
+      "kind": "clip_scale",
+      "lo": 0.0,
+      "hi": 0.3
+    }
+  },
+  {
+    "signal_type": "comment_rate",
+    "spec": {
+      "kind": "clip_scale",
+      "lo": 0.0,
+      "hi": 0.2
+    }
+  },
+  {
+    "signal_type": "session_attendance_rate",
+    "spec": {
+      "kind": "clip_scale",
+      "lo": 0.0,
+      "hi": 0.3
+    }
+  },
+  {
+    "signal_type": "co_activity_rate",
+    "spec": {
+      "kind": "clip_scale",
+      "lo": 0.0,
+      "hi": 0.4
+    }
+  },
+  {
+    "signal_type": "help_seeking_latency",
+    "spec": {
+      "kind": "clip_scale",
+      "lo": 0.0,
+      "hi": 14.0
+    }
+  },
+  {
+    "signal_type": "help_request_rate",
+    "spec": {
+      "kind": "clip_scale",
+      "lo": 0.0,
+      "hi": 0.15
+    }
+  }
+]

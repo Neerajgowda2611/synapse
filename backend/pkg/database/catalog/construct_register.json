@@ -1,0 +1,444 @@
+[
+  {
+    "construct_id": "conscientiousness",
+    "trait": "conscientiousness",
+    "family": "conscientiousness_self_regulation",
+    "version": "0.1.0",
+    "spec": {
+      "construct_id": "conscientiousness",
+      "trait": "conscientiousness",
+      "family": "conscientiousness_self_regulation",
+      "shape": "monotonic",
+      "peak": null,
+      "pole": null,
+      "name": "Conscientiousness",
+      "definition": "Planning, monitoring, and following through on commitments.",
+      "scientific_rationale": "Grounded in self-regulated learning and Big-Five conscientiousness.",
+      "legitimacy_rationale": "Supports study-habit coaching without gatekeeping.",
+      "supporting_signals": [
+        "submission_lead_days",
+        "submission_regularity"
+      ],
+      "required_observations": [
+        "assignment_submission",
+        "mentorship_session_cadence"
+      ],
+      "source_apps": [
+        "lms",
+        "mentorship"
+      ],
+      "fairness": {
+        "dif_checked": true,
+        "dif_flags": [],
+        "known_confounds": [
+          "workload"
+        ],
+        "residualization": null
+      },
+      "scope": [
+        "higher_ed"
+      ],
+      "uncertainty_policy": "Suppress below n_eff=3; surface with CI.",
+      "version": "0.1.0",
+      "owner": "profiling-core",
+      "review": null
+    }
+  },
+  {
+    "construct_id": "cognitive_ability",
+    "trait": "cognitive_ability",
+    "family": "cognitive",
+    "version": "0.1.0",
+    "spec": {
+      "construct_id": "cognitive_ability",
+      "trait": "cognitive_ability",
+      "family": "cognitive",
+      "shape": "monotonic",
+      "peak": null,
+      "pole": null,
+      "name": "Cognitive Ability",
+      "definition": "Demonstrated reasoning and knowledge retrieval in assessed work.",
+      "scientific_rationale": "Criterion validity against graded assessments.",
+      "legitimacy_rationale": "Informs academic support matching.",
+      "supporting_signals": [
+        "mean_quiz_score",
+        "quiz_score_vs_baseline"
+      ],
+      "required_observations": [
+        "quiz_result"
+      ],
+      "source_apps": [
+        "lms"
+      ],
+      "fairness": {
+        "dif_checked": true,
+        "dif_flags": [],
+        "known_confounds": [
+          "workload"
+        ],
+        "residualization": null
+      },
+      "scope": [
+        "higher_ed"
+      ],
+      "uncertainty_policy": "Suppress below n_eff=3; surface with CI.",
+      "version": "0.1.0",
+      "owner": "profiling-core",
+      "review": null
+    }
+  },
+  {
+    "construct_id": "learning_velocity",
+    "trait": "learning_velocity",
+    "family": "cognitive",
+    "version": "0.1.0",
+    "spec": {
+      "construct_id": "learning_velocity",
+      "trait": "learning_velocity",
+      "family": "cognitive",
+      "shape": "monotonic",
+      "peak": null,
+      "pole": null,
+      "name": "Learning Velocity",
+      "definition": "Rate of improvement in performance over time.",
+      "scientific_rationale": "Growth mindset and learning-rate constructs.",
+      "legitimacy_rationale": "Highlights fast learners for stretch opportunities.",
+      "supporting_signals": [
+        "quiz_score_trend",
+        "leadtime_trend"
+      ],
+      "required_observations": [
+        "quiz_result",
+        "assignment_submission"
+      ],
+      "source_apps": [
+        "lms"
+      ],
+      "fairness": {
+        "dif_checked": true,
+        "dif_flags": [],
+        "known_confounds": [
+          "workload"
+        ],
+        "residualization": null
+      },
+      "scope": [
+        "higher_ed"
+      ],
+      "uncertainty_policy": "Suppress below n_eff=3; surface with CI.",
+      "version": "0.1.0",
+      "owner": "profiling-core",
+      "review": null
+    }
+  },
+  {
+    "construct_id": "resilience",
+    "trait": "resilience",
+    "family": "intrapersonal_motivational",
+    "version": "0.1.0",
+    "spec": {
+      "construct_id": "resilience",
+      "trait": "resilience",
+      "family": "intrapersonal_motivational",
+      "shape": "monotonic",
+      "peak": null,
+      "pole": null,
+      "name": "Resilience",
+      "definition": "Recovery and persistence after setbacks.",
+      "scientific_rationale": "Grit and resilience literature.",
+      "legitimacy_rationale": "Identifies students who bounce back.",
+      "supporting_signals": [
+        "quiz_recovery_trend",
+        "task_completion_rate"
+      ],
+      "required_observations": [
+        "quiz_result",
+        "mentorship_task_event"
+      ],
+      "source_apps": [
+        "lms",
+        "mentorship"
+      ],
+      "fairness": {
+        "dif_checked": true,
+        "dif_flags": [],
+        "known_confounds": [
+          "workload"
+        ],
+        "residualization": null
+      },
+      "scope": [
+        "higher_ed"
+      ],
+      "uncertainty_policy": "Suppress below n_eff=3; surface with CI.",
+      "version": "0.1.0",
+      "owner": "profiling-core",
+      "review": null
+    }
+  },
+  {
+    "construct_id": "agency",
+    "trait": "agency",
+    "family": "intrapersonal_motivational",
+    "version": "0.1.0",
+    "spec": {
+      "construct_id": "agency",
+      "trait": "agency",
+      "family": "intrapersonal_motivational",
+      "shape": "bipolar",
+      "peak": null,
+      "pole": "agency",
+      "name": "Agency",
+      "definition": "Self-direction versus compliance on a bipolar axis.",
+      "scientific_rationale": "Agency-compliance bipolar construct.",
+      "legitimacy_rationale": "Startup contexts reward initiative.",
+      "supporting_signals": [
+        "self_claim_rate",
+        "milestone_definition_rate"
+      ],
+      "required_observations": [
+        "task_self_claimed",
+        "projex_milestone_defined"
+      ],
+      "source_apps": [
+        "project_management"
+      ],
+      "fairness": {
+        "dif_checked": true,
+        "dif_flags": [],
+        "known_confounds": [
+          "workload"
+        ],
+        "residualization": null
+      },
+      "scope": [
+        "higher_ed"
+      ],
+      "uncertainty_policy": "Suppress below n_eff=3; surface with CI.",
+      "version": "0.1.0",
+      "owner": "profiling-core",
+      "review": null
+    }
+  },
+  {
+    "construct_id": "risk_appetite",
+    "trait": "risk_appetite",
+    "family": "intrapersonal_motivational",
+    "version": "0.1.0",
+    "spec": {
+      "construct_id": "risk_appetite",
+      "trait": "risk_appetite",
+      "family": "intrapersonal_motivational",
+      "shape": "bipolar",
+      "peak": null,
+      "pole": "risk",
+      "name": "Risk Appetite",
+      "definition": "Willingness to pursue uncertain opportunities.",
+      "scientific_rationale": "Risk-taking propensity in vocational choice.",
+      "legitimacy_rationale": "Relevant for entrepreneurial pathways.",
+      "supporting_signals": [
+        "application_rate",
+        "stretch_milestone_rate"
+      ],
+      "required_observations": [
+        "placement_application_submitted",
+        "projex_milestone_defined"
+      ],
+      "source_apps": [
+        "job_board",
+        "project_management"
+      ],
+      "fairness": {
+        "dif_checked": true,
+        "dif_flags": [],
+        "known_confounds": [
+          "workload"
+        ],
+        "residualization": null
+      },
+      "scope": [
+        "higher_ed"
+      ],
+      "uncertainty_policy": "Suppress below n_eff=3; surface with CI.",
+      "version": "0.1.0",
+      "owner": "profiling-core",
+      "review": null
+    }
+  },
+  {
+    "construct_id": "creativity",
+    "trait": "creativity",
+    "family": "creative_openness",
+    "version": "0.1.0",
+    "spec": {
+      "construct_id": "creativity",
+      "trait": "creativity",
+      "family": "creative_openness",
+      "shape": "monotonic",
+      "peak": null,
+      "pole": null,
+      "name": "Creativity",
+      "definition": "Generating and pursuing novel portfolio artefacts.",
+      "scientific_rationale": "Creative self-expression via project diversity.",
+      "legitimacy_rationale": "Surfaces builders and makers.",
+      "supporting_signals": [
+        "project_add_rate",
+        "experience_add_rate"
+      ],
+      "required_observations": [
+        "placement_project_added",
+        "placement_experience_added"
+      ],
+      "source_apps": [
+        "job_board"
+      ],
+      "fairness": {
+        "dif_checked": true,
+        "dif_flags": [],
+        "known_confounds": [
+          "workload"
+        ],
+        "residualization": null
+      },
+      "scope": [
+        "higher_ed"
+      ],
+      "uncertainty_policy": "Suppress below n_eff=3; surface with CI.",
+      "version": "0.1.0",
+      "owner": "profiling-core",
+      "review": null
+    }
+  },
+  {
+    "construct_id": "communication",
+    "trait": "communication",
+    "family": "interpersonal_social",
+    "version": "0.1.0",
+    "spec": {
+      "construct_id": "communication",
+      "trait": "communication",
+      "family": "interpersonal_social",
+      "shape": "monotonic",
+      "peak": null,
+      "pole": null,
+      "name": "Communication",
+      "definition": "Frequency and consistency of written exchange.",
+      "scientific_rationale": "Observed communicative behaviour in mentorship and projects.",
+      "legitimacy_rationale": "Essential for team-based work.",
+      "supporting_signals": [
+        "message_rate",
+        "comment_rate"
+      ],
+      "required_observations": [
+        "mentorship_message_event",
+        "projex_comment_posted"
+      ],
+      "source_apps": [
+        "mentorship",
+        "project_management"
+      ],
+      "fairness": {
+        "dif_checked": true,
+        "dif_flags": [],
+        "known_confounds": [
+          "workload"
+        ],
+        "residualization": null
+      },
+      "scope": [
+        "higher_ed"
+      ],
+      "uncertainty_policy": "Suppress below n_eff=3; surface with CI.",
+      "version": "0.1.0",
+      "owner": "profiling-core",
+      "review": null
+    }
+  },
+  {
+    "construct_id": "collaboration",
+    "trait": "collaboration",
+    "family": "interpersonal_social",
+    "version": "0.1.0",
+    "spec": {
+      "construct_id": "collaboration",
+      "trait": "collaboration",
+      "family": "interpersonal_social",
+      "shape": "monotonic",
+      "peak": null,
+      "pole": null,
+      "name": "Collaboration",
+      "definition": "Participation in shared mentorship and project activities.",
+      "scientific_rationale": "Social engagement in structured programmes.",
+      "legitimacy_rationale": "Predicts team effectiveness.",
+      "supporting_signals": [
+        "session_attendance_rate",
+        "co_activity_rate"
+      ],
+      "required_observations": [
+        "mentorship_session_lifecycle",
+        "mentorship_task_event"
+      ],
+      "source_apps": [
+        "mentorship"
+      ],
+      "fairness": {
+        "dif_checked": true,
+        "dif_flags": [],
+        "known_confounds": [
+          "workload"
+        ],
+        "residualization": null
+      },
+      "scope": [
+        "higher_ed"
+      ],
+      "uncertainty_policy": "Suppress below n_eff=3; surface with CI.",
+      "version": "0.1.0",
+      "owner": "profiling-core",
+      "review": null
+    }
+  },
+  {
+    "construct_id": "help_seeking",
+    "trait": "help_seeking",
+    "family": "intrapersonal_motivational",
+    "version": "0.1.0",
+    "spec": {
+      "construct_id": "help_seeking",
+      "trait": "help_seeking",
+      "family": "intrapersonal_motivational",
+      "shape": "peaked",
+      "peak": 0.55,
+      "pole": null,
+      "name": "Help-Seeking",
+      "definition": "Calibrated use of support resources.",
+      "scientific_rationale": "Inverted-U relationship with performance.",
+      "legitimacy_rationale": "Moderate help-seeking is healthiest.",
+      "supporting_signals": [
+        "help_seeking_latency",
+        "help_request_rate"
+      ],
+      "required_observations": [
+        "mentorship_help_request"
+      ],
+      "source_apps": [
+        "mentorship"
+      ],
+      "fairness": {
+        "dif_checked": true,
+        "dif_flags": [],
+        "known_confounds": [
+          "workload"
+        ],
+        "residualization": null
+      },
+      "scope": [
+        "higher_ed"
+      ],
+      "uncertainty_policy": "Suppress below n_eff=3; surface with CI.",
+      "version": "0.1.0",
+      "owner": "profiling-core",
+      "review": null
+    }
+  }
+]

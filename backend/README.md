@@ -39,7 +39,8 @@ backend/
 Runtime seed JSON lives in `pkg/database/catalog/`. **Design source of truth** is the sibling `profiling-design` repo:
 
 - `observation_layer/catalog.py` — types + bindings
-- `signal_layer/seed.py` — signals + derivation rules
+- `signal_layer/seed.py` — signals, derivation rules, construct claims
+- `profiling/seed.py` — construct register, metric norms, reward systems
 
 After catalog changes in profiling-design, export JSON with `profiling-design/scripts/sync_profiler_catalog_json.py`, then restart the backend.
 

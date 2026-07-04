@@ -60,6 +60,10 @@ func InitDB(databaseURL string) (*gorm.DB, error) {
 		return nil, err
 	}
 
+	if err := seedMetricCatalog(db); err != nil {
+		return nil, err
+	}
+
 	if err := ensureObservationIndexes(db); err != nil {
 		return nil, err
 	}
@@ -367,6 +371,43 @@ func ensureConnectorTables(db *gorm.DB) error {
 		`ALTER TABLE signal_observations ADD COLUMN IF NOT EXISTS rule_id text`,
 		`CREATE UNIQUE INDEX IF NOT EXISTS idx_signal_observations_unique ON signal_observations (signal_id, canonical_observation_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_signal_observations_canonical_rule ON signal_observations (canonical_observation_id, rule_id)`,
+		`CREATE TABLE IF NOT EXISTS construct_claim_registry (
+			claim_id text PRIMARY KEY,
+			version text NOT NULL DEFAULT '1.0.0',
+			signal_type text NOT NULL,
+			trait text NOT NULL,
+			spec jsonb NOT NULL,
+			created_at timestamptz NOT NULL DEFAULT now(),
+			updated_at timestamptz NOT NULL DEFAULT now(),
+			CONSTRAINT fk_construct_claim_signal_type FOREIGN KEY (signal_type) REFERENCES signal_type_registry(signal_type)
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_construct_claim_registry_signal_type ON construct_claim_registry (signal_type)`,
+		`CREATE INDEX IF NOT EXISTS idx_construct_claim_registry_trait ON construct_claim_registry (trait)`,
+		`CREATE TABLE IF NOT EXISTS construct_register (
+			construct_id text PRIMARY KEY,
+			trait text NOT NULL,
+			family text NOT NULL,
+			version text NOT NULL DEFAULT '0.1.0',
+			spec jsonb NOT NULL,
+			created_at timestamptz NOT NULL DEFAULT now(),
+			updated_at timestamptz NOT NULL DEFAULT now()
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_construct_register_trait ON construct_register (trait)`,
+		`CREATE TABLE IF NOT EXISTS metric_norm (
+			signal_type text PRIMARY KEY,
+			spec jsonb NOT NULL,
+			created_at timestamptz NOT NULL DEFAULT now(),
+			updated_at timestamptz NOT NULL DEFAULT now(),
+			CONSTRAINT fk_metric_norm_signal_type FOREIGN KEY (signal_type) REFERENCES signal_type_registry(signal_type)
+		)`,
+		`CREATE TABLE IF NOT EXISTS reward_system (
+			id text PRIMARY KEY,
+			version text NOT NULL DEFAULT '0.1.0',
+			label text,
+			spec jsonb NOT NULL,
+			created_at timestamptz NOT NULL DEFAULT now(),
+			updated_at timestamptz NOT NULL DEFAULT now()
+		)`,
 	}
 
 	for _, statement := range statements {

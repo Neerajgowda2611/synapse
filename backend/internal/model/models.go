@@ -445,3 +445,55 @@ type SignalObservation struct {
 func (SignalObservation) TableName() string {
 	return "signal_observations"
 }
+
+type ConstructClaimRegistry struct {
+	ClaimID    string    `gorm:"primaryKey" json:"claim_id"`
+	Version    string    `gorm:"not null;default:1.0.0" json:"version"`
+	SignalType string    `gorm:"not null;index" json:"signal_type"`
+	Trait      string    `gorm:"not null;index" json:"trait"`
+	Spec       JSONB     `gorm:"type:jsonb;not null" json:"spec"`
+	CreatedAt  time.Time `gorm:"not null;default:now()" json:"created_at"`
+	UpdatedAt  time.Time `gorm:"not null;default:now()" json:"updated_at"`
+}
+
+func (ConstructClaimRegistry) TableName() string {
+	return "construct_claim_registry"
+}
+
+type ConstructRegister struct {
+	ConstructID string    `gorm:"primaryKey" json:"construct_id"`
+	Trait       string    `gorm:"not null;index" json:"trait"`
+	Family      string    `gorm:"not null" json:"family"`
+	Version     string    `gorm:"not null;default:0.1.0" json:"version"`
+	Spec        JSONB     `gorm:"type:jsonb;not null" json:"spec"`
+	CreatedAt   time.Time `gorm:"not null;default:now()" json:"created_at"`
+	UpdatedAt   time.Time `gorm:"not null;default:now()" json:"updated_at"`
+}
+
+func (ConstructRegister) TableName() string {
+	return "construct_register"
+}
+
+type MetricNorm struct {
+	SignalType string    `gorm:"primaryKey" json:"signal_type"`
+	Spec       JSONB     `gorm:"type:jsonb;not null" json:"spec"`
+	CreatedAt  time.Time `gorm:"not null;default:now()" json:"created_at"`
+	UpdatedAt  time.Time `gorm:"not null;default:now()" json:"updated_at"`
+}
+
+func (MetricNorm) TableName() string {
+	return "metric_norm"
+}
+
+type RewardSystem struct {
+	ID        string    `gorm:"primaryKey" json:"id"`
+	Version   string    `gorm:"not null;default:0.1.0" json:"version"`
+	Label     *string   `json:"label,omitempty"`
+	Spec      JSONB     `gorm:"type:jsonb;not null" json:"spec"`
+	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
+	UpdatedAt time.Time `gorm:"not null;default:now()" json:"updated_at"`
+}
+
+func (RewardSystem) TableName() string {
+	return "reward_system"
+}

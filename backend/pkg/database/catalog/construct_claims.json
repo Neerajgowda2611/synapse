@@ -1,0 +1,1408 @@
+[
+  {
+    "claim_id": "submission_lead_days->conscientiousness",
+    "version": "1.0.0",
+    "signal_type": "submission_lead_days",
+    "trait": "conscientiousness",
+    "spec": {
+      "claim_id": "submission_lead_days->conscientiousness",
+      "version": "1.0.0",
+      "signal_type": "submission_lead_days",
+      "trait": "conscientiousness",
+      "family": "conscientiousness_self_regulation",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": "submission_lead_days->conscientiousness",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
+        "dif_flags": [],
+        "gameability": "low"
+      }
+    }
+  },
+  {
+    "claim_id": "submission_regularity->conscientiousness",
+    "version": "1.0.0",
+    "signal_type": "submission_regularity",
+    "trait": "conscientiousness",
+    "spec": {
+      "claim_id": "submission_regularity->conscientiousness",
+      "version": "1.0.0",
+      "signal_type": "submission_regularity",
+      "trait": "conscientiousness",
+      "family": "conscientiousness_self_regulation",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": "submission_regularity->conscientiousness",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
+        "dif_flags": [],
+        "gameability": "low"
+      }
+    }
+  },
+  {
+    "claim_id": "cadence_compliance_rate->conscientiousness",
+    "version": "1.0.0",
+    "signal_type": "cadence_compliance_rate",
+    "trait": "conscientiousness",
+    "spec": {
+      "claim_id": "cadence_compliance_rate->conscientiousness",
+      "version": "1.0.0",
+      "signal_type": "cadence_compliance_rate",
+      "trait": "conscientiousness",
+      "family": "conscientiousness_self_regulation",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": "cadence_compliance_rate->conscientiousness",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
+        "dif_flags": [],
+        "gameability": "low"
+      }
+    }
+  },
+  {
+    "claim_id": "mean_quiz_score->cognitive_ability",
+    "version": "1.0.0",
+    "signal_type": "mean_quiz_score",
+    "trait": "cognitive_ability",
+    "spec": {
+      "claim_id": "mean_quiz_score->cognitive_ability",
+      "version": "1.0.0",
+      "signal_type": "mean_quiz_score",
+      "trait": "cognitive_ability",
+      "family": "cognitive",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": "mean_quiz_score->cognitive_ability",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
+        "dif_flags": [],
+        "gameability": "low"
+      }
+    }
+  },
+  {
+    "claim_id": "quiz_score_vs_baseline->cognitive_ability",
+    "version": "1.0.0",
+    "signal_type": "quiz_score_vs_baseline",
+    "trait": "cognitive_ability",
+    "spec": {
+      "claim_id": "quiz_score_vs_baseline->cognitive_ability",
+      "version": "1.0.0",
+      "signal_type": "quiz_score_vs_baseline",
+      "trait": "cognitive_ability",
+      "family": "cognitive",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": "quiz_score_vs_baseline->cognitive_ability",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
+        "dif_flags": [],
+        "gameability": "low"
+      }
+    }
+  },
+  {
+    "claim_id": "quiz_score_trend->learning_velocity",
+    "version": "1.0.0",
+    "signal_type": "quiz_score_trend",
+    "trait": "learning_velocity",
+    "spec": {
+      "claim_id": "quiz_score_trend->learning_velocity",
+      "version": "1.0.0",
+      "signal_type": "quiz_score_trend",
+      "trait": "learning_velocity",
+      "family": "cognitive",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": "quiz_score_trend->learning_velocity",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
+        "dif_flags": [],
+        "gameability": "low"
+      }
+    }
+  },
+  {
+    "claim_id": "leadtime_trend->learning_velocity",
+    "version": "1.0.0",
+    "signal_type": "leadtime_trend",
+    "trait": "learning_velocity",
+    "spec": {
+      "claim_id": "leadtime_trend->learning_velocity",
+      "version": "1.0.0",
+      "signal_type": "leadtime_trend",
+      "trait": "learning_velocity",
+      "family": "cognitive",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": "leadtime_trend->learning_velocity",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
+        "dif_flags": [],
+        "gameability": "low"
+      }
+    }
+  },
+  {
+    "claim_id": "quiz_recovery_trend->resilience",
+    "version": "1.0.0",
+    "signal_type": "quiz_recovery_trend",
+    "trait": "resilience",
+    "spec": {
+      "claim_id": "quiz_recovery_trend->resilience",
+      "version": "1.0.0",
+      "signal_type": "quiz_recovery_trend",
+      "trait": "resilience",
+      "family": "intrapersonal_motivational",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": "quiz_recovery_trend->resilience",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
+        "dif_flags": [],
+        "gameability": "low"
+      }
+    }
+  },
+  {
+    "claim_id": "task_completion_rate->resilience",
+    "version": "1.0.0",
+    "signal_type": "task_completion_rate",
+    "trait": "resilience",
+    "spec": {
+      "claim_id": "task_completion_rate->resilience",
+      "version": "1.0.0",
+      "signal_type": "task_completion_rate",
+      "trait": "resilience",
+      "family": "intrapersonal_motivational",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": "task_completion_rate->resilience",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
+        "dif_flags": [],
+        "gameability": "low"
+      }
+    }
+  },
+  {
+    "claim_id": "self_claim_rate->agency",
+    "version": "1.0.0",
+    "signal_type": "self_claim_rate",
+    "trait": "agency",
+    "spec": {
+      "claim_id": "self_claim_rate->agency",
+      "version": "1.0.0",
+      "signal_type": "self_claim_rate",
+      "trait": "agency",
+      "family": "intrapersonal_motivational",
+      "direction": "positive",
+      "pole": "agency",
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": "self_claim_rate->agency",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
+        "dif_flags": [],
+        "gameability": "low"
+      }
+    }
+  },
+  {
+    "claim_id": "milestone_definition_rate->agency",
+    "version": "1.0.0",
+    "signal_type": "milestone_definition_rate",
+    "trait": "agency",
+    "spec": {
+      "claim_id": "milestone_definition_rate->agency",
+      "version": "1.0.0",
+      "signal_type": "milestone_definition_rate",
+      "trait": "agency",
+      "family": "intrapersonal_motivational",
+      "direction": "positive",
+      "pole": "agency",
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": "milestone_definition_rate->agency",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
+        "dif_flags": [],
+        "gameability": "low"
+      }
+    }
+  },
+  {
+    "claim_id": "application_rate->risk_appetite",
+    "version": "1.0.0",
+    "signal_type": "application_rate",
+    "trait": "risk_appetite",
+    "spec": {
+      "claim_id": "application_rate->risk_appetite",
+      "version": "1.0.0",
+      "signal_type": "application_rate",
+      "trait": "risk_appetite",
+      "family": "intrapersonal_motivational",
+      "direction": "positive",
+      "pole": "risk",
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": "application_rate->risk_appetite",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
+        "dif_flags": [],
+        "gameability": "low"
+      }
+    }
+  },
+  {
+    "claim_id": "stretch_milestone_rate->risk_appetite",
+    "version": "1.0.0",
+    "signal_type": "stretch_milestone_rate",
+    "trait": "risk_appetite",
+    "spec": {
+      "claim_id": "stretch_milestone_rate->risk_appetite",
+      "version": "1.0.0",
+      "signal_type": "stretch_milestone_rate",
+      "trait": "risk_appetite",
+      "family": "intrapersonal_motivational",
+      "direction": "positive",
+      "pole": "risk",
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": "stretch_milestone_rate->risk_appetite",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
+        "dif_flags": [],
+        "gameability": "low"
+      }
+    }
+  },
+  {
+    "claim_id": "project_add_rate->creativity",
+    "version": "1.0.0",
+    "signal_type": "project_add_rate",
+    "trait": "creativity",
+    "spec": {
+      "claim_id": "project_add_rate->creativity",
+      "version": "1.0.0",
+      "signal_type": "project_add_rate",
+      "trait": "creativity",
+      "family": "creative_openness",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": "project_add_rate->creativity",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
+        "dif_flags": [],
+        "gameability": "low"
+      }
+    }
+  },
+  {
+    "claim_id": "experience_add_rate->creativity",
+    "version": "1.0.0",
+    "signal_type": "experience_add_rate",
+    "trait": "creativity",
+    "spec": {
+      "claim_id": "experience_add_rate->creativity",
+      "version": "1.0.0",
+      "signal_type": "experience_add_rate",
+      "trait": "creativity",
+      "family": "creative_openness",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": "experience_add_rate->creativity",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
+        "dif_flags": [],
+        "gameability": "low"
+      }
+    }
+  },
+  {
+    "claim_id": "message_rate->communication",
+    "version": "1.0.0",
+    "signal_type": "message_rate",
+    "trait": "communication",
+    "spec": {
+      "claim_id": "message_rate->communication",
+      "version": "1.0.0",
+      "signal_type": "message_rate",
+      "trait": "communication",
+      "family": "interpersonal_social",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": "message_rate->communication",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
+        "dif_flags": [],
+        "gameability": "low"
+      }
+    }
+  },
+  {
+    "claim_id": "comment_rate->communication",
+    "version": "1.0.0",
+    "signal_type": "comment_rate",
+    "trait": "communication",
+    "spec": {
+      "claim_id": "comment_rate->communication",
+      "version": "1.0.0",
+      "signal_type": "comment_rate",
+      "trait": "communication",
+      "family": "interpersonal_social",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": "comment_rate->communication",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
+        "dif_flags": [],
+        "gameability": "low"
+      }
+    }
+  },
+  {
+    "claim_id": "session_attendance_rate->collaboration",
+    "version": "1.0.0",
+    "signal_type": "session_attendance_rate",
+    "trait": "collaboration",
+    "spec": {
+      "claim_id": "session_attendance_rate->collaboration",
+      "version": "1.0.0",
+      "signal_type": "session_attendance_rate",
+      "trait": "collaboration",
+      "family": "interpersonal_social",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": "session_attendance_rate->collaboration",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
+        "dif_flags": [],
+        "gameability": "low"
+      }
+    }
+  },
+  {
+    "claim_id": "co_activity_rate->collaboration",
+    "version": "1.0.0",
+    "signal_type": "co_activity_rate",
+    "trait": "collaboration",
+    "spec": {
+      "claim_id": "co_activity_rate->collaboration",
+      "version": "1.0.0",
+      "signal_type": "co_activity_rate",
+      "trait": "collaboration",
+      "family": "interpersonal_social",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": "co_activity_rate->collaboration",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
+        "dif_flags": [],
+        "gameability": "low"
+      }
+    }
+  },
+  {
+    "claim_id": "help_seeking_latency->help_seeking",
+    "version": "1.0.0",
+    "signal_type": "help_seeking_latency",
+    "trait": "help_seeking",
+    "spec": {
+      "claim_id": "help_seeking_latency->help_seeking",
+      "version": "1.0.0",
+      "signal_type": "help_seeking_latency",
+      "trait": "help_seeking",
+      "family": "intrapersonal_motivational",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": "help_seeking_latency->help_seeking",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
+        "dif_flags": [],
+        "gameability": "low"
+      }
+    }
+  },
+  {
+    "claim_id": "help_request_rate->help_seeking",
+    "version": "1.0.0",
+    "signal_type": "help_request_rate",
+    "trait": "help_seeking",
+    "spec": {
+      "claim_id": "help_request_rate->help_seeking",
+      "version": "1.0.0",
+      "signal_type": "help_request_rate",
+      "trait": "help_seeking",
+      "family": "intrapersonal_motivational",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": "help_request_rate->help_seeking",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
+        "dif_flags": [],
+        "gameability": "low"
+      }
+    }
+  },
+  {
+    "claim_id": "note_activity_rate->communication",
+    "version": "1.0.0",
+    "signal_type": "note_activity_rate",
+    "trait": "communication",
+    "spec": {
+      "claim_id": "note_activity_rate->communication",
+      "version": "1.0.0",
+      "signal_type": "note_activity_rate",
+      "trait": "communication",
+      "family": "interpersonal_social",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  },
+  {
+    "claim_id": "session_activity_rate->collaboration",
+    "version": "1.0.0",
+    "signal_type": "session_activity_rate",
+    "trait": "collaboration",
+    "spec": {
+      "claim_id": "session_activity_rate->collaboration",
+      "version": "1.0.0",
+      "signal_type": "session_activity_rate",
+      "trait": "collaboration",
+      "family": "interpersonal_social",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  },
+  {
+    "claim_id": "session_notes_rate->communication",
+    "version": "1.0.0",
+    "signal_type": "session_notes_rate",
+    "trait": "communication",
+    "spec": {
+      "claim_id": "session_notes_rate->communication",
+      "version": "1.0.0",
+      "signal_type": "session_notes_rate",
+      "trait": "communication",
+      "family": "interpersonal_social",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  },
+  {
+    "claim_id": "mentor_role_assignment_rate->collaboration",
+    "version": "1.0.0",
+    "signal_type": "mentor_role_assignment_rate",
+    "trait": "collaboration",
+    "spec": {
+      "claim_id": "mentor_role_assignment_rate->collaboration",
+      "version": "1.0.0",
+      "signal_type": "mentor_role_assignment_rate",
+      "trait": "collaboration",
+      "family": "interpersonal_social",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  },
+  {
+    "claim_id": "projex_task_activity_rate->conscientiousness",
+    "version": "1.0.0",
+    "signal_type": "projex_task_activity_rate",
+    "trait": "conscientiousness",
+    "spec": {
+      "claim_id": "projex_task_activity_rate->conscientiousness",
+      "version": "1.0.0",
+      "signal_type": "projex_task_activity_rate",
+      "trait": "conscientiousness",
+      "family": "conscientiousness_self_regulation",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  },
+  {
+    "claim_id": "projex_role_change_rate->collaboration",
+    "version": "1.0.0",
+    "signal_type": "projex_role_change_rate",
+    "trait": "collaboration",
+    "spec": {
+      "claim_id": "projex_role_change_rate->collaboration",
+      "version": "1.0.0",
+      "signal_type": "projex_role_change_rate",
+      "trait": "collaboration",
+      "family": "interpersonal_social",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  },
+  {
+    "claim_id": "contribution_snapshot_rate->collaboration",
+    "version": "1.0.0",
+    "signal_type": "contribution_snapshot_rate",
+    "trait": "collaboration",
+    "spec": {
+      "claim_id": "contribution_snapshot_rate->collaboration",
+      "version": "1.0.0",
+      "signal_type": "contribution_snapshot_rate",
+      "trait": "collaboration",
+      "family": "interpersonal_social",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  },
+  {
+    "claim_id": "contribution_tasks_completed->conscientiousness",
+    "version": "1.0.0",
+    "signal_type": "contribution_tasks_completed",
+    "trait": "conscientiousness",
+    "spec": {
+      "claim_id": "contribution_tasks_completed->conscientiousness",
+      "version": "1.0.0",
+      "signal_type": "contribution_tasks_completed",
+      "trait": "conscientiousness",
+      "family": "conscientiousness_self_regulation",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  },
+  {
+    "claim_id": "contribution_comments_posted->communication",
+    "version": "1.0.0",
+    "signal_type": "contribution_comments_posted",
+    "trait": "communication",
+    "spec": {
+      "claim_id": "contribution_comments_posted->communication",
+      "version": "1.0.0",
+      "signal_type": "contribution_comments_posted",
+      "trait": "communication",
+      "family": "interpersonal_social",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  },
+  {
+    "claim_id": "milestone_submission_lead_days->conscientiousness",
+    "version": "1.0.0",
+    "signal_type": "milestone_submission_lead_days",
+    "trait": "conscientiousness",
+    "spec": {
+      "claim_id": "milestone_submission_lead_days->conscientiousness",
+      "version": "1.0.0",
+      "signal_type": "milestone_submission_lead_days",
+      "trait": "conscientiousness",
+      "family": "conscientiousness_self_regulation",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  },
+  {
+    "claim_id": "milestone_submission_rate->conscientiousness",
+    "version": "1.0.0",
+    "signal_type": "milestone_submission_rate",
+    "trait": "conscientiousness",
+    "spec": {
+      "claim_id": "milestone_submission_rate->conscientiousness",
+      "version": "1.0.0",
+      "signal_type": "milestone_submission_rate",
+      "trait": "conscientiousness",
+      "family": "conscientiousness_self_regulation",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  },
+  {
+    "claim_id": "projex_self_claim_rate->agency",
+    "version": "1.0.0",
+    "signal_type": "projex_self_claim_rate",
+    "trait": "agency",
+    "spec": {
+      "claim_id": "projex_self_claim_rate->agency",
+      "version": "1.0.0",
+      "signal_type": "projex_self_claim_rate",
+      "trait": "agency",
+      "family": "intrapersonal_motivational",
+      "direction": "positive",
+      "pole": "agency",
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  },
+  {
+    "claim_id": "profile_update_rate->agency",
+    "version": "1.0.0",
+    "signal_type": "profile_update_rate",
+    "trait": "agency",
+    "spec": {
+      "claim_id": "profile_update_rate->agency",
+      "version": "1.0.0",
+      "signal_type": "profile_update_rate",
+      "trait": "agency",
+      "family": "intrapersonal_motivational",
+      "direction": "positive",
+      "pole": "agency",
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  },
+  {
+    "claim_id": "profile_completeness_snapshot->conscientiousness",
+    "version": "1.0.0",
+    "signal_type": "profile_completeness_snapshot",
+    "trait": "conscientiousness",
+    "spec": {
+      "claim_id": "profile_completeness_snapshot->conscientiousness",
+      "version": "1.0.0",
+      "signal_type": "profile_completeness_snapshot",
+      "trait": "conscientiousness",
+      "family": "conscientiousness_self_regulation",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  },
+  {
+    "claim_id": "profile_completeness_trend->conscientiousness",
+    "version": "1.0.0",
+    "signal_type": "profile_completeness_trend",
+    "trait": "conscientiousness",
+    "spec": {
+      "claim_id": "profile_completeness_trend->conscientiousness",
+      "version": "1.0.0",
+      "signal_type": "profile_completeness_trend",
+      "trait": "conscientiousness",
+      "family": "conscientiousness_self_regulation",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  },
+  {
+    "claim_id": "certificate_add_rate->creativity",
+    "version": "1.0.0",
+    "signal_type": "certificate_add_rate",
+    "trait": "creativity",
+    "spec": {
+      "claim_id": "certificate_add_rate->creativity",
+      "version": "1.0.0",
+      "signal_type": "certificate_add_rate",
+      "trait": "creativity",
+      "family": "creative_openness",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  },
+  {
+    "claim_id": "interview_schedule_rate->risk_appetite",
+    "version": "1.0.0",
+    "signal_type": "interview_schedule_rate",
+    "trait": "risk_appetite",
+    "spec": {
+      "claim_id": "interview_schedule_rate->risk_appetite",
+      "version": "1.0.0",
+      "signal_type": "interview_schedule_rate",
+      "trait": "risk_appetite",
+      "family": "intrapersonal_motivational",
+      "direction": "positive",
+      "pole": "risk",
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  },
+  {
+    "claim_id": "offer_received_rate->risk_appetite",
+    "version": "1.0.0",
+    "signal_type": "offer_received_rate",
+    "trait": "risk_appetite",
+    "spec": {
+      "claim_id": "offer_received_rate->risk_appetite",
+      "version": "1.0.0",
+      "signal_type": "offer_received_rate",
+      "trait": "risk_appetite",
+      "family": "intrapersonal_motivational",
+      "direction": "positive",
+      "pole": "risk",
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  },
+  {
+    "claim_id": "recruiter_response_rate->communication",
+    "version": "1.0.0",
+    "signal_type": "recruiter_response_rate",
+    "trait": "communication",
+    "spec": {
+      "claim_id": "recruiter_response_rate->communication",
+      "version": "1.0.0",
+      "signal_type": "recruiter_response_rate",
+      "trait": "communication",
+      "family": "interpersonal_social",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  },
+  {
+    "claim_id": "skill_declaration_rate->creativity",
+    "version": "1.0.0",
+    "signal_type": "skill_declaration_rate",
+    "trait": "creativity",
+    "spec": {
+      "claim_id": "skill_declaration_rate->creativity",
+      "version": "1.0.0",
+      "signal_type": "skill_declaration_rate",
+      "trait": "creativity",
+      "family": "creative_openness",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  },
+  {
+    "claim_id": "job_view_rate->risk_appetite",
+    "version": "1.0.0",
+    "signal_type": "job_view_rate",
+    "trait": "risk_appetite",
+    "spec": {
+      "claim_id": "job_view_rate->risk_appetite",
+      "version": "1.0.0",
+      "signal_type": "job_view_rate",
+      "trait": "risk_appetite",
+      "family": "intrapersonal_motivational",
+      "direction": "positive",
+      "pole": "risk",
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  },
+  {
+    "claim_id": "job_save_rate->risk_appetite",
+    "version": "1.0.0",
+    "signal_type": "job_save_rate",
+    "trait": "risk_appetite",
+    "spec": {
+      "claim_id": "job_save_rate->risk_appetite",
+      "version": "1.0.0",
+      "signal_type": "job_save_rate",
+      "trait": "risk_appetite",
+      "family": "intrapersonal_motivational",
+      "direction": "positive",
+      "pole": "risk",
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  },
+  {
+    "claim_id": "skill_endorsement_rate->collaboration",
+    "version": "1.0.0",
+    "signal_type": "skill_endorsement_rate",
+    "trait": "collaboration",
+    "spec": {
+      "claim_id": "skill_endorsement_rate->collaboration",
+      "version": "1.0.0",
+      "signal_type": "skill_endorsement_rate",
+      "trait": "collaboration",
+      "family": "interpersonal_social",
+      "direction": "positive",
+      "pole": null,
+      "scope": [
+        "higher_ed"
+      ],
+      "source": "expert",
+      "authored_by": "profiling-core",
+      "evidence": {
+        "criterion": null,
+        "n": 0,
+        "convergent_r": null,
+        "discriminant_max_r": null,
+        "invariance_level": null,
+        "invariance_scope": [],
+        "dif_checked": false,
+        "dif_flags": [],
+        "gameability": "unknown"
+      }
+    }
+  }
+]

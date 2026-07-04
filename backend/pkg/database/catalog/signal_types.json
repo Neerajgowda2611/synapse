@@ -1,299 +1,1544 @@
 [
   {
-    "signal_type": "message_rate",
+    "signal_type": "submission_lead_days",
     "version": "1.0.0",
     "spec": {
-      "name": "Message rate",
-      "shape": "trend",
-      "polarity": "positive"
+      "signal_type": "submission_lead_days",
+      "name": "Submission lead time (days)",
+      "description": "Signed gap between submission and deadline; positive = early.",
+      "shape": "point_event",
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "conscientiousness",
+          "family": "conscientiousness_self_regulation",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "assignment_submission"
+      ],
+      "source_apps": [
+        "lms",
+        "project_management"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "submission_lead_days",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
-    "signal_type": "note_activity_rate",
+    "signal_type": "submission_regularity",
     "version": "1.0.0",
     "spec": {
-      "name": "Mentorship note activity rate",
+      "signal_type": "submission_regularity",
+      "name": "Consistent submission lead time",
+      "description": "Low variance in lead-time across the term.",
       "shape": "trend",
-      "polarity": "positive"
-    }
-  },
-  {
-    "signal_type": "task_completion_rate",
-    "version": "1.0.0",
-    "spec": {
-      "name": "Mentorship task completion rate",
-      "shape": "trend",
-      "polarity": "positive"
-    }
-  },
-  {
-    "signal_type": "session_activity_rate",
-    "version": "1.0.0",
-    "spec": {
-      "name": "Mentorship session activity rate",
-      "shape": "trend",
-      "polarity": "positive"
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "conscientiousness",
+          "family": "conscientiousness_self_regulation",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "assignment_submission"
+      ],
+      "source_apps": [
+        "lms"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "submission_regularity",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
     "signal_type": "cadence_compliance_rate",
     "version": "1.0.0",
     "spec": {
-      "name": "Cadence compliance rate",
+      "signal_type": "cadence_compliance_rate",
+      "name": "Mentorship cadence compliance",
+      "description": "Share of mentorship cadence reports marked compliant.",
       "shape": "trend",
-      "polarity": "positive"
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "conscientiousness",
+          "family": "conscientiousness_self_regulation",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "mentorship_session_cadence"
+      ],
+      "source_apps": [
+        "mentorship"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "cadence_compliance_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
-    "signal_type": "mentor_role_assignment_rate",
+    "signal_type": "mean_quiz_score",
     "version": "1.0.0",
     "spec": {
-      "name": "Mentor role assignment rate",
+      "signal_type": "mean_quiz_score",
+      "name": "Mean quiz score",
+      "description": "Average quiz score over window.",
       "shape": "trend",
-      "polarity": "positive"
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "cognitive_ability",
+          "family": "cognitive",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "quiz_result"
+      ],
+      "source_apps": [
+        "lms"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "mean_quiz_score",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
-    "signal_type": "comment_rate",
+    "signal_type": "quiz_score_vs_baseline",
     "version": "1.0.0",
     "spec": {
-      "name": "Projex comment rate",
+      "signal_type": "quiz_score_vs_baseline",
+      "name": "Quiz score vs baseline",
+      "description": "Z-score of mean quiz score vs cohort baseline.",
+      "shape": "comparative",
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "cognitive_ability",
+          "family": "cognitive",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "quiz_result"
+      ],
+      "source_apps": [
+        "lms"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "quiz_score_vs_baseline",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
+    }
+  },
+  {
+    "signal_type": "quiz_score_trend",
+    "version": "1.0.0",
+    "spec": {
+      "signal_type": "quiz_score_trend",
+      "name": "Quiz score trend",
+      "description": "Slope of quiz scores over time.",
       "shape": "trend",
-      "polarity": "positive"
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "learning_velocity",
+          "family": "cognitive",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "quiz_result"
+      ],
+      "source_apps": [
+        "lms"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "quiz_score_trend",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
+    }
+  },
+  {
+    "signal_type": "leadtime_trend",
+    "version": "1.0.0",
+    "spec": {
+      "signal_type": "leadtime_trend",
+      "name": "Lead time trend",
+      "description": "Slope of submission lead time over the term.",
+      "shape": "trend",
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "learning_velocity",
+          "family": "cognitive",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "assignment_submission"
+      ],
+      "source_apps": [
+        "lms"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "leadtime_trend",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
+    }
+  },
+  {
+    "signal_type": "quiz_recovery_trend",
+    "version": "1.0.0",
+    "spec": {
+      "signal_type": "quiz_recovery_trend",
+      "name": "Quiz recovery trend",
+      "description": "Positive slope in quiz scores after an early dip.",
+      "shape": "trend",
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "resilience",
+          "family": "intrapersonal_motivational",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "quiz_result"
+      ],
+      "source_apps": [
+        "lms"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "quiz_recovery_trend",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
+    }
+  },
+  {
+    "signal_type": "task_completion_rate",
+    "version": "1.0.0",
+    "spec": {
+      "signal_type": "task_completion_rate",
+      "name": "Mentorship task completion rate",
+      "description": "Completed mentorship tasks per week.",
+      "shape": "trend",
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "resilience",
+          "family": "intrapersonal_motivational",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "mentorship_task_event"
+      ],
+      "source_apps": [
+        "mentorship"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "task_completion_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
+    }
+  },
+  {
+    "signal_type": "self_claim_rate",
+    "version": "1.0.0",
+    "spec": {
+      "signal_type": "self_claim_rate",
+      "name": "Self-claim rate",
+      "description": "Rate of self-initiated task claims.",
+      "shape": "trend",
+      "polarity": "bipolar",
+      "construct_links": [
+        {
+          "trait": "agency",
+          "family": "intrapersonal_motivational",
+          "direction": "positive",
+          "pole": "agency",
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "task_self_claimed"
+      ],
+      "source_apps": [
+        "project_management"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "self_claim_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
     "signal_type": "milestone_definition_rate",
     "version": "1.0.0",
     "spec": {
-      "name": "Projex milestone definition rate",
+      "signal_type": "milestone_definition_rate",
+      "name": "Self-defined milestone rate",
+      "description": "Rate of user-defined project milestones.",
       "shape": "trend",
-      "polarity": "positive"
-    }
-  },
-  {
-    "signal_type": "projex_task_activity_rate",
-    "version": "1.0.0",
-    "spec": {
-      "name": "Projex task activity rate",
-      "shape": "trend",
-      "polarity": "positive"
-    }
-  },
-  {
-    "signal_type": "projex_role_change_rate",
-    "version": "1.0.0",
-    "spec": {
-      "name": "Projex role change rate",
-      "shape": "trend",
-      "polarity": "positive"
-    }
-  },
-  {
-    "signal_type": "contribution_snapshot_rate",
-    "version": "1.0.0",
-    "spec": {
-      "name": "Contribution snapshot rate",
-      "shape": "trend",
-      "polarity": "positive"
-    }
-  },
-  {
-    "signal_type": "contribution_tasks_completed",
-    "version": "1.0.0",
-    "spec": {
-      "name": "Contribution tasks completed",
-      "shape": "point_event",
-      "polarity": "positive"
-    }
-  },
-  {
-    "signal_type": "contribution_comments_posted",
-    "version": "1.0.0",
-    "spec": {
-      "name": "Contribution comments posted",
-      "shape": "point_event",
-      "polarity": "positive"
+      "polarity": "bipolar",
+      "construct_links": [
+        {
+          "trait": "agency",
+          "family": "intrapersonal_motivational",
+          "direction": "positive",
+          "pole": "agency",
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "projex_milestone_defined"
+      ],
+      "source_apps": [
+        "project_management"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "milestone_definition_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
     "signal_type": "application_rate",
     "version": "1.0.0",
     "spec": {
-      "name": "Placement application rate",
+      "signal_type": "application_rate",
+      "name": "Job application rate",
+      "description": "Placement applications submitted per week.",
       "shape": "trend",
-      "polarity": "positive"
+      "polarity": "bipolar",
+      "construct_links": [
+        {
+          "trait": "risk_appetite",
+          "family": "intrapersonal_motivational",
+          "direction": "positive",
+          "pole": "risk",
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "placement_application_submitted"
+      ],
+      "source_apps": [
+        "job_board"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "application_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
-    "signal_type": "experience_add_rate",
+    "signal_type": "stretch_milestone_rate",
     "version": "1.0.0",
     "spec": {
-      "name": "Experience add rate",
+      "signal_type": "stretch_milestone_rate",
+      "name": "Stretch milestone rate",
+      "description": "Rate of ambitious milestone definitions.",
       "shape": "trend",
-      "polarity": "positive"
+      "polarity": "bipolar",
+      "construct_links": [
+        {
+          "trait": "risk_appetite",
+          "family": "intrapersonal_motivational",
+          "direction": "positive",
+          "pole": "risk",
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "projex_milestone_defined"
+      ],
+      "source_apps": [
+        "project_management"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "stretch_milestone_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
     "signal_type": "project_add_rate",
     "version": "1.0.0",
     "spec": {
-      "name": "Project add rate",
+      "signal_type": "project_add_rate",
+      "name": "Portfolio project add rate",
+      "description": "Rate of new projects added to placement profile.",
       "shape": "trend",
-      "polarity": "positive"
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "creativity",
+          "family": "creative_openness",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "placement_project_added"
+      ],
+      "source_apps": [
+        "job_board"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "project_add_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
-    "signal_type": "profile_update_rate",
+    "signal_type": "experience_add_rate",
     "version": "1.0.0",
     "spec": {
-      "name": "Profile update rate",
+      "signal_type": "experience_add_rate",
+      "name": "Experience add rate",
+      "description": "Rate of diverse experiences added to profile.",
       "shape": "trend",
-      "polarity": "positive"
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "creativity",
+          "family": "creative_openness",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "placement_experience_added"
+      ],
+      "source_apps": [
+        "job_board"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "experience_add_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
-    "signal_type": "certificate_add_rate",
+    "signal_type": "message_rate",
     "version": "1.0.0",
     "spec": {
-      "name": "Certificate add rate",
+      "signal_type": "message_rate",
+      "name": "Mentorship message rate",
+      "description": "Mentorship messages sent per week.",
       "shape": "trend",
-      "polarity": "positive"
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "communication",
+          "family": "interpersonal_social",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "mentorship_message_event"
+      ],
+      "source_apps": [
+        "mentorship"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "message_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
-    "signal_type": "interview_schedule_rate",
+    "signal_type": "comment_rate",
     "version": "1.0.0",
     "spec": {
-      "name": "Interview schedule rate",
+      "signal_type": "comment_rate",
+      "name": "Project comment rate",
+      "description": "Projex comments posted per week.",
       "shape": "trend",
-      "polarity": "positive"
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "communication",
+          "family": "interpersonal_social",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "projex_comment_posted"
+      ],
+      "source_apps": [
+        "project_management"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "comment_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
-    "signal_type": "offer_received_rate",
+    "signal_type": "session_attendance_rate",
     "version": "1.0.0",
     "spec": {
-      "name": "Offer received rate",
+      "signal_type": "session_attendance_rate",
+      "name": "Mentorship session attendance rate",
+      "description": "Attended/completed sessions per month.",
       "shape": "trend",
-      "polarity": "positive"
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "collaboration",
+          "family": "interpersonal_social",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "mentorship_session_lifecycle"
+      ],
+      "source_apps": [
+        "mentorship"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "session_attendance_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
-    "signal_type": "recruiter_response_rate",
+    "signal_type": "co_activity_rate",
     "version": "1.0.0",
     "spec": {
-      "name": "Recruiter response rate",
+      "signal_type": "co_activity_rate",
+      "name": "Co-activity rate",
+      "description": "Combined mentorship tasks and session events per week.",
       "shape": "trend",
-      "polarity": "positive"
-    }
-  },
-  {
-    "signal_type": "skill_declaration_rate",
-    "version": "1.0.0",
-    "spec": {
-      "name": "Skill declaration rate",
-      "shape": "trend",
-      "polarity": "positive"
-    }
-  },
-  {
-    "signal_type": "session_notes_rate",
-    "version": "1.0.0",
-    "spec": {
-      "name": "Session notes rate",
-      "shape": "trend",
-      "polarity": "positive"
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "collaboration",
+          "family": "interpersonal_social",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "mentorship_task_event",
+        "mentorship_session_lifecycle"
+      ],
+      "source_apps": [
+        "mentorship"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "co_activity_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
     "signal_type": "help_seeking_latency",
     "version": "1.0.0",
     "spec": {
+      "signal_type": "help_seeking_latency",
       "name": "Help-seeking latency",
+      "description": "Days from struggle signal to mentorship booking.",
       "shape": "point_event",
-      "polarity": "positive"
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "help_seeking",
+          "family": "intrapersonal_motivational",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "mentorship_help_request"
+      ],
+      "source_apps": [
+        "mentorship"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "help_seeking_latency",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
     "signal_type": "help_request_rate",
     "version": "1.0.0",
     "spec": {
+      "signal_type": "help_request_rate",
       "name": "Help request rate",
+      "description": "Mentorship help requests per month.",
       "shape": "trend",
-      "polarity": "positive"
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "help_seeking",
+          "family": "intrapersonal_motivational",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "mentorship_help_request"
+      ],
+      "source_apps": [
+        "mentorship"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "help_request_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
+    }
+  },
+  {
+    "signal_type": "note_activity_rate",
+    "version": "1.0.0",
+    "spec": {
+      "signal_type": "note_activity_rate",
+      "name": "Mentorship note activity rate",
+      "description": "Mentorship notes created or updated per week.",
+      "shape": "trend",
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "communication",
+          "family": "interpersonal_social",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "mentorship_note_event"
+      ],
+      "source_apps": [
+        "mentorship"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "note_activity_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
+    }
+  },
+  {
+    "signal_type": "session_activity_rate",
+    "version": "1.0.0",
+    "spec": {
+      "signal_type": "session_activity_rate",
+      "name": "Mentorship session activity rate",
+      "description": "Mentorship session lifecycle events per week.",
+      "shape": "trend",
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "collaboration",
+          "family": "interpersonal_social",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "mentorship_session_lifecycle"
+      ],
+      "source_apps": [
+        "mentorship"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "session_activity_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
+    }
+  },
+  {
+    "signal_type": "session_notes_rate",
+    "version": "1.0.0",
+    "spec": {
+      "signal_type": "session_notes_rate",
+      "name": "Session notes rate",
+      "description": "Mentor session notes posted per week.",
+      "shape": "trend",
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "communication",
+          "family": "interpersonal_social",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "mentorship_session_notes_posted"
+      ],
+      "source_apps": [
+        "mentorship"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "session_notes_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
+    }
+  },
+  {
+    "signal_type": "mentor_role_assignment_rate",
+    "version": "1.0.0",
+    "spec": {
+      "signal_type": "mentor_role_assignment_rate",
+      "name": "Mentor role assignment rate",
+      "description": "Rate of mentor role assignments.",
+      "shape": "trend",
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "collaboration",
+          "family": "interpersonal_social",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "mentor_role_assigned"
+      ],
+      "source_apps": [
+        "mentorship"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "mentor_role_assignment_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
+    }
+  },
+  {
+    "signal_type": "projex_task_activity_rate",
+    "version": "1.0.0",
+    "spec": {
+      "signal_type": "projex_task_activity_rate",
+      "name": "Projex task activity rate",
+      "description": "Projex task lifecycle events per week.",
+      "shape": "trend",
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "conscientiousness",
+          "family": "conscientiousness_self_regulation",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "projex_task_event"
+      ],
+      "source_apps": [
+        "project_management"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "projex_task_activity_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
+    }
+  },
+  {
+    "signal_type": "projex_role_change_rate",
+    "version": "1.0.0",
+    "spec": {
+      "signal_type": "projex_role_change_rate",
+      "name": "Projex role change rate",
+      "description": "Projex project role changes per week.",
+      "shape": "trend",
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "collaboration",
+          "family": "interpersonal_social",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "projex_role_assigned"
+      ],
+      "source_apps": [
+        "project_management"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "projex_role_change_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
+    }
+  },
+  {
+    "signal_type": "contribution_snapshot_rate",
+    "version": "1.0.0",
+    "spec": {
+      "signal_type": "contribution_snapshot_rate",
+      "name": "Contribution snapshot rate",
+      "description": "Periodic contribution snapshots per week.",
+      "shape": "trend",
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "collaboration",
+          "family": "interpersonal_social",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "projex_contribution_counted"
+      ],
+      "source_apps": [
+        "project_management"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "contribution_snapshot_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
+    }
+  },
+  {
+    "signal_type": "contribution_tasks_completed",
+    "version": "1.0.0",
+    "spec": {
+      "signal_type": "contribution_tasks_completed",
+      "name": "Contribution tasks completed",
+      "description": "Tasks completed in contribution snapshot.",
+      "shape": "point_event",
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "conscientiousness",
+          "family": "conscientiousness_self_regulation",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "projex_contribution_counted"
+      ],
+      "source_apps": [
+        "project_management"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "contribution_tasks_completed",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
+    }
+  },
+  {
+    "signal_type": "contribution_comments_posted",
+    "version": "1.0.0",
+    "spec": {
+      "signal_type": "contribution_comments_posted",
+      "name": "Contribution comments posted",
+      "description": "Comments posted in contribution snapshot.",
+      "shape": "point_event",
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "communication",
+          "family": "interpersonal_social",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "projex_contribution_counted"
+      ],
+      "source_apps": [
+        "project_management"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "contribution_comments_posted",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
     "signal_type": "milestone_submission_lead_days",
     "version": "1.0.0",
     "spec": {
+      "signal_type": "milestone_submission_lead_days",
       "name": "Milestone submission lead time",
+      "description": "Signed gap between milestone submission and due date.",
       "shape": "point_event",
-      "polarity": "positive"
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "conscientiousness",
+          "family": "conscientiousness_self_regulation",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "projex_milestone_submitted"
+      ],
+      "source_apps": [
+        "project_management"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "milestone_submission_lead_days",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
     "signal_type": "milestone_submission_rate",
     "version": "1.0.0",
     "spec": {
+      "signal_type": "milestone_submission_rate",
       "name": "Milestone submission rate",
+      "description": "Milestone submissions per week.",
       "shape": "trend",
-      "polarity": "positive"
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "conscientiousness",
+          "family": "conscientiousness_self_regulation",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "projex_milestone_submitted"
+      ],
+      "source_apps": [
+        "project_management"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "milestone_submission_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
     "signal_type": "projex_self_claim_rate",
     "version": "1.0.0",
     "spec": {
+      "signal_type": "projex_self_claim_rate",
       "name": "Projex self-claim rate",
+      "description": "Rate of self-initiated task claims in Projex.",
       "shape": "trend",
-      "polarity": "bipolar"
+      "polarity": "bipolar",
+      "construct_links": [
+        {
+          "trait": "agency",
+          "family": "intrapersonal_motivational",
+          "direction": "positive",
+          "pole": "agency",
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "projex_task_self_claimed"
+      ],
+      "source_apps": [
+        "project_management"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "projex_self_claim_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
+    }
+  },
+  {
+    "signal_type": "profile_update_rate",
+    "version": "1.0.0",
+    "spec": {
+      "signal_type": "profile_update_rate",
+      "name": "Profile update rate",
+      "description": "Placement profile field updates per week.",
+      "shape": "trend",
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "agency",
+          "family": "intrapersonal_motivational",
+          "direction": "positive",
+          "pole": "agency",
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "placement_profile_field_updated"
+      ],
+      "source_apps": [
+        "job_board"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "profile_update_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
     "signal_type": "profile_completeness_snapshot",
     "version": "1.0.0",
     "spec": {
+      "signal_type": "profile_completeness_snapshot",
       "name": "Profile completeness snapshot",
+      "description": "Latest profile completeness percentage.",
       "shape": "point_event",
-      "polarity": "positive"
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "conscientiousness",
+          "family": "conscientiousness_self_regulation",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "placement_profile_completeness_updated"
+      ],
+      "source_apps": [
+        "job_board"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "profile_completeness_snapshot",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
     "signal_type": "profile_completeness_trend",
     "version": "1.0.0",
     "spec": {
+      "signal_type": "profile_completeness_trend",
       "name": "Profile completeness trend",
+      "description": "Mean profile completeness over window.",
       "shape": "trend",
-      "polarity": "positive"
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "conscientiousness",
+          "family": "conscientiousness_self_regulation",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "placement_profile_completeness_updated"
+      ],
+      "source_apps": [
+        "job_board"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "profile_completeness_trend",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
+    }
+  },
+  {
+    "signal_type": "certificate_add_rate",
+    "version": "1.0.0",
+    "spec": {
+      "signal_type": "certificate_add_rate",
+      "name": "Certificate add rate",
+      "description": "Certificates added to placement profile per week.",
+      "shape": "trend",
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "creativity",
+          "family": "creative_openness",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "placement_certificate_added"
+      ],
+      "source_apps": [
+        "job_board"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "certificate_add_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
+    }
+  },
+  {
+    "signal_type": "interview_schedule_rate",
+    "version": "1.0.0",
+    "spec": {
+      "signal_type": "interview_schedule_rate",
+      "name": "Interview schedule rate",
+      "description": "Interviews scheduled per week.",
+      "shape": "trend",
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "risk_appetite",
+          "family": "intrapersonal_motivational",
+          "direction": "positive",
+          "pole": "risk",
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "placement_interview_scheduled"
+      ],
+      "source_apps": [
+        "job_board"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "interview_schedule_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
+    }
+  },
+  {
+    "signal_type": "offer_received_rate",
+    "version": "1.0.0",
+    "spec": {
+      "signal_type": "offer_received_rate",
+      "name": "Offer received rate",
+      "description": "Job offers received per week.",
+      "shape": "trend",
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "risk_appetite",
+          "family": "intrapersonal_motivational",
+          "direction": "positive",
+          "pole": "risk",
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "placement_offer_received"
+      ],
+      "source_apps": [
+        "job_board"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "offer_received_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
+    }
+  },
+  {
+    "signal_type": "recruiter_response_rate",
+    "version": "1.0.0",
+    "spec": {
+      "signal_type": "recruiter_response_rate",
+      "name": "Recruiter response rate",
+      "description": "Recruiter responses per week.",
+      "shape": "trend",
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "communication",
+          "family": "interpersonal_social",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "placement_application_recruiter_responded"
+      ],
+      "source_apps": [
+        "job_board"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "recruiter_response_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
+    }
+  },
+  {
+    "signal_type": "skill_declaration_rate",
+    "version": "1.0.0",
+    "spec": {
+      "signal_type": "skill_declaration_rate",
+      "name": "Skill declaration rate",
+      "description": "Skills declared on placement profile per week.",
+      "shape": "trend",
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "creativity",
+          "family": "creative_openness",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "placement_skill_declared"
+      ],
+      "source_apps": [
+        "job_board"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "skill_declaration_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
     "signal_type": "job_view_rate",
     "version": "1.0.0",
     "spec": {
+      "signal_type": "job_view_rate",
       "name": "Job view rate",
+      "description": "Job views per week.",
       "shape": "trend",
-      "polarity": "positive"
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "risk_appetite",
+          "family": "intrapersonal_motivational",
+          "direction": "positive",
+          "pole": "risk",
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "placement_job_viewed"
+      ],
+      "source_apps": [
+        "job_board"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "job_view_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
     "signal_type": "job_save_rate",
     "version": "1.0.0",
     "spec": {
+      "signal_type": "job_save_rate",
       "name": "Job save rate",
+      "description": "Jobs saved per week.",
       "shape": "trend",
-      "polarity": "positive"
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "risk_appetite",
+          "family": "intrapersonal_motivational",
+          "direction": "positive",
+          "pole": "risk",
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "placement_job_saved"
+      ],
+      "source_apps": [
+        "job_board"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "job_save_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   },
   {
     "signal_type": "skill_endorsement_rate",
     "version": "1.0.0",
     "spec": {
+      "signal_type": "skill_endorsement_rate",
       "name": "Skill endorsement rate",
+      "description": "Skill endorsements received per week.",
       "shape": "trend",
-      "polarity": "positive"
+      "polarity": "positive",
+      "construct_links": [
+        {
+          "trait": "collaboration",
+          "family": "interpersonal_social",
+          "direction": "positive",
+          "pole": null,
+          "note": null
+        }
+      ],
+      "competency_links": [],
+      "input_observation_types": [
+        "placement_skill_endorsed"
+      ],
+      "source_apps": [
+        "job_board"
+      ],
+      "inference_method": "rule",
+      "derivation": {
+        "rule_id": "skill_endorsement_rate",
+        "version": "1.0.0"
+      },
+      "validation_status": "candidate",
+      "context_sensitivity": null,
+      "author": "profiling-core"
     }
   }
 ]
