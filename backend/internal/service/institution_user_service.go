@@ -21,6 +21,7 @@ var (
 // the frontend keep working without changes.
 type InstitutionUserView struct {
 	ID            string    `json:"id"`
+	UserID        string    `json:"user_id"`
 	InstitutionID string    `json:"institution_id"`
 	Name          string    `json:"name"`
 	Email         string    `json:"email"`
@@ -78,7 +79,8 @@ func (s *InstitutionUserService) Create(ctx context.Context, input CreateInstitu
 	}
 
 	return &InstitutionUserView{
-		ID:            user.ID.String(),
+		ID:            ur.ID.String(),
+		UserID:        user.ID.String(),
 		InstitutionID: input.InstitutionID.String(),
 		Name:          user.Name,
 		Email:         user.Email,
@@ -103,7 +105,8 @@ func (s *InstitutionUserService) ListByInstitution(ctx context.Context, institut
 			instID = ur.InstitutionID.String()
 		}
 		views = append(views, InstitutionUserView{
-			ID:            ur.UserID.String(),
+			ID:            ur.ID.String(),
+			UserID:        ur.UserID.String(),
 			InstitutionID: instID,
 			Name:          ur.User.Name,
 			Email:         ur.User.Email,

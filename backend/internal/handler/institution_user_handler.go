@@ -70,8 +70,8 @@ func (h *InstitutionUserHandler) Create(c *gin.Context) {
 	}
 
 	// Assign the Casbin role so the user can immediately exercise permissions.
-	if err := authz.AssignRole(h.enforcer, user.ID, user.Role, institutionID.String()); err != nil {
-		logs.Error("failed to assign casbin role", "user_id", user.ID, "role", user.Role, "error", err)
+	if err := authz.AssignRole(h.enforcer, user.UserID, user.Role, institutionID.String()); err != nil {
+		logs.Error("failed to assign casbin role", "user_id", user.UserID, "role", user.Role, "error", err)
 		// Non-fatal: the user row was created; Casbin can be repaired separately.
 	}
 

@@ -140,9 +140,9 @@ func RemoveRole(e *casbin.Enforcer, userID, role, domain string) error {
 	return err
 }
 
-// SyncRolesFromDB reads every active row from user_roles and ensures a matching
-// Casbin G-rule exists. It is idempotent and should be called once at startup
-// so manually seeded or backfilled users are immediately authorised.
+// SyncRolesFromDB rebuilds Casbin G-rules from user_roles on startup.
+// It replaces all grouping policies so stale roles (e.g. after a role change in
+// SQL) cannot linger and cause authorization mismatches.
 func SyncRolesFromDB(db *gorm.DB, e *casbin.Enforcer) error {
 	var rows []struct {
 		UserID        string  `gorm:"column:user_id"`
@@ -156,6 +156,19 @@ func SyncRolesFromDB(db *gorm.DB, e *casbin.Enforcer) error {
 		WHERE status = 'active'
 	`).Scan(&rows).Error; err != nil {
 		return err
+	}
+
+	grouping, err := e.GetGroupingPolicy()
+	if err != nil {
+		return err
+	}
+	for _, rule := range grouping {
+		if len(rule) < 3 {
+			continue
+		}
+		if _, err := e.RemoveGroupingPolicy(rule[0], rule[1], rule[2]); err != nil {
+			return err
+		}
 	}
 
 	for _, r := range rows {

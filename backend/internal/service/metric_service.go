@@ -132,26 +132,22 @@ func (s *MetricService) ComputeJobFit(ctx context.Context, userID uuid.UUID, job
 
 	estimateRows, _, err := s.estimateRepo.LatestByUser(ctx, userID, asOf)
 	derived := false
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+	estimates, err := parseEstimateRows(estimateRows)
 	if err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, err
-		}
+		return nil, err
+	}
+	if len(estimates) == 0 {
 		_, estimates, ensureErr := s.EnsureUserTraits(ctx, userID, asOf, "metric:auto-ensure-user-traits")
 		if ensureErr != nil {
 			return nil, ensureErr
 		}
 		derived = true
-		estimateRows, _, err = s.estimateRepo.LatestByUser(ctx, userID, asOf)
-		if err != nil {
-			return nil, err
-		}
 		if len(estimates) == 0 {
 			return nil, fmt.Errorf("no construct estimates generated for user %s", userID.String())
 		}
-	}
-	estimates, err := parseEstimateRows(estimateRows)
-	if err != nil {
-		return nil, err
 	}
 	score, readings := metric.ScoreRewardSystem(rewardSystem, estimates, userID)
 

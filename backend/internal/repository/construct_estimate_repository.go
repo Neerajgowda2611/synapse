@@ -29,11 +29,17 @@ func (r *ConstructEstimateRepository) LatestByUser(ctx context.Context, userID u
 		RunID uuid.UUID
 	}
 	var rid runIDRow
+	// Only runs that persisted construct_estimates count — fit-score runs reuse
+	// metric_runs but do not write estimate rows and must not shadow trait runs.
 	if err := r.dbWithContext(ctx).
 		Table("metric_runs").
-		Select("id as run_id").
-		Where("user_id = ? AND as_of <= ?", userID, asOf).
-		Order("as_of DESC, created_at DESC").
+		Select("metric_runs.id as run_id").
+		Where("metric_runs.user_id = ? AND metric_runs.as_of <= ?", userID, asOf).
+		Where(`EXISTS (
+			SELECT 1 FROM construct_estimates ce
+			WHERE ce.run_id = metric_runs.id AND ce.user_id = ?
+		)`, userID).
+		Order("metric_runs.as_of DESC, metric_runs.created_at DESC").
 		Limit(1).
 		Scan(&rid).Error; err != nil {
 		return nil, nil, err
