@@ -408,6 +408,65 @@ func ensureConnectorTables(db *gorm.DB) error {
 			created_at timestamptz NOT NULL DEFAULT now(),
 			updated_at timestamptz NOT NULL DEFAULT now()
 		)`,
+		`CREATE TABLE IF NOT EXISTS jobs (
+			id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+			title text NOT NULL,
+			reward_system_id text NOT NULL,
+			created_by uuid,
+			status text NOT NULL DEFAULT 'active',
+			created_at timestamptz NOT NULL DEFAULT now(),
+			updated_at timestamptz NOT NULL DEFAULT now(),
+			CONSTRAINT fk_jobs_reward_system FOREIGN KEY (reward_system_id) REFERENCES reward_system(id) ON DELETE RESTRICT,
+			CONSTRAINT fk_jobs_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_jobs_reward_system_id ON jobs (reward_system_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs (status)`,
+		`CREATE TABLE IF NOT EXISTS metric_runs (
+			id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+			derivation_run_id uuid,
+			as_of timestamptz NOT NULL,
+			user_id uuid NOT NULL,
+			n_estimates integer NOT NULL DEFAULT 0,
+			n_scores integer NOT NULL DEFAULT 0,
+			notes text,
+			created_at timestamptz NOT NULL DEFAULT now(),
+			CONSTRAINT fk_metric_runs_derivation_run FOREIGN KEY (derivation_run_id) REFERENCES derivation_runs(id) ON DELETE SET NULL,
+			CONSTRAINT fk_metric_runs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_metric_runs_user_as_of ON metric_runs (user_id, as_of DESC)`,
+		`CREATE TABLE IF NOT EXISTS construct_estimates (
+			id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+			run_id uuid NOT NULL,
+			user_id uuid NOT NULL,
+			trait text NOT NULL,
+			value double precision NOT NULL,
+			ci_lower double precision NOT NULL,
+			ci_upper double precision NOT NULL,
+			n_effective double precision NOT NULL,
+			spec jsonb NOT NULL,
+			created_at timestamptz NOT NULL DEFAULT now(),
+			CONSTRAINT fk_construct_estimates_run FOREIGN KEY (run_id) REFERENCES metric_runs(id) ON DELETE CASCADE,
+			CONSTRAINT fk_construct_estimates_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+		)`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_construct_estimates_run_user_trait ON construct_estimates (run_id, user_id, trait)`,
+		`CREATE INDEX IF NOT EXISTS idx_construct_estimates_user_trait ON construct_estimates (user_id, trait)`,
+		`CREATE TABLE IF NOT EXISTS reward_scores (
+			id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+			run_id uuid NOT NULL,
+			user_id uuid NOT NULL,
+			reward_system_id text NOT NULL,
+			score double precision NOT NULL,
+			ci_lower double precision NOT NULL,
+			ci_upper double precision NOT NULL,
+			spec jsonb NOT NULL,
+			readings jsonb NOT NULL DEFAULT '{}'::jsonb,
+			created_at timestamptz NOT NULL DEFAULT now(),
+			CONSTRAINT fk_reward_scores_run FOREIGN KEY (run_id) REFERENCES metric_runs(id) ON DELETE CASCADE,
+			CONSTRAINT fk_reward_scores_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+			CONSTRAINT fk_reward_scores_reward_system FOREIGN KEY (reward_system_id) REFERENCES reward_system(id) ON DELETE RESTRICT
+		)`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_reward_scores_run_user_system ON reward_scores (run_id, user_id, reward_system_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_reward_scores_user_system ON reward_scores (user_id, reward_system_id)`,
 	}
 
 	for _, statement := range statements {

@@ -16,103 +16,18 @@
       "scientific_rationale": "Grounded in self-regulated learning and Big-Five conscientiousness.",
       "legitimacy_rationale": "Supports study-habit coaching without gatekeeping.",
       "supporting_signals": [
-        "submission_lead_days",
-        "submission_regularity"
+        "cadence_compliance_rate",
+        "milestone_submission_rate",
+        "task_completion_rate"
       ],
       "required_observations": [
-        "assignment_submission",
-        "mentorship_session_cadence"
+        "mentorship_session_cadence",
+        "mentorship_task_event",
+        "projex_milestone_submitted"
       ],
       "source_apps": [
-        "lms",
-        "mentorship"
-      ],
-      "fairness": {
-        "dif_checked": true,
-        "dif_flags": [],
-        "known_confounds": [
-          "workload"
-        ],
-        "residualization": null
-      },
-      "scope": [
-        "higher_ed"
-      ],
-      "uncertainty_policy": "Suppress below n_eff=3; surface with CI.",
-      "version": "0.1.0",
-      "owner": "profiling-core",
-      "review": null
-    }
-  },
-  {
-    "construct_id": "cognitive_ability",
-    "trait": "cognitive_ability",
-    "family": "cognitive",
-    "version": "0.1.0",
-    "spec": {
-      "construct_id": "cognitive_ability",
-      "trait": "cognitive_ability",
-      "family": "cognitive",
-      "shape": "monotonic",
-      "peak": null,
-      "pole": null,
-      "name": "Cognitive Ability",
-      "definition": "Demonstrated reasoning and knowledge retrieval in assessed work.",
-      "scientific_rationale": "Criterion validity against graded assessments.",
-      "legitimacy_rationale": "Informs academic support matching.",
-      "supporting_signals": [
-        "mean_quiz_score",
-        "quiz_score_vs_baseline"
-      ],
-      "required_observations": [
-        "quiz_result"
-      ],
-      "source_apps": [
-        "lms"
-      ],
-      "fairness": {
-        "dif_checked": true,
-        "dif_flags": [],
-        "known_confounds": [
-          "workload"
-        ],
-        "residualization": null
-      },
-      "scope": [
-        "higher_ed"
-      ],
-      "uncertainty_policy": "Suppress below n_eff=3; surface with CI.",
-      "version": "0.1.0",
-      "owner": "profiling-core",
-      "review": null
-    }
-  },
-  {
-    "construct_id": "learning_velocity",
-    "trait": "learning_velocity",
-    "family": "cognitive",
-    "version": "0.1.0",
-    "spec": {
-      "construct_id": "learning_velocity",
-      "trait": "learning_velocity",
-      "family": "cognitive",
-      "shape": "monotonic",
-      "peak": null,
-      "pole": null,
-      "name": "Learning Velocity",
-      "definition": "Rate of improvement in performance over time.",
-      "scientific_rationale": "Growth mindset and learning-rate constructs.",
-      "legitimacy_rationale": "Highlights fast learners for stretch opportunities.",
-      "supporting_signals": [
-        "quiz_score_trend",
-        "leadtime_trend"
-      ],
-      "required_observations": [
-        "quiz_result",
-        "assignment_submission"
-      ],
-      "source_apps": [
-        "lms"
+        "mentorship",
+        "project_management"
       ],
       "fairness": {
         "dif_checked": true,
@@ -148,15 +63,12 @@
       "scientific_rationale": "Grit and resilience literature.",
       "legitimacy_rationale": "Identifies students who bounce back.",
       "supporting_signals": [
-        "quiz_recovery_trend",
         "task_completion_rate"
       ],
       "required_observations": [
-        "quiz_result",
         "mentorship_task_event"
       ],
       "source_apps": [
-        "lms",
         "mentorship"
       ],
       "fairness": {
@@ -193,11 +105,11 @@
       "scientific_rationale": "Agency-compliance bipolar construct.",
       "legitimacy_rationale": "Startup contexts reward initiative.",
       "supporting_signals": [
-        "self_claim_rate",
+        "projex_self_claim_rate",
         "milestone_definition_rate"
       ],
       "required_observations": [
-        "task_self_claimed",
+        "projex_task_self_claimed",
         "projex_milestone_defined"
       ],
       "source_apps": [

@@ -138,7 +138,7 @@ type DataSource struct {
 	SyncJobs           []SyncJob            `gorm:"foreignKey:DataSourceID" json:"sync_jobs,omitempty"`
 	RawRecords         []RawRecord          `gorm:"foreignKey:DataSourceID" json:"raw_records,omitempty"`
 	Observations       []Observation        `gorm:"foreignKey:DataSourceID" json:"observations,omitempty"`
-	UserIdentities []UserIdentity `gorm:"foreignKey:DataSourceID" json:"user_identities,omitempty"`
+	UserIdentities     []UserIdentity       `gorm:"foreignKey:DataSourceID" json:"user_identities,omitempty"`
 }
 
 func (DataSource) TableName() string {
@@ -496,4 +496,67 @@ type RewardSystem struct {
 
 func (RewardSystem) TableName() string {
 	return "reward_system"
+}
+
+type Job struct {
+	ID             uuid.UUID  `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	Title          string     `gorm:"not null" json:"title"`
+	RewardSystemID string     `gorm:"not null;index" json:"reward_system_id"`
+	CreatedBy      *uuid.UUID `gorm:"type:uuid;index" json:"created_by,omitempty"`
+	Status         string     `gorm:"not null;default:active;index" json:"status"`
+	CreatedAt      time.Time  `gorm:"not null;default:now()" json:"created_at"`
+	UpdatedAt      time.Time  `gorm:"not null;default:now()" json:"updated_at"`
+}
+
+func (Job) TableName() string {
+	return "jobs"
+}
+
+type MetricRun struct {
+	ID              uuid.UUID  `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	DerivationRunID *uuid.UUID `gorm:"type:uuid;index" json:"derivation_run_id,omitempty"`
+	AsOf            time.Time  `gorm:"not null;index" json:"as_of"`
+	UserID          uuid.UUID  `gorm:"type:uuid;not null;index" json:"user_id"`
+	NEstimates      int        `gorm:"not null;default:0" json:"n_estimates"`
+	NScores         int        `gorm:"not null;default:0" json:"n_scores"`
+	Notes           *string    `json:"notes,omitempty"`
+	CreatedAt       time.Time  `gorm:"not null;default:now()" json:"created_at"`
+}
+
+func (MetricRun) TableName() string {
+	return "metric_runs"
+}
+
+type ConstructEstimate struct {
+	ID         uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	RunID      uuid.UUID `gorm:"type:uuid;not null;index" json:"run_id"`
+	UserID     uuid.UUID `gorm:"type:uuid;not null;index" json:"user_id"`
+	Trait      string    `gorm:"not null;index" json:"trait"`
+	Value      float64   `gorm:"not null" json:"value"`
+	CILower    float64   `gorm:"not null" json:"ci_lower"`
+	CIUpper    float64   `gorm:"not null" json:"ci_upper"`
+	NEffective float64   `gorm:"not null" json:"n_effective"`
+	Spec       JSONB     `gorm:"type:jsonb;not null" json:"spec"`
+	CreatedAt  time.Time `gorm:"not null;default:now()" json:"created_at"`
+}
+
+func (ConstructEstimate) TableName() string {
+	return "construct_estimates"
+}
+
+type RewardScore struct {
+	ID             uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	RunID          uuid.UUID `gorm:"type:uuid;not null;index" json:"run_id"`
+	UserID         uuid.UUID `gorm:"type:uuid;not null;index" json:"user_id"`
+	RewardSystemID string    `gorm:"not null;index" json:"reward_system_id"`
+	Score          float64   `gorm:"not null" json:"score"`
+	CILower        float64   `gorm:"not null" json:"ci_lower"`
+	CIUpper        float64   `gorm:"not null" json:"ci_upper"`
+	Spec           JSONB     `gorm:"type:jsonb;not null" json:"spec"`
+	Readings       JSONB     `gorm:"type:jsonb;not null" json:"readings"`
+	CreatedAt      time.Time `gorm:"not null;default:now()" json:"created_at"`
+}
+
+func (RewardScore) TableName() string {
+	return "reward_scores"
 }

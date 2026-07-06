@@ -1,66 +1,10 @@
 [
   {
-    "signal_type": "submission_lead_days",
-    "spec": {
-      "kind": "clip_scale",
-      "lo": -7.0,
-      "hi": 7.0
-    }
-  },
-  {
-    "signal_type": "submission_regularity",
-    "spec": {
-      "kind": "identity",
-      "lo": 0.0,
-      "hi": 1.0
-    }
-  },
-  {
     "signal_type": "cadence_compliance_rate",
     "spec": {
       "kind": "identity",
       "lo": 0.0,
       "hi": 1.0
-    }
-  },
-  {
-    "signal_type": "mean_quiz_score",
-    "spec": {
-      "kind": "clip_scale",
-      "lo": 0.0,
-      "hi": 100.0
-    }
-  },
-  {
-    "signal_type": "quiz_score_vs_baseline",
-    "spec": {
-      "kind": "clip_scale",
-      "lo": -3.0,
-      "hi": 3.0
-    }
-  },
-  {
-    "signal_type": "quiz_score_trend",
-    "spec": {
-      "kind": "clip_scale",
-      "lo": -5.0,
-      "hi": 5.0
-    }
-  },
-  {
-    "signal_type": "leadtime_trend",
-    "spec": {
-      "kind": "clip_scale",
-      "lo": -3.0,
-      "hi": 3.0
-    }
-  },
-  {
-    "signal_type": "quiz_recovery_trend",
-    "spec": {
-      "kind": "clip_scale",
-      "lo": -5.0,
-      "hi": 5.0
     }
   },
   {
@@ -72,19 +16,27 @@
     }
   },
   {
-    "signal_type": "self_claim_rate",
-    "spec": {
-      "kind": "clip_scale",
-      "lo": 0.0,
-      "hi": 0.05
-    }
-  },
-  {
     "signal_type": "milestone_definition_rate",
     "spec": {
       "kind": "clip_scale",
       "lo": 0.0,
       "hi": 0.03
+    }
+  },
+  {
+    "signal_type": "milestone_submission_rate",
+    "spec": {
+      "kind": "clip_scale",
+      "lo": 0.0,
+      "hi": 0.1
+    }
+  },
+  {
+    "signal_type": "projex_self_claim_rate",
+    "spec": {
+      "kind": "clip_scale",
+      "lo": 0.0,
+      "hi": 0.05
     }
   },
   {
@@ -108,7 +60,7 @@
     "spec": {
       "kind": "clip_scale",
       "lo": 0.0,
-      "hi": 0.1
+      "hi": 0.3
     }
   },
   {
@@ -116,7 +68,7 @@
     "spec": {
       "kind": "clip_scale",
       "lo": 0.0,
-      "hi": 0.1
+      "hi": 0.3
     }
   },
   {

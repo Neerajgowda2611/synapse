@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/profiler/backend/internal/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -18,6 +19,9 @@ var metricNormsSeedJSON []byte
 
 //go:embed catalog/reward_systems.json
 var rewardSystemsSeedJSON []byte
+
+//go:embed catalog/jobs.json
+var jobsSeedJSON []byte
 
 type constructRegisterSeed struct {
 	ConstructID string          `json:"construct_id"`
@@ -39,6 +43,13 @@ type rewardSystemSeed struct {
 	Spec    json.RawMessage `json:"spec"`
 }
 
+type jobSeed struct {
+	ID             string `json:"id"`
+	Title          string `json:"title"`
+	RewardSystemID string `json:"reward_system_id"`
+	Status         string `json:"status"`
+}
+
 func seedMetricCatalog(db *gorm.DB) error {
 	if err := seedConstructRegister(db); err != nil {
 		return err
@@ -46,7 +57,10 @@ func seedMetricCatalog(db *gorm.DB) error {
 	if err := seedMetricNorms(db); err != nil {
 		return err
 	}
-	return seedRewardSystems(db)
+	if err := seedRewardSystems(db); err != nil {
+		return err
+	}
+	return seedJobs(db)
 }
 
 func seedConstructRegister(db *gorm.DB) error {
@@ -138,6 +152,44 @@ func seedRewardSystems(db *gorm.DB) error {
 		Columns: []clause.Column{{Name: "id"}},
 		DoUpdates: clause.AssignmentColumns([]string{
 			"version", "label", "spec", "updated_at",
+		}),
+	}).Create(&rows).Error
+}
+
+func seedJobs(db *gorm.DB) error {
+	var seeds []jobSeed
+	if err := json.Unmarshal(jobsSeedJSON, &seeds); err != nil {
+		return err
+	}
+
+	now := time.Now().UTC()
+	rows := make([]model.Job, 0, len(seeds))
+	for _, seed := range seeds {
+		jobID, err := uuid.Parse(seed.ID)
+		if err != nil {
+			return err
+		}
+		status := seed.Status
+		if status == "" {
+			status = "active"
+		}
+		rows = append(rows, model.Job{
+			ID:             jobID,
+			Title:          seed.Title,
+			RewardSystemID: seed.RewardSystemID,
+			Status:         status,
+			CreatedAt:      now,
+			UpdatedAt:      now,
+		})
+	}
+	if len(rows) == 0 {
+		return nil
+	}
+
+	return db.Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "id"}},
+		DoUpdates: clause.AssignmentColumns([]string{
+			"title", "reward_system_id", "status", "updated_at",
 		}),
 	}).Create(&rows).Error
 }

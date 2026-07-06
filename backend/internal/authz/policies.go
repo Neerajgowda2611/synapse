@@ -12,6 +12,7 @@ const (
 	ResourceDataSources  = "data_sources"
 	ResourceUsers        = "users"
 	ResourceProfile      = "profile"
+	ResourceJobs         = "jobs"
 	ResourceConnectors   = "connectors"
 	ResourceSyncJobs     = "sync_jobs"
 	ResourceMappings     = "mappings"
@@ -43,12 +44,16 @@ func seedPolicies(e *casbin.Enforcer) error {
 		{auth.RolePlatformAdmin, "*", ResourceConnectors, ActionRead},
 		{auth.RolePlatformAdmin, "*", ResourceSyncJobs, ActionRead},
 		{auth.RolePlatformAdmin, "*", ResourceMappings, ActionRead},
+		{auth.RolePlatformAdmin, "*", ResourceJobs, ActionRead},
+		{auth.RolePlatformAdmin, "*", ResourceProfile, ActionRead},
 
 		// Platform viewer — read-only globally
 		{auth.RolePlatformViewer, "*", ResourceInstitutions, ActionRead},
 		{auth.RolePlatformViewer, "*", ResourceDataSources, ActionRead},
 		{auth.RolePlatformViewer, "*", ResourceUsers, ActionRead},
 		{auth.RolePlatformViewer, "*", ResourceConnectors, ActionRead},
+		{auth.RolePlatformViewer, "*", ResourceJobs, ActionRead},
+		{auth.RolePlatformViewer, "*", ResourceProfile, ActionRead},
 
 		// Institution admin — full access within their institution domain
 		{auth.RoleInstitutionAdmin, "*", ResourceDataSources, ActionCreate},
@@ -63,21 +68,28 @@ func seedPolicies(e *casbin.Enforcer) error {
 		{auth.RoleInstitutionAdmin, "*", ResourceMappings, ActionCreate},
 		{auth.RoleInstitutionAdmin, "*", ResourceMappings, ActionRead},
 		{auth.RoleInstitutionAdmin, "*", ResourceMappings, ActionUpdate},
+		{auth.RoleInstitutionAdmin, "*", ResourceJobs, ActionRead},
+		{auth.RoleInstitutionAdmin, "*", ResourceProfile, ActionRead},
 
 		// Institution operator — data operations, no user management
 		{auth.RoleInstitutionOperator, "*", ResourceDataSources, ActionRead},
 		{auth.RoleInstitutionOperator, "*", ResourceSyncJobs, ActionCreate},
 		{auth.RoleInstitutionOperator, "*", ResourceSyncJobs, ActionRead},
 		{auth.RoleInstitutionOperator, "*", ResourceMappings, ActionRead},
+		{auth.RoleInstitutionOperator, "*", ResourceJobs, ActionRead},
+		{auth.RoleInstitutionOperator, "*", ResourceProfile, ActionRead},
 
 		// Institution viewer — read-only
 		{auth.RoleInstitutionViewer, "*", ResourceDataSources, ActionRead},
 		{auth.RoleInstitutionViewer, "*", ResourceUsers, ActionRead},
 		{auth.RoleInstitutionViewer, "*", ResourceSyncJobs, ActionRead},
 		{auth.RoleInstitutionViewer, "*", ResourceMappings, ActionRead},
+		{auth.RoleInstitutionViewer, "*", ResourceJobs, ActionRead},
+		{auth.RoleInstitutionViewer, "*", ResourceProfile, ActionRead},
 
 		// Learner — own profile only (handler must also enforce user_id == ctx.UserID)
 		{auth.RoleLearner, "*", ResourceProfile, ActionRead},
+		{auth.RoleLearner, "*", ResourceJobs, ActionRead},
 	}
 
 	for _, p := range policies {
