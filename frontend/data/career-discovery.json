@@ -1,0 +1,87 @@
+{
+  "title": "Career Discovery",
+  "subtitle": "8 target roles identified based on your current skill matrix.",
+  "sort": {
+    "label": "Sort by",
+    "default_option_id": "match_score",
+    "options": [
+      { "id": "match_score", "label": "Match Score" },
+      { "id": "role_title", "label": "Role Title" }
+    ]
+  },
+  "add_to_profile_label": "Add To profile",
+  "roles": [
+    {
+      "id": "principal-engineer",
+      "category": "ENGINEERING",
+      "title": "Principal Engineer",
+      "skills": ["DISTRIBUTED SYSTEMS", "GO", "KUBERNETES"],
+      "description": "Your expertise in Distributed Systems and Go aligns perfectly with the current architecture scaling goals for the Cloud Core team.",
+      "match_score": 92,
+      "match_label": "HIGH MATCH"
+    },
+    {
+      "id": "solution-architect",
+      "category": "ENGINEERING",
+      "title": "Solution Architect",
+      "skills": ["AWS", "SYSTEM DESIGN", "MICROSERVICES"],
+      "description": "Strong system design patterns and cloud infrastructure experience make you a top candidate for cross-team technical leadership.",
+      "match_score": 84,
+      "match_label": "HIGH MATCH"
+    },
+    {
+      "id": "engineering-manager",
+      "category": "LEADERSHIP",
+      "title": "Engineering Manager",
+      "skills": ["TEAM LEADERSHIP", "AGILE", "STAKEHOLDER MGMT"],
+      "description": "Your mentorship activity is high, but direct people-management experience is still developing in your profile.",
+      "match_score": 58,
+      "match_label": "LOW MATCH"
+    },
+    {
+      "id": "backend-engineer",
+      "category": "ENGINEERING",
+      "title": "Backend Engineer",
+      "skills": ["API DESIGN", "POSTGRESQL", "NODE.JS"],
+      "description": "Consistent delivery on API and data-layer projects across PROJEX demonstrates strong backend fundamentals.",
+      "match_score": 89,
+      "match_label": "HIGH MATCH"
+    },
+    {
+      "id": "system-engineer",
+      "category": "ENGINEERING",
+      "title": "System Engineer",
+      "skills": ["LINUX", "NETWORKING", "RELIABILITY"],
+      "description": "Infrastructure and reliability competencies from VTU and project work map closely to platform engineering needs.",
+      "match_score": 91,
+      "match_label": "HIGH MATCH"
+    },
+    {
+      "id": "devops-engineer",
+      "category": "ENGINEERING",
+      "title": "DevOps Engineer",
+      "skills": ["CI/CD", "TERRAFORM", "DOCKER"],
+      "description": "Hands-on pipeline and container experience positions you well for automation-focused platform roles.",
+      "match_score": 76,
+      "match_label": "MEDIUM MATCH"
+    },
+    {
+      "id": "cloud-architect",
+      "category": "ENGINEERING",
+      "title": "Cloud Architect",
+      "skills": ["AWS", "AZURE", "SECURITY"],
+      "description": "Multi-cloud exposure and security-aware design choices strengthen your fit for enterprise architecture tracks.",
+      "match_score": 81,
+      "match_label": "HIGH MATCH"
+    },
+    {
+      "id": "staff-engineer",
+      "category": "ENGINEERING",
+      "title": "Staff Engineer",
+      "skills": ["TECHNICAL STRATEGY", "GO", "MENTORSHIP"],
+      "description": "Deep technical ownership and mentorship signals align with staff-level individual contributor expectations.",
+      "match_score": 87,
+      "match_label": "HIGH MATCH"
+    }
+  ]
+}

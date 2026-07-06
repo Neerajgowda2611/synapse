@@ -1,0 +1,198 @@
+{
+  "system_engineer": {
+    "system_architecture": {
+      "description": "This strength is based on your activities across projects, mentorship, and career preparation.",
+      "sources": [
+        {
+          "source_id": "projex",
+          "title": "Completed Project Milestones Consistently",
+          "stats": [
+            { "label": "18 Tasks Completed" },
+            { "label": "3 Milestones Submitted" },
+            { "label": "92% On-Time Delivery" }
+          ],
+          "items": [
+            { "text": "Completed 'Authentication Module'", "tag": "PROJECT" },
+            { "text": "Submitted Milestone 3", "tag": "MILESTONE" },
+            { "text": "Onetime Milestone 3 submission", "tag": "MILESTONE" }
+          ],
+          "default_open": true
+        },
+        {
+          "source_id": "mentorship",
+          "title": "Active Learning Through Mentorship",
+          "stats": [
+            { "label": "8 Sessions Attended" },
+            { "label": "5 Mentor Tasks Completed" },
+            { "label": "7 Learning Notes Added" }
+          ],
+          "items": [
+            { "text": "Attended system design review session", "tag": "SESSION" },
+            { "text": "Completed scalability planning task", "tag": "TASK" },
+            { "text": "Added notes on distributed systems patterns", "tag": "NOTE" }
+          ],
+          "default_open": false
+        },
+        {
+          "source_id": "vtu",
+          "title": "Academic & Career Readiness",
+          "stats": [
+            { "label": "1 Experience" },
+            { "label": "4 Projects" },
+            { "label": "1 Certificates" },
+            { "label": "3 Interviews" }
+          ],
+          "items": [
+            { "text": "Cloud infrastructure internship", "tag": "EXPERIENCE" },
+            { "text": "Microservices capstone project", "tag": "PROJECT" },
+            { "text": "AWS Solutions Architect certificate", "tag": "CERTIFICATE" },
+            { "text": "Technical round at Infosys", "tag": "INTERVIEW" }
+          ],
+          "default_open": false
+        }
+      ]
+    },
+    "technical_debt_management": {
+      "description": "This strength is based on your activities across projects, mentorship, and career preparation.",
+      "sources": [
+        {
+          "source_id": "projex",
+          "title": "Completed Project Milestones Consistently",
+          "stats": [
+            { "label": "14 Tasks Completed" },
+            { "label": "2 Milestones Submitted" },
+            { "label": "88% On-Time Delivery" }
+          ],
+          "items": [
+            { "text": "Refactored legacy auth module", "tag": "PROJECT" },
+            { "text": "Submitted Milestone 2", "tag": "MILESTONE" }
+          ],
+          "default_open": true
+        },
+        {
+          "source_id": "vtu",
+          "title": "Academic & Career Readiness",
+          "stats": [
+            { "label": "1 Experience" },
+            { "label": "3 Projects" },
+            { "label": "2 Certificates" },
+            { "label": "2 Interviews" }
+          ],
+          "items": [
+            { "text": "DevOps lab assistant role", "tag": "EXPERIENCE" },
+            { "text": "Database optimization project", "tag": "PROJECT" },
+            { "text": "Linux administration certificate", "tag": "CERTIFICATE" },
+            { "text": "HR round at Wipro", "tag": "INTERVIEW" }
+          ],
+          "default_open": false
+        }
+      ]
+    }
+  },
+  "backend_engineer": {
+    "api_design": {
+      "description": "This strength is based on your activities across projects, mentorship, and career preparation.",
+      "sources": [
+        {
+          "source_id": "projex",
+          "title": "Completed Project Milestones Consistently",
+          "stats": [
+            { "label": "20 Tasks Completed" },
+            { "label": "4 Milestones Submitted" },
+            { "label": "95% On-Time Delivery" }
+          ],
+          "items": [
+            { "text": "Designed REST API for user service", "tag": "PROJECT" },
+            { "text": "Submitted Milestone 4", "tag": "MILESTONE" }
+          ],
+          "default_open": true
+        },
+        {
+          "source_id": "mentorship",
+          "title": "Active Learning Through Mentorship",
+          "stats": [
+            { "label": "10 Sessions Attended" },
+            { "label": "6 Mentor Tasks Completed" },
+            { "label": "9 Learning Notes Added" }
+          ],
+          "items": [
+            { "text": "Attended API versioning workshop", "tag": "SESSION" },
+            { "text": "Completed OpenAPI specification task", "tag": "TASK" },
+            { "text": "Added notes on REST best practices", "tag": "NOTE" }
+          ],
+          "default_open": false
+        }
+      ]
+    },
+    "database_modeling": {
+      "description": "This strength is based on your activities across projects, mentorship, and career preparation.",
+      "sources": [
+        {
+          "source_id": "projex",
+          "title": "Completed Project Milestones Consistently",
+          "stats": [
+            { "label": "12 Tasks Completed" },
+            { "label": "2 Milestones Submitted" },
+            { "label": "85% On-Time Delivery" }
+          ],
+          "items": [
+            { "text": "Modeled database schema for inventory system", "tag": "PROJECT" },
+            { "text": "Submitted Milestone 2", "tag": "MILESTONE" }
+          ],
+          "default_open": true
+        },
+        {
+          "source_id": "vtu",
+          "title": "Academic & Career Readiness",
+          "stats": [
+            { "label": "1 Experience" },
+            { "label": "4 Projects" },
+            { "label": "1 Certificates" },
+            { "label": "3 Interviews" }
+          ],
+          "items": [
+            { "text": "Backend developer internship", "tag": "EXPERIENCE" },
+            { "text": "E-commerce database design project", "tag": "PROJECT" },
+            { "text": "PostgreSQL certification", "tag": "CERTIFICATE" },
+            { "text": "Technical round at TCS", "tag": "INTERVIEW" }
+          ],
+          "default_open": false
+        }
+      ]
+    },
+    "problem_solving": {
+      "description": "This strength is based on your activities across projects, mentorship, and career preparation.",
+      "sources": [
+        {
+          "source_id": "mentorship",
+          "title": "Active Learning Through Mentorship",
+          "stats": [
+            { "label": "12 Sessions Attended" },
+            { "label": "8 Mentor Tasks Completed" },
+            { "label": "11 Learning Notes Added" }
+          ],
+          "items": [
+            { "text": "Attended debugging strategies session", "tag": "SESSION" },
+            { "text": "Completed algorithm optimization task", "tag": "TASK" },
+            { "text": "Added notes on problem decomposition", "tag": "NOTE" }
+          ],
+          "default_open": true
+        },
+        {
+          "source_id": "projex",
+          "title": "Completed Project Milestones Consistently",
+          "stats": [
+            { "label": "16 Tasks Completed" },
+            { "label": "3 Milestones Submitted" },
+            { "label": "97% On-Time Delivery" }
+          ],
+          "items": [
+            { "text": "Resolved critical production bug", "tag": "PROJECT" },
+            { "text": "Submitted Milestone 5", "tag": "MILESTONE" }
+          ],
+          "default_open": false
+        }
+      ]
+    }
+  }
+}
