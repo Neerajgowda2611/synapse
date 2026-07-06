@@ -1,0 +1,14 @@
+[
+  {
+    "id": "0d1d6b52-5d8f-4eb8-9b1e-3f945f9e2c11",
+    "title": "Startup Engineer",
+    "reward_system_id": "startup_engineer",
+    "status": "active"
+  },
+  {
+    "id": "a2eaf8bd-204e-4f57-9f35-6e8182cd92f2",
+    "title": "Backend Engineer",
+    "reward_system_id": "backend_engineer",
+    "status": "active"
+  }
+]

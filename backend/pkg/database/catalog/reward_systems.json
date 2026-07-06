@@ -25,15 +25,6 @@
           "pole": "risk"
         },
         {
-          "metric_id": "learning_velocity",
-          "kind": "reflective",
-          "trait": "learning_velocity",
-          "components": {},
-          "shape": "monotonic",
-          "peak": null,
-          "pole": null
-        },
-        {
           "metric_id": "resilience",
           "kind": "reflective",
           "trait": "resilience",
@@ -70,15 +61,6 @@
           "pole": null
         },
         {
-          "metric_id": "cognitive_ability",
-          "kind": "reflective",
-          "trait": "cognitive_ability",
-          "components": {},
-          "shape": "monotonic",
-          "peak": null,
-          "pole": null
-        },
-        {
           "metric_id": "conscientiousness",
           "kind": "reflective",
           "trait": "conscientiousness",
@@ -100,16 +82,109 @@
       "metric_weights": {
         "agency": 1.0,
         "risk_appetite": 0.8,
-        "learning_velocity": 0.9,
         "resilience": 0.8,
         "collaboration": 0.7,
         "creativity": 0.7,
         "communication": 0.6,
-        "cognitive_ability": 0.5,
         "conscientiousness": 0.3,
         "help_seeking": 0.5
       },
       "label": "Startup Engineer",
+      "owner": "profiling-core",
+      "version": "0.1.0"
+    }
+  },
+  {
+    "id": "backend_engineer",
+    "version": "0.1.0",
+    "label": "Backend Engineer",
+    "spec": {
+      "id": "backend_engineer",
+      "metrics": [
+        {
+          "metric_id": "conscientiousness",
+          "kind": "reflective",
+          "trait": "conscientiousness",
+          "components": {},
+          "shape": "monotonic",
+          "peak": null,
+          "pole": null
+        },
+        {
+          "metric_id": "communication",
+          "kind": "reflective",
+          "trait": "communication",
+          "components": {},
+          "shape": "monotonic",
+          "peak": null,
+          "pole": null
+        },
+        {
+          "metric_id": "collaboration",
+          "kind": "reflective",
+          "trait": "collaboration",
+          "components": {},
+          "shape": "monotonic",
+          "peak": null,
+          "pole": null
+        },
+        {
+          "metric_id": "resilience",
+          "kind": "reflective",
+          "trait": "resilience",
+          "components": {},
+          "shape": "monotonic",
+          "peak": null,
+          "pole": null
+        },
+        {
+          "metric_id": "agency",
+          "kind": "reflective",
+          "trait": "agency",
+          "components": {},
+          "shape": "bipolar",
+          "peak": null,
+          "pole": "agency"
+        },
+        {
+          "metric_id": "risk_appetite",
+          "kind": "reflective",
+          "trait": "risk_appetite",
+          "components": {},
+          "shape": "bipolar",
+          "peak": null,
+          "pole": "risk"
+        },
+        {
+          "metric_id": "creativity",
+          "kind": "reflective",
+          "trait": "creativity",
+          "components": {},
+          "shape": "monotonic",
+          "peak": null,
+          "pole": null
+        },
+        {
+          "metric_id": "help_seeking",
+          "kind": "reflective",
+          "trait": "help_seeking",
+          "components": {},
+          "shape": "peaked",
+          "peak": 0.55,
+          "pole": null
+        }
+      ],
+      "metric_weights": {
+        "conscientiousness": 1.0,
+        "communication": 0.8,
+        "collaboration": 0.75,
+        "resilience": 0.65,
+        "agency": 0.5,
+        "risk_appetite": 0.25,
+        "creativity": 0.35,
+        "help_seeking": 0.4
+      },
+      "label": "Backend Engineer",
       "owner": "profiling-core",
       "version": "0.1.0"
     }

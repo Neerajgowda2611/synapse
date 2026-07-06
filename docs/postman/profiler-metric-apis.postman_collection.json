@@ -1,0 +1,182 @@
+{
+  "info": {
+    "name": "Profiler — Metric & Job Fit APIs",
+    "description": "APIs for listing jobs with trait criteria, computing student job fit, viewing trait scores, and drilling into evidence (signal → canonical observation → source app event).\n\n**Auth:** Bearer JWT from `POST /api/v1/auth/login` or your IdP.\n\n**Variables:**\n- `base_url` — e.g. `http://localhost:8080`\n- `auth_token` — JWT access token\n- `user_id` — learner UUID\n- `job_id` — job UUID (Startup Engineer: `0d1d6b52-5d8f-4eb8-9b1e-3f945f9e2c11`)\n- `trait` — e.g. `creativity`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8080" },
+    { "key": "auth_token", "value": "" },
+    { "key": "user_id", "value": "0432feb7-823e-49d4-bbca-9b3e94b463ae" },
+    { "key": "job_id", "value": "0d1d6b52-5d8f-4eb8-9b1e-3f945f9e2c11" },
+    { "key": "trait", "value": "creativity" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{auth_token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Jobs",
+      "item": [
+        {
+          "name": "List jobs with criteria",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/v1/jobs",
+            "description": "Returns all active jobs with reward-system criteria: metric weights, trait mapping, shapes, and component formulas."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"data\": [\n    {\n      \"id\": \"0d1d6b52-5d8f-4eb8-9b1e-3f945f9e2c11\",\n      \"title\": \"Startup Engineer\",\n      \"reward_system_id\": \"startup_engineer\",\n      \"status\": \"active\",\n      \"criteria\": {\n        \"id\": \"startup_engineer\",\n        \"label\": \"Startup Engineer\",\n        \"version\": \"0.1.0\",\n        \"weight_sum\": 5.4,\n        \"metrics\": [\n          {\n            \"metric_id\": \"agency\",\n            \"trait\": \"agency\",\n            \"weight\": 1.0,\n            \"kind\": \"reflective\",\n            \"shape\": \"monotonic\",\n            \"components\": { \"agency\": 1.0 }\n          },\n          {\n            \"metric_id\": \"creativity\",\n            \"trait\": \"creativity\",\n            \"weight\": 0.8,\n            \"kind\": \"reflective\",\n            \"shape\": \"monotonic\",\n            \"components\": { \"creativity\": 1.0 }\n          }\n        ]\n      }\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get job by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/jobs/{{job_id}}",
+            "description": "Single job with full criteria block (same shape as list item)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": \"0d1d6b52-5d8f-4eb8-9b1e-3f945f9e2c11\",\n  \"title\": \"Startup Engineer\",\n  \"reward_system_id\": \"startup_engineer\",\n  \"status\": \"active\",\n  \"criteria\": {\n    \"id\": \"startup_engineer\",\n    \"label\": \"Startup Engineer\",\n    \"version\": \"0.1.0\",\n    \"weight_sum\": 5.4,\n    \"metrics\": []\n  }\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{ \"error\": \"job not found\" }"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Student profile",
+      "item": [
+        {
+          "name": "List user traits",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/{{user_id}}/traits?as_of=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "users", "{{user_id}}", "traits"],
+              "query": [
+                {
+                  "key": "as_of",
+                  "value": "",
+                  "description": "Optional RFC3339 timestamp; defaults to now"
+                }
+              ]
+            },
+            "description": "Tier-A trait estimates for a student. Learners may only request their own `user_id`; institution/platform roles need `users:read`."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"as_of\": \"2026-07-06T11:48:00Z\",\n  \"data\": [\n    {\n      \"trait\": \"creativity\",\n      \"value\": 0.42,\n      \"confidence\": { \"point\": 0.42, \"lower\": 0.31, \"upper\": 0.53, \"level\": 0.95 },\n      \"evidence\": {\n        \"n_signals\": 2,\n        \"n_effective\": 1.8,\n        \"distinct_signal_types\": 2,\n        \"n_observations\": 5\n      },\n      \"as_of\": \"2026-07-06T11:48:00Z\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Refresh user traits",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/users/{{user_id}}/traits/refresh",
+            "description": "Re-runs Tier-A trait pipeline from latest signals. Call after new events are ingested/derived."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"metric_run_id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"as_of\": \"2026-07-06T11:48:00Z\",\n  \"n_traits\": 5\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get job fit for user",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/{{user_id}}/jobs/{{job_id}}/fit",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "users", "{{user_id}}", "jobs", "{{job_id}}", "fit"]
+            },
+            "description": "Computes Tier-B job fit on demand. Returns normalized fit % (0–100), per-trait readings, weights, contributions, and missing traits.\n\nFormula: `fit_percent = (raw_score / weight_sum) × 100` where `raw_score = Σ(weight × trait_value)` and missing traits count as 0."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"job_id\": \"0d1d6b52-5d8f-4eb8-9b1e-3f945f9e2c11\",\n  \"job_title\": \"Startup Engineer\",\n  \"reward_system_id\": \"startup_engineer\",\n  \"as_of\": \"2026-07-06T11:48:00Z\",\n  \"fit_percent\": 19.4,\n  \"score\": 0.194,\n  \"raw_score\": 1.05,\n  \"weight_sum\": 5.4,\n  \"confidence\": { \"point\": 0.194, \"lower\": 0.12, \"upper\": 0.27, \"level\": 0.95 },\n  \"suppressed_metrics\": [],\n  \"traits\": [\n    {\n      \"trait\": \"creativity\",\n      \"metric_id\": \"creativity\",\n      \"weight\": 0.8,\n      \"trait_value\": 0.42,\n      \"metric_value\": 0.42,\n      \"usable\": true,\n      \"contribution\": 0.336,\n      \"missing\": false\n    },\n    {\n      \"trait\": \"agency\",\n      \"metric_id\": \"agency\",\n      \"weight\": 1.0,\n      \"trait_value\": 0,\n      \"metric_value\": 0,\n      \"usable\": false,\n      \"contribution\": 0,\n      \"missing\": true\n    }\n  ],\n  \"missing_traits\": [\"agency\", \"resilience\", \"help_seeking\"],\n  \"traits_auto_refreshed\": false\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get trait evidence",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/users/{{user_id}}/traits/{{trait}}/evidence",
+            "description": "Evidence drill-down for a trait: construct definition, claims, supporting signals, canonical observations, and source app event (connector + event_type + raw payload)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"trait\": \"creativity\",\n  \"value\": 0.42,\n  \"confidence\": { \"point\": 0.42, \"lower\": 0.31, \"upper\": 0.53, \"level\": 0.95 },\n  \"evidence\": { \"n_signals\": 2, \"n_effective\": 1.8, \"distinct_signal_types\": 2, \"n_observations\": 5 },\n  \"construct\": {\n    \"construct_id\": \"creativity\",\n    \"trait\": \"creativity\",\n    \"name\": \"Creativity\",\n    \"supporting_signals\": [\"project_add_rate\", \"experience_add_rate\"],\n    \"source_apps\": [\"projex\", \"vtu_placements\"]\n  },\n  \"claims\": [\n    {\n      \"claim_id\": \"project_add_rate->creativity\",\n      \"signal_type\": \"project_add_rate\",\n      \"trait\": \"creativity\",\n      \"direction\": \"positive\"\n    }\n  ],\n  \"signals\": [\n    {\n      \"signal_id\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"signal_type\": \"project_add_rate\",\n      \"value\": 0.3,\n      \"derived_at\": \"2026-07-05T10:00:00Z\",\n      \"rule_id\": \"project_add_rate\",\n      \"derivation_confidence\": 1,\n      \"canonical_observations\": [\n        {\n          \"id\": \"6ba7b810-9dad-11d1-80b4-00c04fd430c8\",\n          \"observation_type\": \"projex_project_created\",\n          \"occurred_at\": \"2026-07-04T14:22:00Z\",\n          \"fields\": { \"project_id\": \"p-123\" },\n          \"source\": {\n            \"connector\": \"projex\",\n            \"event_type\": \"project.created\",\n            \"binding_id\": \"projex.project.created\",\n            \"raw_observation_id\": \"550e8400-e29b-41d4-a716-446655440000\",\n            \"occurred_at\": \"2026-07-04T14:22:00Z\",\n            \"received_at\": \"2026-07-04T14:22:01Z\",\n            \"payload\": { \"project_id\": \"p-123\", \"title\": \"My App\" }\n          }\n        }\n      ]\n    }\n  ],\n  \"as_of\": \"2026-07-06T11:48:00Z\"\n}"
+            },
+            {
+              "name": "404 Trait not found",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{ \"error\": \"trait estimate not found — refresh traits first\" }"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Auth (helper)",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"learner@example.com\",\n  \"password\": \"your-password\"\n}"
+            },
+            "url": "{{base_url}}/api/v1/auth/login",
+            "description": "Obtain access token; copy `access_token` into collection variable `auth_token`."
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/auth/me",
+            "description": "Returns authenticated user; use `id` as `user_id` for learner self-service calls."
+          }
+        }
+      ]
+    }
+  ]
+}

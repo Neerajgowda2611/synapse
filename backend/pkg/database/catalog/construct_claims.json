@@ -1,71 +1,5 @@
 [
   {
-    "claim_id": "submission_lead_days->conscientiousness",
-    "version": "1.0.0",
-    "signal_type": "submission_lead_days",
-    "trait": "conscientiousness",
-    "spec": {
-      "claim_id": "submission_lead_days->conscientiousness",
-      "version": "1.0.0",
-      "signal_type": "submission_lead_days",
-      "trait": "conscientiousness",
-      "family": "conscientiousness_self_regulation",
-      "direction": "positive",
-      "pole": null,
-      "scope": [
-        "higher_ed"
-      ],
-      "source": "expert",
-      "authored_by": "profiling-core",
-      "evidence": {
-        "criterion": "submission_lead_days->conscientiousness",
-        "n": 200,
-        "convergent_r": 0.35,
-        "discriminant_max_r": 0.1,
-        "invariance_level": "scalar",
-        "invariance_scope": [
-          "higher_ed"
-        ],
-        "dif_checked": true,
-        "dif_flags": [],
-        "gameability": "low"
-      }
-    }
-  },
-  {
-    "claim_id": "submission_regularity->conscientiousness",
-    "version": "1.0.0",
-    "signal_type": "submission_regularity",
-    "trait": "conscientiousness",
-    "spec": {
-      "claim_id": "submission_regularity->conscientiousness",
-      "version": "1.0.0",
-      "signal_type": "submission_regularity",
-      "trait": "conscientiousness",
-      "family": "conscientiousness_self_regulation",
-      "direction": "positive",
-      "pole": null,
-      "scope": [
-        "higher_ed"
-      ],
-      "source": "expert",
-      "authored_by": "profiling-core",
-      "evidence": {
-        "criterion": "submission_regularity->conscientiousness",
-        "n": 200,
-        "convergent_r": 0.35,
-        "discriminant_max_r": 0.1,
-        "invariance_level": "scalar",
-        "invariance_scope": [
-          "higher_ed"
-        ],
-        "dif_checked": true,
-        "dif_flags": [],
-        "gameability": "low"
-      }
-    }
-  },
-  {
     "claim_id": "cadence_compliance_rate->conscientiousness",
     "version": "1.0.0",
     "signal_type": "cadence_compliance_rate",
@@ -99,171 +33,6 @@
     }
   },
   {
-    "claim_id": "mean_quiz_score->cognitive_ability",
-    "version": "1.0.0",
-    "signal_type": "mean_quiz_score",
-    "trait": "cognitive_ability",
-    "spec": {
-      "claim_id": "mean_quiz_score->cognitive_ability",
-      "version": "1.0.0",
-      "signal_type": "mean_quiz_score",
-      "trait": "cognitive_ability",
-      "family": "cognitive",
-      "direction": "positive",
-      "pole": null,
-      "scope": [
-        "higher_ed"
-      ],
-      "source": "expert",
-      "authored_by": "profiling-core",
-      "evidence": {
-        "criterion": "mean_quiz_score->cognitive_ability",
-        "n": 200,
-        "convergent_r": 0.35,
-        "discriminant_max_r": 0.1,
-        "invariance_level": "scalar",
-        "invariance_scope": [
-          "higher_ed"
-        ],
-        "dif_checked": true,
-        "dif_flags": [],
-        "gameability": "low"
-      }
-    }
-  },
-  {
-    "claim_id": "quiz_score_vs_baseline->cognitive_ability",
-    "version": "1.0.0",
-    "signal_type": "quiz_score_vs_baseline",
-    "trait": "cognitive_ability",
-    "spec": {
-      "claim_id": "quiz_score_vs_baseline->cognitive_ability",
-      "version": "1.0.0",
-      "signal_type": "quiz_score_vs_baseline",
-      "trait": "cognitive_ability",
-      "family": "cognitive",
-      "direction": "positive",
-      "pole": null,
-      "scope": [
-        "higher_ed"
-      ],
-      "source": "expert",
-      "authored_by": "profiling-core",
-      "evidence": {
-        "criterion": "quiz_score_vs_baseline->cognitive_ability",
-        "n": 200,
-        "convergent_r": 0.35,
-        "discriminant_max_r": 0.1,
-        "invariance_level": "scalar",
-        "invariance_scope": [
-          "higher_ed"
-        ],
-        "dif_checked": true,
-        "dif_flags": [],
-        "gameability": "low"
-      }
-    }
-  },
-  {
-    "claim_id": "quiz_score_trend->learning_velocity",
-    "version": "1.0.0",
-    "signal_type": "quiz_score_trend",
-    "trait": "learning_velocity",
-    "spec": {
-      "claim_id": "quiz_score_trend->learning_velocity",
-      "version": "1.0.0",
-      "signal_type": "quiz_score_trend",
-      "trait": "learning_velocity",
-      "family": "cognitive",
-      "direction": "positive",
-      "pole": null,
-      "scope": [
-        "higher_ed"
-      ],
-      "source": "expert",
-      "authored_by": "profiling-core",
-      "evidence": {
-        "criterion": "quiz_score_trend->learning_velocity",
-        "n": 200,
-        "convergent_r": 0.35,
-        "discriminant_max_r": 0.1,
-        "invariance_level": "scalar",
-        "invariance_scope": [
-          "higher_ed"
-        ],
-        "dif_checked": true,
-        "dif_flags": [],
-        "gameability": "low"
-      }
-    }
-  },
-  {
-    "claim_id": "leadtime_trend->learning_velocity",
-    "version": "1.0.0",
-    "signal_type": "leadtime_trend",
-    "trait": "learning_velocity",
-    "spec": {
-      "claim_id": "leadtime_trend->learning_velocity",
-      "version": "1.0.0",
-      "signal_type": "leadtime_trend",
-      "trait": "learning_velocity",
-      "family": "cognitive",
-      "direction": "positive",
-      "pole": null,
-      "scope": [
-        "higher_ed"
-      ],
-      "source": "expert",
-      "authored_by": "profiling-core",
-      "evidence": {
-        "criterion": "leadtime_trend->learning_velocity",
-        "n": 200,
-        "convergent_r": 0.35,
-        "discriminant_max_r": 0.1,
-        "invariance_level": "scalar",
-        "invariance_scope": [
-          "higher_ed"
-        ],
-        "dif_checked": true,
-        "dif_flags": [],
-        "gameability": "low"
-      }
-    }
-  },
-  {
-    "claim_id": "quiz_recovery_trend->resilience",
-    "version": "1.0.0",
-    "signal_type": "quiz_recovery_trend",
-    "trait": "resilience",
-    "spec": {
-      "claim_id": "quiz_recovery_trend->resilience",
-      "version": "1.0.0",
-      "signal_type": "quiz_recovery_trend",
-      "trait": "resilience",
-      "family": "intrapersonal_motivational",
-      "direction": "positive",
-      "pole": null,
-      "scope": [
-        "higher_ed"
-      ],
-      "source": "expert",
-      "authored_by": "profiling-core",
-      "evidence": {
-        "criterion": "quiz_recovery_trend->resilience",
-        "n": 200,
-        "convergent_r": 0.35,
-        "discriminant_max_r": 0.1,
-        "invariance_level": "scalar",
-        "invariance_scope": [
-          "higher_ed"
-        ],
-        "dif_checked": true,
-        "dif_flags": [],
-        "gameability": "low"
-      }
-    }
-  },
-  {
     "claim_id": "task_completion_rate->resilience",
     "version": "1.0.0",
     "signal_type": "task_completion_rate",
@@ -283,39 +52,6 @@
       "authored_by": "profiling-core",
       "evidence": {
         "criterion": "task_completion_rate->resilience",
-        "n": 200,
-        "convergent_r": 0.35,
-        "discriminant_max_r": 0.1,
-        "invariance_level": "scalar",
-        "invariance_scope": [
-          "higher_ed"
-        ],
-        "dif_checked": true,
-        "dif_flags": [],
-        "gameability": "low"
-      }
-    }
-  },
-  {
-    "claim_id": "self_claim_rate->agency",
-    "version": "1.0.0",
-    "signal_type": "self_claim_rate",
-    "trait": "agency",
-    "spec": {
-      "claim_id": "self_claim_rate->agency",
-      "version": "1.0.0",
-      "signal_type": "self_claim_rate",
-      "trait": "agency",
-      "family": "intrapersonal_motivational",
-      "direction": "positive",
-      "pole": "agency",
-      "scope": [
-        "higher_ed"
-      ],
-      "source": "expert",
-      "authored_by": "profiling-core",
-      "evidence": {
-        "criterion": "self_claim_rate->agency",
         "n": 200,
         "convergent_r": 0.35,
         "discriminant_max_r": 0.1,
@@ -1021,15 +757,17 @@
       "source": "expert",
       "authored_by": "profiling-core",
       "evidence": {
-        "criterion": null,
-        "n": 0,
-        "convergent_r": null,
-        "discriminant_max_r": null,
-        "invariance_level": null,
-        "invariance_scope": [],
-        "dif_checked": false,
+        "criterion": "milestone_submission_rate->conscientiousness",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
         "dif_flags": [],
-        "gameability": "unknown"
+        "gameability": "low"
       }
     }
   },
@@ -1052,15 +790,17 @@
       "source": "expert",
       "authored_by": "profiling-core",
       "evidence": {
-        "criterion": null,
-        "n": 0,
-        "convergent_r": null,
-        "discriminant_max_r": null,
-        "invariance_level": null,
-        "invariance_scope": [],
-        "dif_checked": false,
+        "criterion": "projex_self_claim_rate->agency",
+        "n": 200,
+        "convergent_r": 0.35,
+        "discriminant_max_r": 0.1,
+        "invariance_level": "scalar",
+        "invariance_scope": [
+          "higher_ed"
+        ],
+        "dif_checked": true,
         "dif_flags": [],
-        "gameability": "unknown"
+        "gameability": "low"
       }
     }
   },

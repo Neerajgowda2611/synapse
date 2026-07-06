@@ -35,6 +35,31 @@ func RegisterRoutes(
 	typeRegistryRepo := repository.NewObservationTypeRegistryRepository(db)
 	canonicalObservationRepo := repository.NewCanonicalObservationRepository(db)
 	userIdentityRepo := repository.NewUserIdentityRepository(db)
+	signalRepo := repository.NewSignalRepository(db)
+	signalObsRepo := repository.NewSignalObservationRepository(db)
+	claimRepo := repository.NewConstructClaimRegistryRepository(db)
+	registerRepo := repository.NewConstructRegisterRepository(db)
+	normRepo := repository.NewMetricNormRepository(db)
+	rewardRepo := repository.NewRewardSystemRepository(db)
+	jobRepo := repository.NewJobRepository(db)
+	metricRunRepo := repository.NewMetricRunRepository(db)
+	estimateRepo := repository.NewConstructEstimateRepository(db)
+	rewardScoreRepo := repository.NewRewardScoreRepository(db)
+
+	metricService := service.NewMetricService(
+		signalRepo,
+		signalObsRepo,
+		canonicalObservationRepo,
+		claimRepo,
+		registerRepo,
+		normRepo,
+		rewardRepo,
+		jobRepo,
+		metricRunRepo,
+		estimateRepo,
+		rewardScoreRepo,
+	)
+	profileHandler := NewProfileHandler(metricService, enforcer)
 
 	// Services
 	institutionService := service.NewInstitutionService(institutionRepo)
@@ -171,5 +196,20 @@ func RegisterRoutes(
 			dataSourceHandler.GetLatestSyncJob,
 		)
 	}
+
+	jobs := api.Group("/jobs", requireAuth, authz.Require(enforcer, authz.ResourceJobs, authz.ActionRead))
+	{
+		jobs.GET("", profileHandler.ListJobs)
+		jobs.GET("/:id", profileHandler.GetJob)
+	}
+
+	users := api.Group("/users", requireAuth)
+	{
+		users.GET("/:userId/traits", profileHandler.ListUserTraits)
+		users.POST("/:userId/traits/refresh", profileHandler.RefreshUserTraits)
+		users.GET("/:userId/jobs/:jobId/fit", profileHandler.GetUserJobFit)
+		users.GET("/:userId/traits/:trait/evidence", profileHandler.GetTraitEvidence)
+	}
+
 	return dataSourceService.ObservationService()
 }
