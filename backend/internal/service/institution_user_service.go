@@ -78,7 +78,7 @@ func (s *InstitutionUserService) Create(ctx context.Context, input CreateInstitu
 	}
 
 	return &InstitutionUserView{
-		ID:            ur.ID.String(),
+		ID:            user.ID.String(),
 		InstitutionID: input.InstitutionID.String(),
 		Name:          user.Name,
 		Email:         user.Email,
@@ -103,7 +103,7 @@ func (s *InstitutionUserService) ListByInstitution(ctx context.Context, institut
 			instID = ur.InstitutionID.String()
 		}
 		views = append(views, InstitutionUserView{
-			ID:            ur.ID.String(),
+			ID:            ur.UserID.String(),
 			InstitutionID: instID,
 			Name:          ur.User.Name,
 			Email:         ur.User.Email,

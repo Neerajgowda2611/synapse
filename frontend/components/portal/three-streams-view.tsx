@@ -86,6 +86,11 @@ function StreamListBox({
 }
 
 export function ThreeStreamsView({ data }: ThreeStreamsViewProps) {
+  const visibleSections = SECTIONS.filter((section) => {
+    if (section.key !== "recent_highlights") return true
+    return data.streams.some((stream) => stream.recent_highlights.length > 0)
+  })
+
   return (
     <Card className="py-8 **:data-[slot=accordion-trigger]:cursor-pointer **:data-[slot=dropdown-menu-item]:cursor-pointer **:data-[slot=dropdown-menu-trigger]:cursor-pointer **:data-[slot=tabs-trigger]:cursor-pointer [&_a]:cursor-pointer [&_button]:cursor-pointer **:[[role=menuitem]]:cursor-pointer **:[[role=tab]]:cursor-pointer">
       <CardHeader className="px-8 pb-6">
@@ -99,7 +104,7 @@ export function ThreeStreamsView({ data }: ThreeStreamsViewProps) {
           ))}
         </div>
 
-        {SECTIONS.map((section) => (
+        {visibleSections.map((section) => (
           <section key={section.key} className="space-y-4">
             <div className="flex items-center gap-4">
               <p className="shrink-0 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">

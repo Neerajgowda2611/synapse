@@ -4,18 +4,14 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { PortalShell } from "@/components/portal/portal-shell"
 import { PortalUserProvider } from "@/contexts/portal-user-context"
-import { api } from "@/lib/api/client"
+import { getProfilerMe } from "@/lib/api/profiler"
 import { clearAccessToken, getAccessToken } from "@/lib/config"
-
-interface MeResponse {
-  email: string
-  name: string
-  user_type: string
-}
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const [me, setMe] = useState<MeResponse | null>(null)
+  const [me, setMe] = useState<{ userId: string; name: string; email: string } | null>(
+    null
+  )
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -24,14 +20,17 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
       return
     }
 
-    api
-      .get<MeResponse>("/api/v1/auth/me")
+    getProfilerMe()
       .then((meData) => {
         if (meData.user_type !== "learner") {
           router.replace("/dashboard")
           return
         }
-        setMe(meData)
+        setMe({
+          userId: meData.user_id,
+          name: meData.name,
+          email: meData.email,
+        })
       })
       .catch(() => {
         clearAccessToken()
@@ -51,7 +50,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   if (!me) return null
 
   return (
-    <PortalUserProvider user={{ name: me.name, email: me.email }}>
+    <PortalUserProvider user={me}>
       <PortalShell>{children}</PortalShell>
     </PortalUserProvider>
   )

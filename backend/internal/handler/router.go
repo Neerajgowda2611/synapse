@@ -89,7 +89,7 @@ func RegisterRoutes(
 	dataSourceHandler := NewDataSourceHandler(dataSourceService)
 	webhookHandler := NewWebhookHandler(dataSourceService)
 
-	requireAuth := middleware.RequireAuth(validator, resolver)
+	requireAuth := middleware.RequireAuth(validator, resolver, enforcer)
 
 	api := router.Group("/api/v1")
 

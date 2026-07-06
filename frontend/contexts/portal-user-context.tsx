@@ -3,6 +3,7 @@
 import { createContext, ReactNode, useContext } from "react"
 
 export interface PortalUser {
+  userId: string
   name: string
   email: string
 }

@@ -20,15 +20,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
-import { getCompetencyEvidence } from "@/lib/api/competency-evidence"
+import { getTraitEvidenceSafe } from "@/lib/api/profiler"
+import { usePortalUser } from "@/contexts/portal-user-context"
+import { mapTraitEvidenceToDialog } from "@/lib/profiling/mappers"
 import type { CompetencyEvidence } from "@/lib/profiling/evidence-types"
 
 type CompetencyEvidenceDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  roleId: string
   roleTitle: string
-  competencyId: string
+  trait: string
   competencyName: string
   score: number
   sourceLabels: Record<string, string>
@@ -37,23 +38,25 @@ type CompetencyEvidenceDialogProps = {
 export function CompetencyEvidenceDialog({
   open,
   onOpenChange,
-  roleId,
   roleTitle,
-  competencyId,
+  trait,
   competencyName,
   score,
   sourceLabels,
 }: CompetencyEvidenceDialogProps) {
+  const { userId } = usePortalUser()
   const [evidence, setEvidence] = useState<CompetencyEvidence | null>(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!open) return
     setLoading(true)
-    getCompetencyEvidence(roleId, competencyId)
-      .then(setEvidence)
+    getTraitEvidenceSafe(userId, trait)
+      .then((response) => {
+        setEvidence(response ? mapTraitEvidenceToDialog(response) : null)
+      })
       .finally(() => setLoading(false))
-  }, [open, roleId, competencyId])
+  }, [open, userId, trait, sourceLabels])
 
   const defaultOpenSources =
     evidence?.sources.filter((s) => s.default_open).map((s) => s.source_id) ?? []
