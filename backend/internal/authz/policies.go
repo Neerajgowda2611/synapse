@@ -101,11 +101,37 @@ func seedPolicies(e *casbin.Enforcer) error {
 	return e.SavePolicy()
 }
 
-// AssignRole adds a g rule: user has role in domain.
-// Call this when a user is added to an institution or promoted.
+func roleDomains(institutionID *string) []string {
+	if institutionID != nil && *institutionID != "" {
+		return []string{*institutionID, "*"}
+	}
+	return []string{"*"}
+}
+
+func assignRoleInDomains(e *casbin.Enforcer, userID, role, institutionID string) error {
+	domains := roleDomains(nil)
+	if institutionID != "" && institutionID != "*" {
+		domains = roleDomains(&institutionID)
+	}
+	seen := make(map[string]struct{}, len(domains))
+	for _, domain := range domains {
+		if _, ok := seen[domain]; ok {
+			continue
+		}
+		seen[domain] = struct{}{}
+		if _, err := e.AddRoleForUserInDomain(userID, role, domain); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// AssignRole adds Casbin g rules for a user in their institution domain and globally.
 func AssignRole(e *casbin.Enforcer, userID, role, domain string) error {
-	_, err := e.AddRoleForUserInDomain(userID, role, domain)
-	return err
+	if err := assignRoleInDomains(e, userID, role, domain); err != nil {
+		return err
+	}
+	return e.SavePolicy()
 }
 
 // RemoveRole removes a g rule for a user in a domain.
@@ -133,14 +159,27 @@ func SyncRolesFromDB(db *gorm.DB, e *casbin.Enforcer) error {
 	}
 
 	for _, r := range rows {
-		domain := "*"
-		if r.InstitutionID != nil && *r.InstitutionID != "" {
-			domain = *r.InstitutionID
+		institutionID := ""
+		if r.InstitutionID != nil {
+			institutionID = *r.InstitutionID
 		}
-		if _, err := e.AddRoleForUserInDomain(r.UserID, r.Role, domain); err != nil {
+		if err := assignRoleInDomains(e, r.UserID, r.Role, institutionID); err != nil {
 			return err
 		}
 	}
 
+	return e.SavePolicy()
+}
+
+// EnsureUserRoles idempotently syncs Casbin g rules for the authenticated user.
+// Called on each request so role assignments stay aligned with user_roles.
+func EnsureUserRoles(e *casbin.Enforcer, ac *auth.AuthContext) error {
+	institutionID := ""
+	if ac.InstitutionID != nil {
+		institutionID = ac.InstitutionID.String()
+	}
+	if err := assignRoleInDomains(e, ac.UserID.String(), ac.Role, institutionID); err != nil {
+		return err
+	}
 	return e.SavePolicy()
 }

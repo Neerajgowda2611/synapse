@@ -1,0 +1,402 @@
+import type {
+  JobFitResponse,
+  JobWithCriteria,
+  TraitEvidenceResponse,
+} from "@/lib/api/profiler"
+import type { CareerDiscoveryResponse } from "@/lib/profiling/career-discovery-types"
+import type { CompetencyEvidence } from "@/lib/profiling/evidence-types"
+import type { PlayerCardViewData } from "@/lib/profiling/types"
+import type { StreamIcon, ThreeStreamsResponse } from "@/lib/profiling/three-streams-types"
+
+const CONNECTOR_TO_STREAM: Record<string, string> = {
+  vtu_placements: "vtu",
+  vtu: "vtu",
+  projex: "projex",
+  mentorship: "mentorship",
+}
+
+const STREAM_STATIC: Record<
+  string,
+  {
+    label: string
+    subtitle: string
+    icon: StreamIcon
+    contributes: string[]
+    activities_we_consider: string[]
+    what_activities_show: string[]
+  }
+> = {
+  vtu: {
+    label: "VTU",
+    subtitle: "Career Profile",
+    icon: "briefcase",
+    contributes: ["Professional Profile", "Readiness", "Technical Skills"],
+    activities_we_consider: [
+      "Skills",
+      "Certificates",
+      "Work Experience",
+      "Job Applications",
+      "Interviews",
+      "Offers Received",
+    ],
+    what_activities_show: ["Career Ready", "Professionalism", "Technical Skills"],
+  },
+  projex: {
+    label: "PROJEX",
+    subtitle: "Project Experience",
+    icon: "rocket",
+    contributes: ["Teamwork", "Project Delivery", "Ownership"],
+    activities_we_consider: [
+      "Project",
+      "Tasks Completed",
+      "Milestones Submitted",
+      "Evaluations",
+      "Team Contributions",
+      "Feedback",
+    ],
+    what_activities_show: ["Reliability", "Collaboration", "Project Ownership"],
+  },
+  mentorship: {
+    label: "MENTORSHIP",
+    subtitle: "Growth & Guidance",
+    icon: "messages-square",
+    contributes: ["Continuous Learning", "Guidance", "Personal Growth"],
+    activities_we_consider: [
+      "Sessions Attended",
+      "Mentor Feedback",
+      "Learning Tasks",
+      "Notes Added",
+      "Messages Exchanged",
+    ],
+    what_activities_show: ["Learning Mindset", "Consistency", "Growth"],
+  },
+}
+
+const HIGHLIGHT_RULES: Array<{
+  streamId: string
+  match: (type: string) => boolean
+  label: (count: number) => string
+}> = [
+  {
+    streamId: "vtu",
+    match: (t) => t.includes("certificate"),
+    label: (n) => `${n} Certificate${n === 1 ? "" : "s"} Added`,
+  },
+  {
+    streamId: "vtu",
+    match: (t) => t.includes("job") && t.includes("appl"),
+    label: (n) => `${n} Job${n === 1 ? "" : "s"} Applied`,
+  },
+  {
+    streamId: "vtu",
+    match: (t) => t.includes("interview"),
+    label: (n) => `${n} Interview Call${n === 1 ? "" : "s"}`,
+  },
+  {
+    streamId: "vtu",
+    match: (t) => t.includes("offer"),
+    label: (n) => `${n} Offer${n === 1 ? "" : "s"} Received`,
+  },
+  {
+    streamId: "projex",
+    match: (t) => t.includes("task"),
+    label: (n) => `${n} Task${n === 1 ? "" : "s"} Completed`,
+  },
+  {
+    streamId: "projex",
+    match: (t) => t.includes("milestone"),
+    label: (n) => `${n} Milestone${n === 1 ? "" : "s"} Delivered`,
+  },
+  {
+    streamId: "projex",
+    match: (t) => t.includes("feedback"),
+    label: (n) => `${n} Peer Feedback Received`,
+  },
+  {
+    streamId: "mentorship",
+    match: (t) => t.includes("session") || t.includes("mentoring"),
+    label: (n) => `${n} Mentoring Session${n === 1 ? "" : "s"}`,
+  },
+  {
+    streamId: "mentorship",
+    match: (t) => t.includes("mentor") && t.includes("task"),
+    label: (n) => `${n} Mentor Task${n === 1 ? "" : "s"} Completed`,
+  },
+  {
+    streamId: "mentorship",
+    match: (t) => t.includes("note"),
+    label: (n) => `${n} Learning Note${n === 1 ? "" : "s"} Added`,
+  },
+]
+
+export function formatTraitName(trait: string): string {
+  return trait
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
+}
+
+export function formatConnectorLabel(connector: string): string {
+  return connector
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
+}
+
+export function formatRewardSystemId(id: string): string {
+  return id.replace(/_/g, " ").toUpperCase()
+}
+
+export function matchLabelFromPercent(percent: number): string {
+  if (percent >= 80) return "HIGH MATCH"
+  if (percent >= 60) return "MEDIUM MATCH"
+  return "LOW MATCH"
+}
+
+export function buildSourceLabelMap(
+  evidenceList: TraitEvidenceResponse[]
+): Record<string, string> {
+  const labels: Record<string, string> = {}
+  for (const evidence of evidenceList) {
+    for (const app of evidence.construct?.source_apps ?? []) {
+      labels[app] = formatConnectorLabel(app)
+    }
+    for (const signal of evidence.signals) {
+      for (const obs of signal.canonical_observations) {
+        labels[obs.source.connector] = formatConnectorLabel(obs.source.connector)
+      }
+    }
+  }
+  return labels
+}
+
+export function mapRoleFromJobFit(
+  job: JobWithCriteria,
+  fit: JobFitResponse,
+  evidenceByTrait: Record<string, TraitEvidenceResponse>
+): PlayerCardViewData["roles"][number] {
+  return {
+    id: job.id,
+    title: job.title,
+    focus: job.criteria.label,
+    fitPercent: Math.round(fit.fit_percent),
+    competencies: fit.traits.map((traitReading) => {
+      const evidence = evidenceByTrait[traitReading.trait]
+      const sourceIds = [
+        ...new Set([
+          ...(evidence?.construct?.source_apps ?? []),
+          ...(evidence?.signals.flatMap((s) =>
+            s.canonical_observations.map((o) => o.source.connector)
+          ) ?? []),
+        ]),
+      ]
+      return {
+        trait: traitReading.trait,
+        name: evidence?.construct?.name ?? formatTraitName(traitReading.trait),
+        score: traitReading.usable ? Math.round(traitReading.trait_value * 100) : 0,
+        verified: traitReading.usable && !traitReading.missing,
+        sourceIds,
+      }
+    }),
+  }
+}
+
+export function mapPlayerCard(
+  jobs: JobWithCriteria[],
+  fitsByJobId: Record<string, JobFitResponse>,
+  evidenceByTrait: Record<string, TraitEvidenceResponse>
+): PlayerCardViewData {
+  return {
+    roles: jobs.map((job) =>
+      mapRoleFromJobFit(job, fitsByJobId[job.id], evidenceByTrait)
+    ),
+    sourceLabels: buildSourceLabelMap(Object.values(evidenceByTrait)),
+  }
+}
+
+function discoverDescription(
+  job: JobWithCriteria,
+  fit: JobFitResponse,
+  evidenceByTrait: Record<string, TraitEvidenceResponse>
+): string {
+  const sortedTraits = [...fit.traits]
+    .filter((t) => t.usable && !t.missing)
+    .sort((a, b) => b.weight - a.weight)
+
+  for (const traitReading of sortedTraits) {
+    const definition = evidenceByTrait[traitReading.trait]?.construct?.definition
+    if (definition) return definition
+  }
+
+  if (fit.missing_traits.length > 0) {
+    const missing = fit.missing_traits.map(formatTraitName).join(", ")
+    return `Your profile is still developing for ${missing}. Strengthening these areas would improve fit for ${job.title}.`
+  }
+
+  return `Your trait profile aligns with the ${job.criteria.label} criteria for this role.`
+}
+
+export function mapCareerDiscovery(
+  jobs: JobWithCriteria[],
+  fits: JobFitResponse[],
+  evidenceByTrait: Record<string, TraitEvidenceResponse>
+): CareerDiscoveryResponse {
+  const fitByJobId = Object.fromEntries(fits.map((f) => [f.job_id, f]))
+
+  return {
+    title: "Career Discovery",
+    subtitle: `${jobs.length} target role${jobs.length === 1 ? "" : "s"} identified based on your current skill matrix.`,
+    sort: {
+      label: "Sort by",
+      default_option_id: "match_score",
+      options: [
+        { id: "match_score", label: "Match Score" },
+        { id: "role_title", label: "Role Title" },
+      ],
+    },
+    add_to_profile_label: "Add To profile",
+    roles: jobs.map((job) => {
+      const fit = fitByJobId[job.id]
+      const matchScore = Math.round(fit?.fit_percent ?? 0)
+      const skills = job.criteria.metrics
+        .map((m) => m.trait ?? m.metric_id)
+        .filter(Boolean)
+        .map((s) => s.replace(/_/g, " ").toUpperCase())
+
+      return {
+        id: job.id,
+        category: formatRewardSystemId(job.reward_system_id),
+        title: job.title,
+        skills,
+        description: fit
+          ? discoverDescription(job, fit, evidenceByTrait)
+          : `Explore how your profile aligns with ${job.title}.`,
+        match_score: matchScore,
+        match_label: matchLabelFromPercent(matchScore),
+      }
+    }),
+  }
+}
+
+function streamIdForConnector(connector: string): string | undefined {
+  if (CONNECTOR_TO_STREAM[connector]) return CONNECTOR_TO_STREAM[connector]
+  for (const [key, streamId] of Object.entries(CONNECTOR_TO_STREAM)) {
+    if (connector.includes(key)) return streamId
+  }
+  return undefined
+}
+
+function aggregateHighlights(
+  evidenceList: TraitEvidenceResponse[]
+): Record<string, string[]> {
+  const counts: Record<string, Record<string, number>> = {
+    vtu: {},
+    projex: {},
+    mentorship: {},
+  }
+
+  for (const evidence of evidenceList) {
+    for (const signal of evidence.signals) {
+      for (const obs of signal.canonical_observations) {
+        const streamId = streamIdForConnector(obs.source.connector)
+        if (!streamId) continue
+        const type = obs.observation_type.toLowerCase()
+        for (const rule of HIGHLIGHT_RULES) {
+          if (rule.streamId !== streamId || !rule.match(type)) continue
+          const key = rule.label(0)
+          counts[streamId][key] = (counts[streamId][key] ?? 0) + 1
+        }
+      }
+    }
+  }
+
+  const highlights: Record<string, string[]> = {}
+  for (const streamId of Object.keys(STREAM_STATIC)) {
+    const streamCounts = counts[streamId] ?? {}
+    highlights[streamId] = HIGHLIGHT_RULES.filter((r) => r.streamId === streamId)
+      .map((rule) => {
+        const key = rule.label(0)
+        const count = streamCounts[key]
+        return count ? rule.label(count) : null
+      })
+      .filter((h): h is string => h !== null)
+  }
+
+  return highlights
+}
+
+export function mapThreeStreams(
+  evidenceList: TraitEvidenceResponse[]
+): ThreeStreamsResponse {
+  const highlights = aggregateHighlights(evidenceList)
+
+  return {
+    title: "How Your Profile Is Built",
+    streams: Object.entries(STREAM_STATIC).map(([id, config]) => ({
+      id,
+      label: config.label,
+      subtitle: config.subtitle,
+      icon: config.icon,
+      contributes: config.contributes,
+      activities_we_consider: config.activities_we_consider,
+      what_activities_show: config.what_activities_show,
+      recent_highlights: highlights[id] ?? [],
+    })),
+  }
+}
+
+export function mapTraitEvidenceToDialog(
+  evidence: TraitEvidenceResponse
+): CompetencyEvidence {
+  const byConnector = new Map<
+    string,
+    {
+      observations: Array<{ text: string; tag: string }>
+      signalTypes: Set<string>
+      nObservations: number
+    }
+  >()
+
+  for (const signal of evidence.signals) {
+    for (const obs of signal.canonical_observations) {
+      const connector = obs.source.connector
+      const entry = byConnector.get(connector) ?? {
+        observations: [],
+        signalTypes: new Set<string>(),
+        nObservations: 0,
+      }
+      entry.signalTypes.add(signal.signal_type)
+      entry.nObservations += 1
+      const title =
+        typeof obs.fields.title === "string"
+          ? obs.fields.title
+          : typeof obs.source.payload?.title === "string"
+            ? obs.source.payload.title
+            : formatTraitName(obs.observation_type)
+      entry.observations.push({
+        text: title,
+        tag: obs.observation_type.replace(/_/g, " ").toUpperCase(),
+      })
+      byConnector.set(connector, entry)
+    }
+  }
+
+  const sources = [...byConnector.entries()].map(([connector, data], index) => ({
+    source_id: connector,
+    title: `${formatConnectorLabel(connector)} Activity`,
+    stats: [
+      { label: `${data.nObservations} observation${data.nObservations === 1 ? "" : "s"}` },
+      { label: `${data.signalTypes.size} signal type${data.signalTypes.size === 1 ? "" : "s"}` },
+    ],
+    items: data.observations,
+    default_open: index === 0,
+  }))
+
+  return {
+    description:
+      evidence.construct?.definition ??
+      evidence.construct?.scientific_rationale ??
+      "",
+    sources,
+  }
+}

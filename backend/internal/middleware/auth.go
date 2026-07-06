@@ -5,14 +5,16 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/casbin/casbin/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/profiler/backend/internal/auth"
+	"github.com/profiler/backend/internal/authz"
 	"github.com/profiler/backend/internal/logs"
 )
 
 // RequireAuth validates the Bearer JWT and loads AuthContext onto the request context.
 // Returns 401 if the token is missing, invalid, or the user is not provisioned.
-func RequireAuth(validator *auth.Validator, resolver *auth.Resolver) gin.HandlerFunc {
+func RequireAuth(validator *auth.Validator, resolver *auth.Resolver, enforcer *casbin.Enforcer) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		rawToken := extractBearer(c.GetHeader("Authorization"))
 		if rawToken == "" {
@@ -39,6 +41,12 @@ func RequireAuth(validator *auth.Validator, resolver *auth.Resolver) gin.Handler
 			}
 			logs.Error("resolver error", "error", err, "sub", claims.Sub)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "authentication failed"})
+			return
+		}
+
+		if err := authz.EnsureUserRoles(enforcer, ac); err != nil {
+			logs.Error("failed to sync casbin roles for user", "error", err, "user_id", ac.UserID)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "authorization setup failed"})
 			return
 		}
 

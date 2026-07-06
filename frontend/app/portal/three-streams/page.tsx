@@ -1,0 +1,82 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { ThreeStreamsView } from "@/components/portal/three-streams-view"
+import {
+  getTraitEvidenceSafe,
+  listUserTraits,
+  refreshUserTraits,
+} from "@/lib/api/profiler"
+import { usePortalUser } from "@/contexts/portal-user-context"
+import { mapThreeStreams } from "@/lib/profiling/mappers"
+import type { ThreeStreamsResponse } from "@/lib/profiling/three-streams-types"
+
+export default function ThreeStreamsPage() {
+  const { userId } = usePortalUser()
+  const [data, setData] = useState<ThreeStreamsResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function load() {
+      setLoading(true)
+      setError(null)
+      try {
+        let traitsResponse = await listUserTraits(userId)
+        if (traitsResponse.data.length === 0) {
+          await refreshUserTraits(userId)
+          traitsResponse = await listUserTraits(userId)
+        }
+
+        const evidenceList = (
+          await Promise.all(
+            traitsResponse.data.map((trait) => getTraitEvidenceSafe(userId, trait.trait))
+          )
+        ).filter((e): e is NonNullable<typeof e> => e !== null)
+
+        if (!cancelled) {
+          setData(mapThreeStreams(evidenceList))
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Unable to load streams.")
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [userId])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <p className="text-muted-foreground">Loading streams...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <p className="text-muted-foreground">{error}</p>
+      </div>
+    )
+  }
+
+  if (!data) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <p className="text-muted-foreground">Unable to load streams.</p>
+      </div>
+    )
+  }
+
+  return <ThreeStreamsView data={data} />
+}
