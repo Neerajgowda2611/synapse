@@ -1,0 +1,121 @@
+name: Build and Deploy Frontend
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}-frontend
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
+            type=ref,event=branch,enable=${{ github.ref != 'refs/heads/main' }}
+            type=ref,event=pr
+            type=ref,event=tag
+          labels: |
+            org.opencontainers.image.title=Synapse Frontend
+            org.opencontainers.image.description=Synapse profiler frontend web app
+            org.opencontainers.image.vendor=Moonshot
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Generate summary
+        run: |
+          echo "## Frontend Container Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Repository:** ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Published Images" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Pull Commands" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "docker pull ghcr.io/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
+            echo "docker run -p 3000:3000 ghcr.io/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "docker pull ghcr.io/${{ env.IMAGE_NAME }}:${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+            echo "docker run -p 3000:3000 ghcr.io/${{ env.IMAGE_NAME }}:${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Deploy to Development
+        id: deploy
+        if: success() && github.ref_name == 'dev'
+        run: |
+          echo "Triggering frontend deployment..."
+
+          DEPLOY_URL="${{ vars.FRONTEND_DEPLOY_URL }}"
+          STACK_NAME="${{ vars.FRONTEND_STACK_NAME }}"
+          ENDPOINT_ID="${{ vars.FRONTEND_ENDPOINT_ID }}"
+          ENVIRONMENT="development"
+
+          echo "Deploying to $ENVIRONMENT environment"
+          echo "Deploy URL: $DEPLOY_URL"
+          echo "Stack Name: $STACK_NAME"
+          echo "Endpoint ID: $ENDPOINT_ID"
+
+          RESPONSE=$(curl -s -w "%{http_code}" -X POST "$DEPLOY_URL" \
+            -H "Content-Type: application/json" \
+            -H "x-api-key:${{ secrets.KARUVI_API_KEY }}" \
+            -d "{\"stack_name\":\"$STACK_NAME\",\"endpoint_id\":$ENDPOINT_ID}")
+
+          HTTP_CODE="${RESPONSE: -3}"
+          RESPONSE_BODY="${RESPONSE%???}"
+
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $RESPONSE_BODY"
+
+          if [[ "$HTTP_CODE" -ge 200 && "$HTTP_CODE" -lt 300 ]]; then
+            echo "Deployment triggered successfully"
+            echo "DEPLOY_STATUS=success" >> $GITHUB_OUTPUT
+            echo "ENVIRONMENT=$ENVIRONMENT" >> $GITHUB_OUTPUT
+          else
+            echo "Deployment trigger failed"
+            echo "DEPLOY_STATUS=failed" >> $GITHUB_OUTPUT
+            echo "ENVIRONMENT=$ENVIRONMENT" >> $GITHUB_OUTPUT
+            exit 1
+          fi
