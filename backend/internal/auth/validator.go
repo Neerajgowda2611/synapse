@@ -10,21 +10,26 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwt"
 )
 
-// Claims holds the parsed fields we care about from a Zitadel JWT.
+// Claims holds the parsed fields we care about from a JWT.
+// ProfilerUserID is set only for profiler-minted access tokens (token_type=profiler_access);
+// the resolver uses it to bypass the IdP-sub lookup and load the user directly by primary key.
 type Claims struct {
-	Sub           string
-	Email         string
-	EmailVerified bool
-	Name          string
-	Audience      []string
+	Sub            string
+	Email          string
+	EmailVerified  bool
+	Name           string
+	Audience       []string
+	ProfilerUserID string
 }
 
-// Validator validates Zitadel-issued JWTs using a cached JWKS.
+// Validator validates JWTs. Tries the profiler-minted token path first (HS256) when
+// AuthX is enabled, then falls back to Zitadel JWKS validation.
 type Validator struct {
 	issuer    string
 	audiences []string
 	cache     *jwk.Cache
 	jwksURL   string
+	authxCfg  AuthxConfig
 }
 
 func NewValidator(issuer string, audiences []string, jwksURL string) (*Validator, error) {
@@ -50,9 +55,23 @@ func NewValidator(issuer string, audiences []string, jwksURL string) (*Validator
 	}, nil
 }
 
+// WithAuthx installs an AuthxConfig on the validator. When enabled, Validate() will
+// first try to parse the token as a profiler-minted HS256 access token before
+// falling back to the Zitadel JWKS path. Returns the validator for chaining.
+func (v *Validator) WithAuthx(cfg AuthxConfig) *Validator {
+	v.authxCfg = cfg
+	return v
+}
+
 // Validate parses and validates a raw JWT string.
 // Returns the extracted Claims on success.
 func (v *Validator) Validate(ctx context.Context, rawToken string) (*Claims, error) {
+	if v.authxCfg.Enabled {
+		if claims, err := ParseProfilerAccessToken(ctx, rawToken, v.authxCfg); err == nil {
+			return claims, nil
+		}
+	}
+
 	claims, err := v.parseToken(ctx, rawToken)
 	if err == nil {
 		return claims, nil

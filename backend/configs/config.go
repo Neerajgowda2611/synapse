@@ -20,6 +20,10 @@ type Config struct {
 	ZitadelServiceToken          string
 	ZitadelLoginClientID         string
 	ZitadelRedirectURI           string
+	EnableAuthx                  bool
+	AuthIdpUrl                   string
+	AuthxClientID                string
+	AuthxClientSecret            string
 	FrontendURL                  string
 	CORSAllowOrigins             string
 	ObservationWorkerEnabled     bool
@@ -55,6 +59,26 @@ func Load(configPath string) (*Config, error) {
 		return nil, fmt.Errorf("ZITADEL_WEB_CLIENT_ID is required")
 	}
 
+	enableAuthx := getEnvBool("ENABLE_AUTHX", false)
+	authIdpUrl := os.Getenv("AUTH_IDP_URL")
+	authxClientID := os.Getenv("AUTHX_CLIENT_ID")
+	authxClientSecret := os.Getenv("AUTHX_CLIENT_SECRET")
+	if enableAuthx {
+		var missing []string
+		if authIdpUrl == "" {
+			missing = append(missing, "AUTH_IDP_URL")
+		}
+		if authxClientID == "" {
+			missing = append(missing, "AUTHX_CLIENT_ID")
+		}
+		if authxClientSecret == "" {
+			missing = append(missing, "AUTHX_CLIENT_SECRET")
+		}
+		if len(missing) > 0 {
+			return nil, fmt.Errorf("ENABLE_AUTHX=true but missing: %v", missing)
+		}
+	}
+
 	return &Config{
 		Port:                         port,
 		AppEnv:                       getEnv("APP_ENV", "development"),
@@ -66,6 +90,10 @@ func Load(configPath string) (*Config, error) {
 		ZitadelServiceToken:          os.Getenv("ZITADEL_SERVICE_USER_TOKEN"),
 		ZitadelLoginClientID:         os.Getenv("ZITADEL_LOGIN_CLIENT_ID"),
 		ZitadelRedirectURI:           getEnv("ZITADEL_REDIRECT_URI", frontendURL+"/auth/callback"),
+		EnableAuthx:                  enableAuthx,
+		AuthIdpUrl:                   authIdpUrl,
+		AuthxClientID:                authxClientID,
+		AuthxClientSecret:            authxClientSecret,
 		FrontendURL:                  frontendURL,
 		CORSAllowOrigins:             getEnv("CORS_ALLOW_ORIGINS", frontendURL),
 		ObservationWorkerEnabled:     getEnvBool("OBSERVATION_WORKER_ENABLED", true),

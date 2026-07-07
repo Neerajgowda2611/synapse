@@ -18,6 +18,8 @@ func RegisterRoutes(
 	resolver *auth.Resolver,
 	enforcer *casbin.Enforcer,
 	loginClient *auth.LoginClient,
+	authxSvc *auth.AuthxSessionService,
+	authxEnabled bool,
 	devMode bool,
 ) *service.ObservationService {
 	// Repositories
@@ -84,6 +86,7 @@ func RegisterRoutes(
 	// Handlers
 	authHandler := NewAuthHandler()
 	authLoginHandler := NewAuthLoginHandler(loginClient, devMode)
+	authxHandler := NewAuthxHandler(authxSvc, authxEnabled)
 	institutionHandler := NewInstitutionHandler(institutionService)
 	institutionUserHandler := NewInstitutionUserHandler(institutionUserService, enforcer)
 	dataSourceHandler := NewDataSourceHandler(dataSourceService)
@@ -98,6 +101,8 @@ func RegisterRoutes(
 	{
 		authPublic.POST("/login", authLoginHandler.Login)
 		authPublic.POST("/token-exchange", authLoginHandler.TokenExchange)
+		authPublic.POST("/authx/session-token", authxHandler.SessionToken)
+		authPublic.POST("/authx/refresh-session", authxHandler.RefreshSession)
 	}
 
 	// Auth — requires a valid token but no specific role
