@@ -182,66 +182,36 @@ export function traitPercent(value: number): number {
 
 export function mapRoleFromJobFit(
   job: JobWithCriteria,
-  fit: JobFitResponse,
-  evidenceByTrait: Record<string, TraitEvidenceResponse>
+  fit: JobFitResponse
 ): PlayerCardViewData["roles"][number] {
   return {
     id: job.id,
     title: job.title,
     focus: job.criteria.label,
     fitPercent: Math.round(fit.fit_percent),
-    competencies: fit.traits.map((traitReading) => {
-      const evidence = evidenceByTrait[traitReading.trait]
-      const sourceIds = [
-        ...new Set([
-          ...(evidence?.construct?.source_apps ?? []),
-          ...(evidence?.signals.flatMap((s) =>
-            s.canonical_observations.map((o) => o.source.connector)
-          ) ?? []),
-        ]),
-      ]
-      const rawValue =
-        traitReading.trait_value > 0
-          ? traitReading.trait_value
-          : (evidence?.value ?? 0)
-      return {
+    competencies: fit.traits
+      .map((traitReading) => ({
         trait: traitReading.trait,
-        name: evidence?.construct?.name ?? formatTraitName(traitReading.trait),
-        score: traitPercent(rawValue),
+        name: formatTraitName(traitReading.trait),
+        score: traitPercent(traitReading.trait_value),
         verified: traitReading.usable && !traitReading.missing,
-        sourceIds,
-      }
-    }),
+        sourceIds: [],
+      }))
+      .sort((a, b) => b.score - a.score),
   }
 }
 
 export function mapPlayerCard(
   jobs: JobWithCriteria[],
-  fitsByJobId: Record<string, JobFitResponse>,
-  evidenceByTrait: Record<string, TraitEvidenceResponse>
+  fitsByJobId: Record<string, JobFitResponse>
 ): PlayerCardViewData {
   return {
-    roles: jobs.map((job) =>
-      mapRoleFromJobFit(job, fitsByJobId[job.id], evidenceByTrait)
-    ),
-    sourceLabels: buildSourceLabelMap(Object.values(evidenceByTrait)),
+    roles: jobs.map((job) => mapRoleFromJobFit(job, fitsByJobId[job.id])),
+    sourceLabels: {},
   }
 }
 
-function discoverDescription(
-  job: JobWithCriteria,
-  fit: JobFitResponse,
-  evidenceByTrait: Record<string, TraitEvidenceResponse>
-): string {
-  const sortedTraits = [...fit.traits]
-    .filter((t) => t.usable && !t.missing)
-    .sort((a, b) => b.weight - a.weight)
-
-  for (const traitReading of sortedTraits) {
-    const definition = evidenceByTrait[traitReading.trait]?.construct?.definition
-    if (definition) return definition
-  }
-
+function discoverDescription(job: JobWithCriteria, fit: JobFitResponse): string {
   if (fit.missing_traits.length > 0) {
     const missing = fit.missing_traits.map(formatTraitName).join(", ")
     return `Your profile is still developing for ${missing}. Strengthening these areas would improve fit for ${job.title}.`
@@ -252,8 +222,7 @@ function discoverDescription(
 
 export function mapCareerDiscovery(
   jobs: JobWithCriteria[],
-  fits: JobFitResponse[],
-  evidenceByTrait: Record<string, TraitEvidenceResponse>
+  fits: JobFitResponse[]
 ): CareerDiscoveryResponse {
   const fitByJobId = Object.fromEntries(fits.map((f) => [f.job_id, f]))
 
@@ -283,7 +252,7 @@ export function mapCareerDiscovery(
         title: job.title,
         skills,
         description: fit
-          ? discoverDescription(job, fit, evidenceByTrait)
+          ? discoverDescription(job, fit)
           : `Explore how your profile aligns with ${job.title}.`,
         match_score: matchScore,
         match_label: matchLabelFromPercent(matchScore),

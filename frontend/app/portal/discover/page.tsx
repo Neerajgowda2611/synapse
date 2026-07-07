@@ -2,27 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { CareerDiscoveryView } from "@/components/portal/career-discovery-view"
-import {
-  getTraitEvidenceSafe,
-  getUserJobFit,
-  listJobs,
-} from "@/lib/api/profiler"
+import { getUserJobFit, listJobs } from "@/lib/api/profiler"
 import { usePortalUser } from "@/contexts/portal-user-context"
 import { mapCareerDiscovery } from "@/lib/profiling/mappers"
 import type { CareerDiscoveryResponse } from "@/lib/profiling/career-discovery-types"
-import type { TraitEvidenceResponse } from "@/lib/api/profiler"
-
-async function loadEvidenceForTraits(userId: string, traits: string[]) {
-  const entries = await Promise.all(
-    traits.map(async (trait) => {
-      const evidence = await getTraitEvidenceSafe(userId, trait)
-      return evidence ? ([trait, evidence] as const) : null
-    })
-  )
-  return Object.fromEntries(
-    entries.filter((e): e is [string, TraitEvidenceResponse] => e !== null)
-  )
-}
 
 export default function DiscoverPage() {
   const { userId } = usePortalUser()
@@ -39,11 +22,9 @@ export default function DiscoverPage() {
       try {
         const { data: jobs } = await listJobs()
         const fits = await Promise.all(jobs.map((job) => getUserJobFit(userId, job.id)))
-        const allTraits = [...new Set(fits.flatMap((fit) => fit.traits.map((t) => t.trait)))]
-        const evidenceByTrait = await loadEvidenceForTraits(userId, allTraits)
 
         if (!cancelled) {
-          setData(mapCareerDiscovery(jobs, fits, evidenceByTrait))
+          setData(mapCareerDiscovery(jobs, fits))
         }
       } catch (err) {
         if (!cancelled) {

@@ -12,6 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { cn } from "@/lib/utils"
 import type {
   CareerDiscoveryResponse,
   CareerDiscoveryRole,
@@ -101,7 +102,7 @@ export function CareerDiscoveryView({ data }: CareerDiscoveryViewProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 min-w-36 cursor-pointer justify-between gap-2 px-3 font-medium text-foreground"
+                  className="h-8 min-w-36 cursor-pointer justify-between gap-2 border-primary px-3 font-medium text-primary hover:bg-primary/10! hover:text-primary! aria-expanded:bg-primary/10! aria-expanded:text-primary!"
                 >
                   <span className="truncate">{activeSort.label}</span>
                   <ChevronDown className="size-4 shrink-0 opacity-60" />
@@ -113,7 +114,10 @@ export function CareerDiscoveryView({ data }: CareerDiscoveryViewProps) {
                 {data.sort.options.map((option) => (
                   <DropdownMenuItem
                     key={option.id}
-                    className="cursor-pointer px-3 py-2"
+                    className={cn(
+                      "cursor-pointer px-3 py-2 hover:bg-primary/10! hover:text-primary! focus:bg-primary/10! focus:text-primary! not-data-[variant=destructive]:hover:**:text-primary! not-data-[variant=destructive]:focus:**:text-primary!",
+                      sortId === option.id && "bg-primary/10 font-medium text-primary"
+                    )}
                     onClick={() => setSortId(option.id)}
                   >
                     {option.label}

@@ -1,25 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { getTraitEvidenceSafe, getUserJobFit, listJobs } from "@/lib/api/profiler"
+import { getUserJobFit, listJobs } from "@/lib/api/profiler"
 import { PlayerCardView } from "@/components/portal/player-card-view"
 import { usePortalUser } from "@/contexts/portal-user-context"
 import { mapPlayerCard } from "@/lib/profiling/mappers"
 import type { PlayerCardViewData } from "@/lib/profiling/types"
-
-import type { TraitEvidenceResponse } from "@/lib/api/profiler"
-
-async function loadEvidenceForTraits(userId: string, traits: string[]) {
-  const entries = await Promise.all(
-    traits.map(async (trait) => {
-      const evidence = await getTraitEvidenceSafe(userId, trait)
-      return evidence ? ([trait, evidence] as const) : null
-    })
-  )
-  return Object.fromEntries(
-    entries.filter((e): e is [string, TraitEvidenceResponse] => e !== null)
-  )
-}
 
 export default function PlayerCardPage() {
   const { userId } = usePortalUser()
@@ -43,15 +29,12 @@ export default function PlayerCardPage() {
         const fits = await Promise.all(
           jobs.map((job) => getUserJobFit(userId, job.id))
         )
-        const allTraits = [...new Set(fits.flatMap((fit) => fit.traits.map((t) => t.trait)))]
-        const evidenceByTrait = await loadEvidenceForTraits(userId, allTraits)
 
         if (!cancelled) {
           setData(
             mapPlayerCard(
               jobs,
-              Object.fromEntries(fits.map((f) => [f.job_id, f])),
-              evidenceByTrait
+              Object.fromEntries(fits.map((f) => [f.job_id, f]))
             )
           )
         }
