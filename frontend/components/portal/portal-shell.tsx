@@ -103,7 +103,10 @@ export function PortalShell({ children }: PortalShellProps) {
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DropdownMenuItem onClick={signOut} className="cursor-pointer">
+                  <DropdownMenuItem
+                    onClick={signOut}
+                    className="cursor-pointer hover:bg-primary/10! hover:text-primary! focus:bg-primary/10! focus:text-primary! not-data-[variant=destructive]:hover:**:text-primary! not-data-[variant=destructive]:focus:**:text-primary!"
+                  >
                     Sign out
                   </DropdownMenuItem>
                 </DropdownMenuGroup>

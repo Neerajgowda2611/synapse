@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { CareerDiscoveryView } from "@/components/portal/career-discovery-view"
+import { Skeleton } from "@/components/ui/skeleton"
 import { getUserJobFit, listJobs } from "@/lib/api/profiler"
 import { usePortalUser } from "@/contexts/portal-user-context"
 import { mapCareerDiscovery } from "@/lib/profiling/mappers"
@@ -43,8 +44,13 @@ export default function DiscoverPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <p className="text-muted-foreground">Loading career discovery...</p>
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-96 max-w-full" />
+        </div>
+        <Skeleton className="h-44 w-full rounded-xl" />
+        <Skeleton className="h-44 w-full rounded-xl" />
       </div>
     )
   }
