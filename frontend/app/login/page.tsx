@@ -42,7 +42,11 @@ function LoginForm() {
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || "Login failed")
+        if (res.status === 400 || res.status === 401 || res.status === 403) {
+          setError("Wrong username or password.")
+        } else {
+          setError("Unable to sign in right now. Please try again.")
+        }
         return
       }
 
@@ -59,25 +63,30 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-semibold text-gray-900">Profiler</h1>
-            <p className="mt-2 text-sm text-gray-500">
-              Sign in with your Zitadel login name and password
+        <div className="rounded-3xl border border-border/60 bg-card p-8 shadow-lg shadow-primary/5">
+          <div className="mb-8 text-center">
+            <div className="mx-auto mb-4 inline-flex rounded-full border border-primary/20 bg-primary/10 px-3 py-1">
+              <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+                Synapse
+              </span>
+            </div>
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground">Welcome back</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Sign in with your login name and password to continue
             </p>
           </div>
 
           {error && (
-            <div className="mb-6 rounded-lg bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
+            <div className="mb-6 rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {error}
             </div>
           )}
 
-          <form onSubmit={onSubmit} className="space-y-4">
+          <form onSubmit={onSubmit} className="space-y-5">
             <div>
-              <label htmlFor="login" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="login" className="mb-1.5 block text-sm font-medium text-foreground">
                 Login name
               </label>
               <input
@@ -87,12 +96,11 @@ function LoginForm() {
                 autoComplete="username"
                 value={login}
                 onChange={(e) => setLogin(e.target.value)}
-                placeholder="Neerajgowda"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-foreground">
                 Password
               </label>
               <input
@@ -101,13 +109,13 @@ function LoginForm() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-indigo-600 px-4 py-3 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+              className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
             >
               {loading ? "Signing in..." : "Sign in"}
             </button>

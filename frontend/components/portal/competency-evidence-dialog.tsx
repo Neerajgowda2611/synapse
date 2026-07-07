@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
 import { getTraitEvidenceSafe } from "@/lib/api/profiler"
 import { usePortalUser } from "@/contexts/portal-user-context"
 import { mapTraitEvidenceToDialog, formatConnectorLabel } from "@/lib/profiling/mappers"
@@ -165,7 +166,12 @@ export function CompetencyEvidenceDialog({
 
         <div className="flex-1 overflow-y-auto px-8 py-6">
           {loading && (
-            <p className="text-sm text-muted-foreground">Loading evidence...</p>
+            <div className="space-y-4">
+              <Skeleton className="h-4 w-36" />
+              <Skeleton className="h-4 w-full max-w-2xl" />
+              <Skeleton className="h-28 w-full rounded-xl" />
+              <Skeleton className="h-28 w-full rounded-xl" />
+            </div>
           )}
           {!loading && !evidence && (
             <p className="text-sm text-muted-foreground">No evidence available.</p>

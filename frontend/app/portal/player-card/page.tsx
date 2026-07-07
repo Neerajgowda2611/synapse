@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { getUserJobFit, listJobs } from "@/lib/api/profiler"
 import { PlayerCardView } from "@/components/portal/player-card-view"
+import { Skeleton } from "@/components/ui/skeleton"
 import { usePortalUser } from "@/contexts/portal-user-context"
 import { mapPlayerCard } from "@/lib/profiling/mappers"
 import type { PlayerCardViewData } from "@/lib/profiling/types"
@@ -55,8 +56,12 @@ export default function PlayerCardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <p className="text-muted-foreground">Loading profile...</p>
+      <div className="space-y-6">
+        <Skeleton className="h-28 w-full rounded-xl" />
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-56 w-full rounded-xl" />
+        </div>
       </div>
     )
   }
