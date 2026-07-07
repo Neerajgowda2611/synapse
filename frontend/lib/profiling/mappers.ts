@@ -385,11 +385,20 @@ export function mapTraitEvidenceToDialog(
     }
   })
 
+  const latestSignalAt = evidence.signals
+    .map((signal) => signal.derived_at)
+    .filter((value): value is string => Boolean(value))
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0]
+
   return {
     description:
       evidence.construct?.definition ??
       evidence.construct?.scientific_rationale ??
       "",
+    distinct_signal_types: evidence.evidence.distinct_signal_types,
+    n_observations: evidence.evidence.n_observations,
+    latest_signal_at: latestSignalAt,
+    source: "Native",
     sources,
   }
 }

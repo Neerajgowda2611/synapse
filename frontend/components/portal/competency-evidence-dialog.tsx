@@ -47,6 +47,17 @@ function formatOccurredAt(value?: string): string | null {
   })
 }
 
+function formatLatestSignalAt(value?: string): string {
+  if (!value) return "N/A"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "N/A"
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  })
+}
+
 function ObservationRow({ item }: { item: EvidenceItem }) {
   const occurredAt = formatOccurredAt(item.occurred_at)
 
@@ -162,6 +173,46 @@ export function CompetencyEvidenceDialog({
               )}
             </div>
           </div>
+          {evidence && (
+            <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              <Card className="bg-muted/50 py-3 shadow-none">
+                <CardContent className="space-y-0.5 px-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    Distinct signal types
+                  </p>
+                  <p className="text-xl font-semibold text-foreground">
+                    {evidence.distinct_signal_types}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="bg-muted/50 py-3 shadow-none">
+                <CardContent className="space-y-0.5 px-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    Evidence Density
+                  </p>
+                  <p className="text-xl font-semibold text-foreground">{evidence.n_observations}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-muted/50 py-3 shadow-none">
+                <CardContent className="space-y-0.5 px-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    Latest signal
+                  </p>
+                  <p className="text-sm font-semibold text-foreground">
+                    {formatLatestSignalAt(evidence.latest_signal_at)}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="bg-muted/50 py-3 shadow-none">
+                <CardContent className="space-y-0.5 px-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    Source
+                  </p>
+                  <p className="text-sm font-semibold text-foreground">{evidence.source}</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-8 py-6">

@@ -27,6 +27,10 @@ export interface EvidenceSource {
 
 export interface CompetencyEvidence {
   description: string
+  distinct_signal_types: number
+  n_observations: number
+  latest_signal_at?: string
+  source: string
   sources: EvidenceSource[]
 }
 
