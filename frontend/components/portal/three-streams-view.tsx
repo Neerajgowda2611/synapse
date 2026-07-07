@@ -24,12 +24,17 @@ type SectionConfig = {
   bulleted: boolean
 }
 
-const SECTIONS: SectionConfig[] = [
+const STATIC_SECTIONS: SectionConfig[] = [
   { key: "contributes", label: "Contributes", bulleted: true },
   { key: "activities_we_consider", label: "Activities We Consider", bulleted: true },
   { key: "what_activities_show", label: "What These Activities Show", bulleted: true },
-  { key: "recent_highlights", label: "Recent Highlights", bulleted: false },
 ]
+
+const HIGHLIGHTS_SECTION: SectionConfig = {
+  key: "recent_highlights",
+  label: "Recent Highlights",
+  bulleted: false,
+}
 
 function StreamHeader({ stream }: { stream: Stream }) {
   const Icon = ICON_MAP[stream.icon]
@@ -85,11 +90,53 @@ function StreamListBox({
   )
 }
 
+function SectionBlock({
+  section,
+  streams,
+}: {
+  section: SectionConfig
+  streams: Stream[]
+}) {
+  return (
+    <section className="space-y-4">
+      <div className="flex items-center gap-4">
+        <p className="shrink-0 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+          {section.label}
+        </p>
+        <Separator className="flex-1" />
+      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {streams.map((stream) => {
+          const items = stream[section.key]
+
+          if (section.key === "recent_highlights" && items.length === 0) {
+            return (
+              <Card
+                key={`${stream.id}-${section.key}`}
+                className="h-full bg-muted/50 py-4 shadow-none"
+              >
+                <CardContent className="px-4">
+                  <p className="text-sm text-muted-foreground">No recent highlights yet.</p>
+                </CardContent>
+              </Card>
+            )
+          }
+
+          return (
+            <StreamListBox
+              key={`${stream.id}-${section.key}`}
+              items={items}
+              bulleted={section.bulleted}
+            />
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
 export function ThreeStreamsView({ data }: ThreeStreamsViewProps) {
-  const visibleSections = SECTIONS.filter((section) => {
-    if (section.key !== "recent_highlights") return true
-    return data.streams.some((stream) => stream.recent_highlights.length > 0)
-  })
+  const hasHighlights = data.streams.some((stream) => stream.recent_highlights.length > 0)
 
   return (
     <Card className="py-8 **:data-[slot=accordion-trigger]:cursor-pointer **:data-[slot=dropdown-menu-item]:cursor-pointer **:data-[slot=dropdown-menu-trigger]:cursor-pointer **:data-[slot=tabs-trigger]:cursor-pointer [&_a]:cursor-pointer [&_button]:cursor-pointer **:[[role=menuitem]]:cursor-pointer **:[[role=tab]]:cursor-pointer">
@@ -104,25 +151,17 @@ export function ThreeStreamsView({ data }: ThreeStreamsViewProps) {
           ))}
         </div>
 
-        {visibleSections.map((section) => (
-          <section key={section.key} className="space-y-4">
-            <div className="flex items-center gap-4">
-              <p className="shrink-0 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-                {section.label}
-              </p>
-              <Separator className="flex-1" />
-            </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              {data.streams.map((stream) => (
-                <StreamListBox
-                  key={`${stream.id}-${section.key}`}
-                  items={stream[section.key]}
-                  bulleted={section.bulleted}
-                />
-              ))}
-            </div>
-          </section>
+        {hasHighlights && (
+          <SectionBlock section={HIGHLIGHTS_SECTION} streams={data.streams} />
+        )}
+
+        {STATIC_SECTIONS.map((section) => (
+          <SectionBlock key={section.key} section={section} streams={data.streams} />
         ))}
+
+        {!hasHighlights && (
+          <SectionBlock section={HIGHLIGHTS_SECTION} streams={data.streams} />
+        )}
       </CardContent>
     </Card>
   )

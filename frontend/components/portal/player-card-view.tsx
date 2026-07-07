@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Check } from "lucide-react"
+import { BadgeCheck, Check } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -94,6 +94,12 @@ export function PlayerCardView({ data }: PlayerCardViewProps) {
       <div className="space-y-6 **:data-[slot=accordion-trigger]:cursor-pointer **:data-[slot=dropdown-menu-item]:cursor-pointer **:data-[slot=dropdown-menu-trigger]:cursor-pointer **:data-[slot=tabs-trigger]:cursor-pointer [&_a]:cursor-pointer [&_button]:cursor-pointer **:[[role=menuitem]]:cursor-pointer **:[[role=tab]]:cursor-pointer">
         <Card className="py-6">
           <CardHeader className="px-6 pb-0">
+            <div className="mb-3 inline-flex w-fit items-center gap-1.5 rounded-md bg-primary/10 px-3 py-1">
+              <BadgeCheck className="size-3.5 text-primary" />
+              <p className="text-[11px] font-semibold tracking-wide text-primary">
+                VERIFIED PROFILE from Placement, Mentorship and Proje-x
+              </p>
+            </div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
               {name}
             </h1>

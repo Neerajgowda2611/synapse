@@ -22,7 +22,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { getTraitEvidenceSafe } from "@/lib/api/profiler"
 import { usePortalUser } from "@/contexts/portal-user-context"
-import { mapTraitEvidenceToDialog } from "@/lib/profiling/mappers"
+import { mapTraitEvidenceToDialog, formatConnectorLabel } from "@/lib/profiling/mappers"
 import type { CompetencyEvidence, EvidenceGroup, EvidenceItem } from "@/lib/profiling/evidence-types"
 
 type CompetencyEvidenceDialogProps = {
@@ -111,14 +111,27 @@ export function CompetencyEvidenceDialog({
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      setEvidence(null)
+      return
+    }
+
+    let cancelled = false
     setLoading(true)
     getTraitEvidenceSafe(userId, trait)
       .then((response) => {
-        setEvidence(response ? mapTraitEvidenceToDialog(response) : null)
+        if (!cancelled) {
+          setEvidence(response ? mapTraitEvidenceToDialog(response) : null)
+        }
       })
-      .finally(() => setLoading(false))
-  }, [open, userId, trait, sourceLabels])
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [open, userId, trait])
 
   const defaultOpenSources =
     evidence?.sources.filter((s) => s.default_open).map((s) => s.source_id) ?? []
@@ -205,7 +218,7 @@ export function CompetencyEvidenceDialog({
                           </div>
                           <Badge variant="outline" className="shrink-0">
                             <User className="size-3" />
-                            {sourceLabels[source.source_id] ?? source.source_id}
+                            {sourceLabels[source.source_id] ?? formatConnectorLabel(source.source_id)}
                           </Badge>
                         </div>
                       </AccordionTrigger>
