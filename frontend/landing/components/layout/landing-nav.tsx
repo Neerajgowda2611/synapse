@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { Menu, X, Sun, Moon } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
@@ -101,14 +102,34 @@ export function MarketingNav() {
       >
         <div className="flex items-center justify-between gap-8">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 shrink-0">
-            <span className="inline-flex size-9 items-center justify-center rounded-xl bg-foreground text-sm font-bold text-background shadow-xs">
-              P
-            </span>
-            <div className="hidden sm:block">
-              <p className="text-sm font-semibold tracking-tight text-foreground leading-none">Profiler</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">by Xcelerator</p>
+          <Link href="/" className="flex shrink-0 items-center gap-3">
+            <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl border border-border/40 bg-background/80 shadow-xs ring-1 ring-foreground/5 backdrop-blur-sm">
+              <Image
+                src="/logo-only.svg"
+                alt="Profiler"
+                width={163}
+                height={160}
+                priority
+                className="h-6 w-6 object-contain dark:hidden"
+              />
+              <Image
+                src="/logo-only (1).svg"
+                alt="Profiler"
+                width={163}
+                height={160}
+                priority
+                className="hidden h-6 w-6 object-contain dark:block"
+              />
             </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold leading-none tracking-tight text-foreground sm:text-[15px]">
+                Profiler
+              </p>
+              <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                by Xcelerator
+              </p>
+            </div>
+            <span className="sr-only">Profiler home</span>
           </Link>
 
           {/* Desktop nav */}
@@ -127,7 +148,7 @@ export function MarketingNav() {
                 {activeSection === item.href.replace("#", "") && (
                   <motion.span
                     layoutId="nav-active-pill"
-                    className="absolute inset-0 rounded-full bg-foreground/[0.06]"
+                    className="absolute inset-0 rounded-full bg-foreground/6"
                     transition={{ type: "spring", stiffness: 320, damping: 30 }}
                   />
                 )}
@@ -178,7 +199,7 @@ export function MarketingNav() {
                   <Link
                     key={item.label}
                     href={item.href}
-                    className="block rounded-2xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/[0.04]"
+                    className="block rounded-2xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/4"
                     onClick={() => setIsOpen(false)}
                   >
                     {item.label}
