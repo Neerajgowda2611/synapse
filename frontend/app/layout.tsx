@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { DM_Sans, Space_Mono } from "next/font/google"
+import { ThemeProvider } from "next-themes"
 import "./globals.css"
 
 const dmSans = DM_Sans({
@@ -14,8 +15,9 @@ const spaceMono = Space_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "Profiler",
-  description: "Education profiling platform",
+  title: "Profiler — The Learner Intelligence Platform",
+  description:
+    "Connect your institutional systems, extract AI-powered signals, and build learner profiles that capture who students really are. Beyond the resume.",
 }
 
 export default function RootLayout({
@@ -24,9 +26,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${dmSans.variable} ${spaceMono.variable} h-full antialiased`}>
+    <html lang="en" className={`${dmSans.variable} ${spaceMono.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="flex min-h-full flex-col bg-background font-sans text-foreground antialiased">
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   )
