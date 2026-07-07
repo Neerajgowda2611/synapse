@@ -23,7 +23,7 @@ import { Separator } from "@/components/ui/separator"
 import { getTraitEvidenceSafe } from "@/lib/api/profiler"
 import { usePortalUser } from "@/contexts/portal-user-context"
 import { mapTraitEvidenceToDialog } from "@/lib/profiling/mappers"
-import type { CompetencyEvidence } from "@/lib/profiling/evidence-types"
+import type { CompetencyEvidence, EvidenceGroup, EvidenceItem } from "@/lib/profiling/evidence-types"
 
 type CompetencyEvidenceDialogProps = {
   open: boolean
@@ -33,6 +33,68 @@ type CompetencyEvidenceDialogProps = {
   competencyName: string
   score: number
   sourceLabels: Record<string, string>
+}
+
+function formatOccurredAt(value?: string): string | null {
+  if (!value) return null
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  })
+}
+
+function ObservationRow({ item }: { item: EvidenceItem }) {
+  const occurredAt = formatOccurredAt(item.occurred_at)
+
+  return (
+    <Card className="bg-muted py-2 shadow-none">
+      <CardContent className="flex items-start justify-between gap-3 px-3 py-2">
+        <div className="min-w-0 flex-1 space-y-0.5">
+          <p className="text-sm font-medium text-foreground">{item.text}</p>
+          {item.detail && (
+            <p className="text-xs leading-relaxed text-muted-foreground">{item.detail}</p>
+          )}
+        </div>
+        {occurredAt && (
+          <span className="shrink-0 pt-0.5 text-xs text-muted-foreground">{occurredAt}</span>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function EvidenceGroupSection({ group }: { group: EvidenceGroup }) {
+  if (group.count === 1) {
+    return <ObservationRow item={group.items[0]} />
+  }
+
+  return (
+    <AccordionItem value={group.group_id} className="border-0">
+      <Card className="overflow-hidden bg-muted/40 py-0 shadow-none">
+        <AccordionTrigger className="cursor-pointer px-3 py-3 hover:no-underline **:data-[slot=accordion-trigger-icon]:ml-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2 text-left">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-foreground">{group.title}</p>
+              <p className="text-xs text-muted-foreground">{group.label}</p>
+            </div>
+            <Badge variant="secondary" className="shrink-0 text-[10px]">
+              {group.count}
+            </Badge>
+          </div>
+        </AccordionTrigger>
+        <AccordionContent className="border-t border-border px-3 pb-3">
+          <div className="mt-2 space-y-2">
+            {group.items.map((item) => (
+              <ObservationRow key={item.id} item={item} />
+            ))}
+          </div>
+        </AccordionContent>
+      </Card>
+    </AccordionItem>
+  )
 }
 
 export function CompetencyEvidenceDialog({
@@ -148,22 +210,14 @@ export function CompetencyEvidenceDialog({
                         </div>
                       </AccordionTrigger>
 
-                      {source.items.length > 0 && (
+                      {source.groups.length > 0 && (
                         <AccordionContent className="border-t border-border px-4 pb-4">
                           <div className="mt-4 space-y-2 border-l border-border pl-4">
-                            {source.items.map((item) => (
-                              <Card
-                                key={`${item.text}-${item.tag}`}
-                                className="bg-muted py-2 shadow-none"
-                              >
-                                <CardContent className="flex items-center justify-between px-3 py-0">
-                                  <span className="text-sm text-foreground">{item.text}</span>
-                                  <Badge variant="outline" className="text-[10px]">
-                                    {item.tag}
-                                  </Badge>
-                                </CardContent>
-                              </Card>
-                            ))}
+                            <Accordion multiple className="space-y-2">
+                              {source.groups.map((group) => (
+                                <EvidenceGroupSection key={group.group_id} group={group} />
+                              ))}
+                            </Accordion>
                           </div>
                         </AccordionContent>
                       )}

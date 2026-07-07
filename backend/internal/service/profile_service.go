@@ -372,8 +372,8 @@ func buildJobFitResponse(result *JobFitResult) *JobFitResponse {
 		}
 		weight := result.MetricWeights[metricID]
 		traitValue := 0.0
-		for _, v := range reading.Components {
-			traitValue = v
+		if estimate, ok := result.Estimates[traitName]; ok {
+			traitValue = estimate.Value
 		}
 		missing := len(reading.Missing) > 0 || !reading.Usable
 		if missing && traitName != "" {
@@ -381,7 +381,7 @@ func buildJobFitResponse(result *JobFitResult) *JobFitResponse {
 		}
 		contribution := 0.0
 		if reading.Usable {
-			contribution = traitValue * weight
+			contribution = reading.Value * weight
 		}
 		traits = append(traits, JobFitTraitReading{
 			Trait:        traitName,

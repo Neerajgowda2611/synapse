@@ -3,15 +3,25 @@ export interface EvidenceStat {
 }
 
 export interface EvidenceItem {
+  id: string
   text: string
-  tag: string
+  detail?: string
+  occurred_at?: string
+}
+
+export interface EvidenceGroup {
+  group_id: string
+  title: string
+  label: string
+  count: number
+  items: EvidenceItem[]
 }
 
 export interface EvidenceSource {
   source_id: string
   title: string
   stats: EvidenceStat[]
-  items: EvidenceItem[]
+  groups: EvidenceGroup[]
   default_open: boolean
 }
 

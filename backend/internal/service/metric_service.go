@@ -36,6 +36,7 @@ type JobFitResult struct {
 	MetricWeights map[string]float64
 	Score         metric.RewardScore
 	Readings      map[string]metric.MetricReading
+	Estimates     map[string]metric.ConstructEstimate
 	MetricRun     *model.MetricRun
 	WasDerived    bool
 }
@@ -196,6 +197,7 @@ func (s *MetricService) ComputeJobFit(ctx context.Context, userID uuid.UUID, job
 		MetricWeights: rewardSystem.MetricWeights,
 		Score:         score,
 		Readings:      readings,
+		Estimates:     estimates,
 		MetricRun:     run,
 		WasDerived:    derived,
 	}, nil

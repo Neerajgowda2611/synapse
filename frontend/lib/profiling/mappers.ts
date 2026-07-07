@@ -4,7 +4,13 @@ import type {
   TraitEvidenceResponse,
 } from "@/lib/api/profiler"
 import type { CareerDiscoveryResponse } from "@/lib/profiling/career-discovery-types"
-import type { CompetencyEvidence } from "@/lib/profiling/evidence-types"
+import type { CompetencyEvidence, EvidenceGroup, EvidenceItem } from "@/lib/profiling/evidence-types"
+import {
+  formatObservationTypeLabel,
+  formatObservationTypePlural,
+  observationItemDetail,
+  observationItemText,
+} from "@/lib/profiling/evidence-labels"
 import type { PlayerCardViewData } from "@/lib/profiling/types"
 import type { StreamIcon, ThreeStreamsResponse } from "@/lib/profiling/three-streams-types"
 
@@ -170,6 +176,10 @@ export function buildSourceLabelMap(
   return labels
 }
 
+export function traitPercent(value: number): number {
+  return Math.round(value * 100)
+}
+
 export function mapRoleFromJobFit(
   job: JobWithCriteria,
   fit: JobFitResponse,
@@ -190,10 +200,14 @@ export function mapRoleFromJobFit(
           ) ?? []),
         ]),
       ]
+      const rawValue =
+        traitReading.trait_value > 0
+          ? traitReading.trait_value
+          : (evidence?.value ?? 0)
       return {
         trait: traitReading.trait,
         name: evidence?.construct?.name ?? formatTraitName(traitReading.trait),
-        score: traitReading.usable ? Math.round(traitReading.trait_value * 100) : 0,
+        score: traitPercent(rawValue),
         verified: traitReading.usable && !traitReading.missing,
         sourceIds,
       }
@@ -351,8 +365,7 @@ export function mapTraitEvidenceToDialog(
   const byConnector = new Map<
     string,
     {
-      observations: Array<{ text: string; tag: string }>
-      signalTypes: Set<string>
+      byObservationType: Map<string, EvidenceItem[]>
       nObservations: number
     }
   >()
@@ -361,36 +374,47 @@ export function mapTraitEvidenceToDialog(
     for (const obs of signal.canonical_observations) {
       const connector = obs.source.connector
       const entry = byConnector.get(connector) ?? {
-        observations: [],
-        signalTypes: new Set<string>(),
+        byObservationType: new Map<string, EvidenceItem[]>(),
         nObservations: 0,
       }
-      entry.signalTypes.add(signal.signal_type)
       entry.nObservations += 1
-      const title =
-        typeof obs.fields.title === "string"
-          ? obs.fields.title
-          : typeof obs.source.payload?.title === "string"
-            ? obs.source.payload.title
-            : formatTraitName(obs.observation_type)
-      entry.observations.push({
-        text: title,
-        tag: obs.observation_type.replace(/_/g, " ").toUpperCase(),
+
+      const observationType = obs.observation_type
+      const items = entry.byObservationType.get(observationType) ?? []
+      const fields = obs.fields ?? {}
+      items.push({
+        id: obs.id,
+        text: observationItemText(observationType, fields, obs.source.payload),
+        detail: observationItemDetail(observationType, fields, obs.source.payload),
+        occurred_at: obs.occurred_at,
       })
+      entry.byObservationType.set(observationType, items)
       byConnector.set(connector, entry)
     }
   }
 
-  const sources = [...byConnector.entries()].map(([connector, data], index) => ({
-    source_id: connector,
-    title: `${formatConnectorLabel(connector)} Activity`,
-    stats: [
-      { label: `${data.nObservations} observation${data.nObservations === 1 ? "" : "s"}` },
-      { label: `${data.signalTypes.size} signal type${data.signalTypes.size === 1 ? "" : "s"}` },
-    ],
-    items: data.observations,
-    default_open: index === 0,
-  }))
+  const sources = [...byConnector.entries()].map(([connector, data], index) => {
+    const groups: EvidenceGroup[] = [...data.byObservationType.entries()]
+      .map(([observationType, items]) => ({
+        group_id: `${connector}:${observationType}`,
+        title: formatObservationTypePlural(observationType, items.length),
+        label: formatObservationTypeLabel(observationType),
+        count: items.length,
+        items,
+      }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+
+    return {
+      source_id: connector,
+      title: `${formatConnectorLabel(connector)} Activity`,
+      stats: [
+        { label: `${data.nObservations} activit${data.nObservations === 1 ? "y" : "ies"}` },
+        { label: `${groups.length} activity type${groups.length === 1 ? "" : "s"}` },
+      ],
+      groups,
+      default_open: index === 0,
+    }
+  })
 
   return {
     description:
