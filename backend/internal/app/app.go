@@ -64,7 +64,22 @@ func Start() {
 	}
 	logs.Info("JWT validator initialized", "issuer", cfg.ZitadelIssuer)
 
-	resolver := auth.NewResolver(repository.NewUserRepository(db))
+	authxCfg := auth.AuthxConfig{
+		Enabled:      cfg.EnableAuthx,
+		AuthIdpUrl:   cfg.AuthIdpUrl,
+		ClientID:     cfg.AuthxClientID,
+		ClientSecret: cfg.AuthxClientSecret,
+	}
+	validator = validator.WithAuthx(authxCfg)
+	if authxCfg.Enabled {
+		logs.Info("AuthX enabled", "idp", authxCfg.AuthIdpUrl, "client_id", authxCfg.ClientID)
+	} else {
+		logs.Info("AuthX disabled — set ENABLE_AUTHX=true to enable")
+	}
+
+	userRepo := repository.NewUserRepository(db)
+	resolver := auth.NewResolver(userRepo)
+	authxSessionService := auth.NewAuthxSessionService(userRepo, authxCfg)
 
 	enforcer, err := authz.NewEnforcer(db)
 	if err != nil {
@@ -94,7 +109,7 @@ func Start() {
 		logs.Info("Zitadel password login disabled — set ZITADEL_SERVICE_USER_TOKEN to enable")
 	}
 
-	router := newRouter(db, validator, resolver, enforcer, loginClient, cfg.CORSAllowOrigins, cfg.AppEnv != "production")
+	router := newRouter(db, validator, resolver, enforcer, loginClient, authxSessionService, cfg.EnableAuthx, cfg.CORSAllowOrigins, cfg.AppEnv != "production")
 
 	var observationWorker *worker.ObservationWorker
 	if cfg.ObservationWorkerEnabled {
@@ -184,6 +199,8 @@ func newRouter(
 	resolver *auth.Resolver,
 	enforcer *casbin.Enforcer,
 	loginClient *auth.LoginClient,
+	authxSvc *auth.AuthxSessionService,
+	authxEnabled bool,
 	corsAllowOrigin string,
 	devMode bool,
 ) *routerBundle {
@@ -196,7 +213,7 @@ func newRouter(
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
-	observationService := handler.RegisterRoutes(router, db, validator, resolver, enforcer, loginClient, devMode)
+	observationService := handler.RegisterRoutes(router, db, validator, resolver, enforcer, loginClient, authxSvc, authxEnabled, devMode)
 
 	return &routerBundle{
 		Engine:             router,

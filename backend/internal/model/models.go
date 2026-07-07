@@ -71,6 +71,7 @@ func (Institution) TableName() string {
 type User struct {
 	ID         uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
 	ZitadelSub *string   `gorm:"uniqueIndex"                                    json:"zitadel_sub,omitempty"`
+	AuthxSub   *string   `gorm:"uniqueIndex"                                    json:"authx_sub,omitempty"`
 	Email      string    `gorm:"not null;uniqueIndex"                           json:"email"`
 	Name       string    `gorm:"not null"                                       json:"name"`
 	Status     string    `gorm:"not null;default:active"                        json:"status"`

@@ -3,6 +3,8 @@
 import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { appConfig, AUTH_CODE_VERIFIER_KEY, clearAccessToken } from "@/lib/config"
+import { isAuthxEnabled } from "@/lib/authx-config"
+import { AuthxSignIn } from "@/components/authx-sign-in"
 
 function LoginForm() {
   const searchParams = useSearchParams()
@@ -119,6 +121,14 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
+  if (isAuthxEnabled) {
+    return (
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+        <AuthxSignIn />
+      </Suspense>
+    )
+  }
+
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
       <LoginForm />

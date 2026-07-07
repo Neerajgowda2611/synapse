@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/profiler/backend/internal/model"
 	"github.com/profiler/backend/internal/repository"
 )
@@ -22,6 +23,19 @@ func NewResolver(userRepo *repository.UserRepository) *Resolver {
 }
 
 func (r *Resolver) Resolve(ctx context.Context, claims *Claims) (*AuthContext, error) {
+	// Profiler-minted access tokens carry the users.id in Sub — skip the IdP lookup entirely.
+	if claims.ProfilerUserID != "" {
+		userID, err := uuid.Parse(claims.ProfilerUserID)
+		if err != nil {
+			return nil, fmt.Errorf("%w: invalid profiler user id", ErrUserNotProvisioned)
+		}
+		user, roles, err := r.userRepo.GetWithRolesByID(ctx, userID)
+		if err != nil {
+			return nil, fmt.Errorf("%w: id=%s", ErrUserNotProvisioned, claims.ProfilerUserID)
+		}
+		return buildAuthContext(user, roles)
+	}
+
 	if ac, err := r.resolveBySub(ctx, claims.Sub); err == nil {
 		return ac, nil
 	}
@@ -95,6 +109,9 @@ func pickPrimaryRole(roles []model.UserRole) model.UserRole {
 		if isInstitutionRole(r.Role) {
 			return r
 		}
+	}
+	if len(roles) == 0 {
+		return model.UserRole{Role: RoleLearner}
 	}
 	return roles[0]
 }

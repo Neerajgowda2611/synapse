@@ -37,6 +37,60 @@ func (r *UserRepository) GetWithRolesByZitadelSub(ctx context.Context, sub strin
 	return &user, user.Roles, nil
 }
 
+// GetWithRolesByAuthxSub returns the user and all their active roles matched on the AuthX sub claim.
+func (r *UserRepository) GetWithRolesByAuthxSub(ctx context.Context, sub string) (*model.User, []model.UserRole, error) {
+	var user model.User
+	err := r.dbCtx(ctx).
+		Preload("Roles", "status = ?", "active").
+		Where("authx_sub = ?", sub).
+		First(&user).Error
+	if err != nil {
+		return nil, nil, err
+	}
+	return &user, user.Roles, nil
+}
+
+// GetWithRolesByID returns the user and all their active roles by primary key.
+func (r *UserRepository) GetWithRolesByID(ctx context.Context, id uuid.UUID) (*model.User, []model.UserRole, error) {
+	var user model.User
+	err := r.dbCtx(ctx).
+		Preload("Roles", "status = ?", "active").
+		Where("id = ?", id).
+		First(&user).Error
+	if err != nil {
+		return nil, nil, err
+	}
+	return &user, user.Roles, nil
+}
+
+// LinkAuthxSub stamps authx_sub onto an existing user row (first-login provisioning).
+func (r *UserRepository) LinkAuthxSub(ctx context.Context, userID uuid.UUID, sub string) error {
+	return r.dbCtx(ctx).
+		Model(&model.User{}).
+		Where("id = ?", userID).
+		Updates(map[string]any{
+			"authx_sub":  sub,
+			"updated_at": time.Now(),
+		}).Error
+}
+
+// CreateAuthxUserWithRole inserts a users row and a single user_roles row atomically.
+// Used for AuthX JIT-provisioning when the user hasn't been pre-created by an admin.
+func (r *UserRepository) CreateAuthxUserWithRole(ctx context.Context, user *model.User, role *model.UserRole) error {
+	return r.dbCtx(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(user).Error; err != nil {
+			return err
+		}
+		role.UserID = user.ID
+		return tx.Create(role).Error
+	})
+}
+
+// AddRole inserts a single user_roles row for an existing user.
+func (r *UserRepository) AddRole(ctx context.Context, role *model.UserRole) error {
+	return r.dbCtx(ctx).Create(role).Error
+}
+
 // GetWithRolesByEmail returns the user and all their active roles.
 func (r *UserRepository) GetWithRolesByEmail(ctx context.Context, email string) (*model.User, []model.UserRole, error) {
 	var user model.User
