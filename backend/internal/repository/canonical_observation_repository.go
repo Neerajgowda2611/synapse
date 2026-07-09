@@ -29,6 +29,19 @@ func (r *CanonicalObservationRepository) ListByUserBefore(ctx context.Context, u
 	return rows, nil
 }
 
+func (r *CanonicalObservationRepository) ListByUserBeforeWithRaw(ctx context.Context, userID uuid.UUID, asOf time.Time) ([]model.CanonicalObservation, error) {
+	var rows []model.CanonicalObservation
+	err := r.dbWithContext(ctx).
+		Preload("RawObservation").
+		Where("user_id = ? AND occurred_at <= ?", userID, asOf).
+		Order("occurred_at DESC").
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
 func (r *CanonicalObservationRepository) GetByIDsWithRaw(ctx context.Context, ids []uuid.UUID) ([]model.CanonicalObservation, error) {
 	if len(ids) == 0 {
 		return nil, nil

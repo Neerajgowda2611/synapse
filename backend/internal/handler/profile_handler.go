@@ -24,7 +24,8 @@ func NewProfileHandler(metricService *service.MetricService, enforcer *casbin.En
 }
 
 func (h *ProfileHandler) ListJobs(c *gin.Context) {
-	jobs, err := h.metricService.ListJobsWithCriteria(c.Request.Context())
+	learnerInstitutionID := learnerInstitutionFilter(c)
+	jobs, err := h.metricService.ListJobsWithCriteria(c.Request.Context(), learnerInstitutionID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list jobs"})
 		return
@@ -38,7 +39,7 @@ func (h *ProfileHandler) GetJob(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid job id"})
 		return
 	}
-	job, err := h.metricService.GetJobWithCriteria(c.Request.Context(), jobID)
+	job, err := h.metricService.GetJobWithCriteria(c.Request.Context(), jobID, learnerInstitutionFilter(c))
 	if err != nil {
 		if errors.Is(err, service.ErrJobNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -68,6 +69,24 @@ func (h *ProfileHandler) ListUserTraits(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": traits, "as_of": asOf})
 }
 
+func (h *ProfileHandler) ListUserStreamActivity(c *gin.Context) {
+	userID, err := uuid.Parse(c.Param("userId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		return
+	}
+	if !h.canAccessUserProfile(c, userID) {
+		return
+	}
+	asOf := parseAsOf(c)
+	activity, err := h.metricService.ListUserStreamActivity(c.Request.Context(), userID, asOf)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list stream activity"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": activity, "as_of": asOf})
+}
+
 func (h *ProfileHandler) GetUserJobFit(c *gin.Context) {
 	userID, err := uuid.Parse(c.Param("userId"))
 	if err != nil {
@@ -83,7 +102,7 @@ func (h *ProfileHandler) GetUserJobFit(c *gin.Context) {
 		return
 	}
 	asOf := parseAsOf(c)
-	fit, err := h.metricService.GetUserJobFit(c.Request.Context(), userID, jobID, asOf)
+	fit, err := h.metricService.GetUserJobFit(c.Request.Context(), userID, jobID, asOf, learnerInstitutionFilter(c))
 	if err != nil {
 		if errors.Is(err, service.ErrJobNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -185,4 +204,12 @@ func parseAsOf(c *gin.Context) time.Time {
 		}
 	}
 	return time.Now().UTC()
+}
+
+func learnerInstitutionFilter(c *gin.Context) *uuid.UUID {
+	ac := auth.FromContext(c.Request.Context())
+	if ac == nil || ac.UserType != auth.UserTypeLearner {
+		return nil
+	}
+	return ac.InstitutionID
 }

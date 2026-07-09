@@ -45,6 +45,9 @@ export interface JobRewardCriteria {
 export interface JobWithCriteria {
   id: string
   title: string
+  company_name?: string
+  subtitle?: string
+  external_url?: string
   reward_system_id: string
   status: string
   criteria: JobRewardCriteria
@@ -163,6 +166,18 @@ export function listJobs() {
 
 export function getJob(jobId: string) {
   return api.get<JobWithCriteria>(`/api/v1/jobs/${jobId}`)
+}
+
+export function listUserStreamActivity(userId: string, asOf?: string) {
+  const query = asOf ? `?as_of=${encodeURIComponent(asOf)}` : ""
+  return api.get<{ data: StreamActivityObservation[]; as_of: string }>(
+    `/api/v1/users/${userId}/streams/activity${query}`
+  )
+}
+
+export interface StreamActivityObservation {
+  connector: string
+  observation_type: string
 }
 
 export function listUserTraits(userId: string, asOf?: string) {

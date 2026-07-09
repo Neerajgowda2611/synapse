@@ -41,6 +41,9 @@ type JobRewardCriteria struct {
 type JobWithCriteria struct {
 	ID             uuid.UUID         `json:"id"`
 	Title          string            `json:"title"`
+	CompanyName    *string           `json:"company_name,omitempty"`
+	Subtitle       *string           `json:"subtitle,omitempty"`
+	ExternalURL    *string           `json:"external_url,omitempty"`
 	RewardSystemID string            `json:"reward_system_id"`
 	Status         string            `json:"status"`
 	Criteria       JobRewardCriteria `json:"criteria"`
@@ -120,8 +123,13 @@ type TraitEvidenceResponse struct {
 	AsOf       time.Time                     `json:"as_of"`
 }
 
-func (s *MetricService) ListJobsWithCriteria(ctx context.Context) ([]JobWithCriteria, error) {
-	jobs, err := s.jobRepo.ListActive(ctx)
+type StreamActivityObservation struct {
+	Connector       string `json:"connector"`
+	ObservationType string `json:"observation_type"`
+}
+
+func (s *MetricService) ListJobsWithCriteria(ctx context.Context, learnerInstitutionID *uuid.UUID) ([]JobWithCriteria, error) {
+	jobs, err := s.jobRepo.ListActiveForInstitution(ctx, learnerInstitutionID)
 	if err != nil {
 		return nil, err
 	}
@@ -135,24 +143,21 @@ func (s *MetricService) ListJobsWithCriteria(ctx context.Context) ([]JobWithCrit
 		if !ok {
 			return nil, fmt.Errorf("reward system not found: %s", job.RewardSystemID)
 		}
-		out = append(out, JobWithCriteria{
-			ID:             job.ID,
-			Title:          job.Title,
-			RewardSystemID: job.RewardSystemID,
-			Status:         job.Status,
-			Criteria:       toJobRewardCriteria(rs),
-		})
+		out = append(out, toJobWithCriteria(job, rs))
 	}
 	return out, nil
 }
 
-func (s *MetricService) GetJobWithCriteria(ctx context.Context, jobID uuid.UUID) (*JobWithCriteria, error) {
+func (s *MetricService) GetJobWithCriteria(ctx context.Context, jobID uuid.UUID, learnerInstitutionID *uuid.UUID) (*JobWithCriteria, error) {
 	job, err := s.jobRepo.GetByID(ctx, jobID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrJobNotFound
 		}
 		return nil, err
+	}
+	if !jobVisibleToLearner(job, learnerInstitutionID) {
+		return nil, ErrJobNotFound
 	}
 	rewardSystems, err := metric.LoadRewardSystems(ctx, s.rewardRepo)
 	if err != nil {
@@ -162,13 +167,21 @@ func (s *MetricService) GetJobWithCriteria(ctx context.Context, jobID uuid.UUID)
 	if !ok {
 		return nil, fmt.Errorf("reward system not found: %s", job.RewardSystemID)
 	}
-	return &JobWithCriteria{
+	jc := toJobWithCriteria(*job, rs)
+	return &jc, nil
+}
+
+func toJobWithCriteria(job model.Job, rs metric.RewardSystem) JobWithCriteria {
+	return JobWithCriteria{
 		ID:             job.ID,
 		Title:          job.Title,
+		CompanyName:    job.CompanyName,
+		Subtitle:       job.Subtitle,
+		ExternalURL:    job.ExternalURL,
 		RewardSystemID: job.RewardSystemID,
 		Status:         job.Status,
 		Criteria:       toJobRewardCriteria(rs),
-	}, nil
+	}
 }
 
 func (s *MetricService) ListUserTraits(ctx context.Context, userID uuid.UUID, asOf time.Time) ([]UserTraitSummary, error) {
@@ -196,7 +209,40 @@ func (s *MetricService) ListUserTraits(ctx context.Context, userID uuid.UUID, as
 	return out, nil
 }
 
-func (s *MetricService) GetUserJobFit(ctx context.Context, userID, jobID uuid.UUID, asOf time.Time) (*JobFitResponse, error) {
+func (s *MetricService) ListUserStreamActivity(ctx context.Context, userID uuid.UUID, asOf time.Time) ([]StreamActivityObservation, error) {
+	rows, err := s.canonicalRepo.ListByUserBeforeWithRaw(ctx, userID, asOf)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]StreamActivityObservation, 0, len(rows))
+	for _, row := range rows {
+		connector := ""
+		if row.RawObservation.ID != uuid.Nil {
+			connector = row.RawObservation.SourceConnector
+		}
+		if connector == "" {
+			continue
+		}
+		out = append(out, StreamActivityObservation{
+			Connector:       connector,
+			ObservationType: row.ObservationType,
+		})
+	}
+	return out, nil
+}
+
+func (s *MetricService) GetUserJobFit(ctx context.Context, userID, jobID uuid.UUID, asOf time.Time, learnerInstitutionID *uuid.UUID) (*JobFitResponse, error) {
+	job, err := s.jobRepo.GetByID(ctx, jobID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrJobNotFound
+		}
+		return nil, err
+	}
+	if !jobVisibleToLearner(job, learnerInstitutionID) {
+		return nil, ErrJobNotFound
+	}
+
 	result, err := s.ComputeJobFit(ctx, userID, jobID, asOf, "api:compute-job-fit")
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -467,4 +513,14 @@ func uniqueUUIDs(ids []uuid.UUID) []uuid.UUID {
 		out = append(out, id)
 	}
 	return out
+}
+
+func jobVisibleToLearner(job *model.Job, learnerInstitutionID *uuid.UUID) bool {
+	if learnerInstitutionID == nil {
+		return true
+	}
+	if job.InstitutionID == nil {
+		return true
+	}
+	return *job.InstitutionID == *learnerInstitutionID
 }

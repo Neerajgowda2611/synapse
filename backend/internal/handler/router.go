@@ -8,6 +8,7 @@ import (
 	"github.com/profiler/backend/internal/middleware"
 	"github.com/profiler/backend/internal/repository"
 	"github.com/profiler/backend/internal/service"
+	"github.com/profiler/backend/internal/xint"
 	"gorm.io/gorm"
 )
 
@@ -20,6 +21,7 @@ func RegisterRoutes(
 	loginClient *auth.LoginClient,
 	authxSvc *auth.AuthxSessionService,
 	authxEnabled bool,
+	xintCfg xint.Config,
 	devMode bool,
 ) *service.ObservationService {
 	// Repositories
@@ -87,6 +89,9 @@ func RegisterRoutes(
 	authHandler := NewAuthHandler()
 	authLoginHandler := NewAuthLoginHandler(loginClient, devMode)
 	authxHandler := NewAuthxHandler(authxSvc, authxEnabled)
+	xintResolver := xint.NewResolver(userRepo)
+	jobIngestService := service.NewJobIngestService(db, jobRepo, rewardRepo, institutionRepo, registerRepo)
+	xintHandler := NewXintHandler(xintResolver, jobIngestService)
 	institutionHandler := NewInstitutionHandler(institutionService)
 	institutionUserHandler := NewInstitutionUserHandler(institutionUserService, enforcer)
 	dataSourceHandler := NewDataSourceHandler(dataSourceService)
@@ -112,6 +117,14 @@ func RegisterRoutes(
 	{
 		// Token identifies the data source; event semantics live in the envelope body.
 		webhooks.POST("/ingest/:token", webhookHandler.Ingest)
+	}
+
+	xintGroup := api.Group("/xint", middleware.RequireXint(xintCfg))
+	{
+		xintGroup.GET("/health", xintHandler.Health)
+		xintGroup.GET("/users/resolve", xintHandler.ResolveUser)
+		xintGroup.POST("/jobs", xintHandler.UpsertJob)
+		xintGroup.GET("/jobs/lookup", xintHandler.LookupJob)
 	}
 
 	api.GET("/connectors",
@@ -212,6 +225,7 @@ func RegisterRoutes(
 	{
 		users.GET("/:userId/traits", profileHandler.ListUserTraits)
 		users.POST("/:userId/traits/refresh", profileHandler.RefreshUserTraits)
+		users.GET("/:userId/streams/activity", profileHandler.ListUserStreamActivity)
 		users.GET("/:userId/jobs/:jobId/fit", profileHandler.GetUserJobFit)
 		users.GET("/:userId/traits/:trait/evidence", profileHandler.GetTraitEvidence)
 	}

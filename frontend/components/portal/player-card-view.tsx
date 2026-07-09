@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CompetencyEvidenceDialog } from "@/components/portal/competency-evidence-dialog"
+import { JobFitBreakdownPanel } from "@/components/portal/job-fit-breakdown-panel"
 import { usePortalUser } from "@/contexts/portal-user-context"
 import type { CompetencyView, PlayerCardViewData, RoleView } from "@/lib/profiling/types"
 
@@ -49,7 +50,17 @@ function CompetencyGrid({
                   </Badge>
                 )}
               </div>
-              <p className="mb-3 text-sm font-medium text-foreground">{competency.name}</p>
+              <p className="mb-1 text-sm font-medium text-foreground">{competency.name}</p>
+              <p className="mb-3 text-xs text-muted-foreground">
+                {competency.missing ? (
+                  "Not enough evidence yet"
+                ) : (
+                  <>
+                    Role weight: {competency.roleWeightPct}% &bull; +{competency.matchPoints} match
+                    pts
+                  </>
+                )}
+              </p>
               <div className="mb-4 flex flex-wrap gap-1.5">
                 {competency.sourceIds.map((sourceId) => (
                   <Badge
@@ -146,6 +157,12 @@ export function PlayerCardView({ data }: PlayerCardViewProps) {
                   </div>
 
                   <Separator className="mb-6" />
+
+                  {role.fitBreakdown ? (
+                    <div className="mb-6">
+                      <JobFitBreakdownPanel breakdown={role.fitBreakdown} />
+                    </div>
+                  ) : null}
 
                   <CompetencyGrid
                     role={role}

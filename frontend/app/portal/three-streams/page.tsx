@@ -3,13 +3,9 @@
 import { useEffect, useState } from "react"
 import { ThreeStreamsView } from "@/components/portal/three-streams-view"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  getTraitEvidenceSafe,
-  listUserTraits,
-  refreshUserTraits,
-} from "@/lib/api/profiler"
+import { listUserStreamActivity } from "@/lib/api/profiler"
 import { usePortalUser } from "@/contexts/portal-user-context"
-import { mapThreeStreams } from "@/lib/profiling/mappers"
+import { mapThreeStreamsFromActivity } from "@/lib/profiling/mappers"
 import type { ThreeStreamsResponse } from "@/lib/profiling/three-streams-types"
 
 export default function ThreeStreamsPage() {
@@ -25,20 +21,10 @@ export default function ThreeStreamsPage() {
       setLoading(true)
       setError(null)
       try {
-        let traitsResponse = await listUserTraits(userId)
-        if (traitsResponse.data.length === 0) {
-          await refreshUserTraits(userId)
-          traitsResponse = await listUserTraits(userId)
-        }
-
-        const evidenceList = (
-          await Promise.all(
-            traitsResponse.data.map((trait) => getTraitEvidenceSafe(userId, trait.trait))
-          )
-        ).filter((e): e is NonNullable<typeof e> => e !== null)
+        const { data: activity } = await listUserStreamActivity(userId)
 
         if (!cancelled) {
-          setData(mapThreeStreams(evidenceList))
+          setData(mapThreeStreamsFromActivity(activity))
         }
       } catch (err) {
         if (!cancelled) {

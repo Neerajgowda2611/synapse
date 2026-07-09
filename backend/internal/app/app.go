@@ -23,6 +23,7 @@ import (
 	"github.com/profiler/backend/internal/repository"
 	"github.com/profiler/backend/internal/service"
 	"github.com/profiler/backend/internal/worker"
+	"github.com/profiler/backend/internal/xint"
 	"github.com/profiler/backend/pkg/database"
 )
 
@@ -80,6 +81,19 @@ func Start() {
 	userRepo := repository.NewUserRepository(db)
 	resolver := auth.NewResolver(userRepo)
 	authxSessionService := auth.NewAuthxSessionService(userRepo, authxCfg)
+	xintCfg := xint.Config{
+		Enabled:        cfg.XintEnabled,
+		ServiceToken:   cfg.XintServiceToken,
+		AllowedSources: xint.ParseAllowedSources(cfg.XintAllowedSources),
+		PlacementURL:   cfg.XintPlacementURL,
+		ProjexURL:      cfg.XintProjexURL,
+		ShipxURL:       cfg.XintShipxURL,
+	}
+	if xintCfg.Enabled {
+		logs.Info("xint enabled", "allowed_sources", cfg.XintAllowedSources)
+	} else {
+		logs.Info("xint disabled — set XINT_ENABLED=true to enable")
+	}
 
 	enforcer, err := authz.NewEnforcer(db)
 	if err != nil {
@@ -109,7 +123,7 @@ func Start() {
 		logs.Info("Zitadel password login disabled — set ZITADEL_SERVICE_USER_TOKEN to enable")
 	}
 
-	router := newRouter(db, validator, resolver, enforcer, loginClient, authxSessionService, cfg.EnableAuthx, cfg.CORSAllowOrigins, cfg.AppEnv != "production")
+	router := newRouter(db, validator, resolver, enforcer, loginClient, authxSessionService, cfg.EnableAuthx, xintCfg, cfg.CORSAllowOrigins, cfg.AppEnv != "production")
 
 	var observationWorker *worker.ObservationWorker
 	if cfg.ObservationWorkerEnabled {
@@ -201,6 +215,7 @@ func newRouter(
 	loginClient *auth.LoginClient,
 	authxSvc *auth.AuthxSessionService,
 	authxEnabled bool,
+	xintCfg xint.Config,
 	corsAllowOrigin string,
 	devMode bool,
 ) *routerBundle {
@@ -213,7 +228,7 @@ func newRouter(
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
-	observationService := handler.RegisterRoutes(router, db, validator, resolver, enforcer, loginClient, authxSvc, authxEnabled, devMode)
+	observationService := handler.RegisterRoutes(router, db, validator, resolver, enforcer, loginClient, authxSvc, authxEnabled, xintCfg, devMode)
 
 	return &routerBundle{
 		Engine:             router,

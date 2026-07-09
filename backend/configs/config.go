@@ -24,6 +24,12 @@ type Config struct {
 	AuthIdpUrl                   string
 	AuthxClientID                string
 	AuthxClientSecret            string
+	XintEnabled                  bool
+	XintServiceToken             string
+	XintAllowedSources           string
+	XintPlacementURL             string
+	XintProjexURL                string
+	XintShipxURL                 string
 	FrontendURL                  string
 	CORSAllowOrigins             string
 	ObservationWorkerEnabled     bool
@@ -79,6 +85,13 @@ func Load(configPath string) (*Config, error) {
 		}
 	}
 
+	xintEnabled := getEnvBool("XINT_ENABLED", false)
+	xintServiceToken := os.Getenv("XINT_SERVICE_TOKEN")
+	xintAllowedSources := getEnv("XINT_ALLOWED_SOURCES", "placement,projex,shipx")
+	if xintEnabled && xintServiceToken == "" {
+		return nil, fmt.Errorf("XINT_ENABLED=true but XINT_SERVICE_TOKEN is missing")
+	}
+
 	return &Config{
 		Port:                         port,
 		AppEnv:                       getEnv("APP_ENV", "development"),
@@ -94,6 +107,12 @@ func Load(configPath string) (*Config, error) {
 		AuthIdpUrl:                   authIdpUrl,
 		AuthxClientID:                authxClientID,
 		AuthxClientSecret:            authxClientSecret,
+		XintEnabled:                  xintEnabled,
+		XintServiceToken:             xintServiceToken,
+		XintAllowedSources:           xintAllowedSources,
+		XintPlacementURL:             os.Getenv("XINT_PLACEMENT_URL"),
+		XintProjexURL:                os.Getenv("XINT_PROJEX_URL"),
+		XintShipxURL:                 os.Getenv("XINT_SHIPX_URL"),
 		FrontendURL:                  frontendURL,
 		CORSAllowOrigins:             getEnv("CORS_ALLOW_ORIGINS", frontendURL),
 		ObservationWorkerEnabled:     getEnvBool("OBSERVATION_WORKER_ENABLED", true),

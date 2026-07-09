@@ -5,6 +5,7 @@ import (
 
 	"github.com/profiler/backend/internal/model"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type RewardSystemRepository struct {
@@ -32,4 +33,13 @@ func (r *RewardSystemRepository) ListAll(ctx context.Context) ([]model.RewardSys
 		return nil, err
 	}
 	return rows, nil
+}
+
+func (r *RewardSystemRepository) Upsert(ctx context.Context, row *model.RewardSystem) error {
+	return r.dbWithContext(ctx).Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "id"}},
+		DoUpdates: clause.AssignmentColumns([]string{
+			"version", "label", "spec", "updated_at",
+		}),
+	}).Create(row).Error
 }

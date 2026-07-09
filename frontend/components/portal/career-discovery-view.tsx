@@ -1,7 +1,8 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, ChevronUp, ExternalLink } from "lucide-react"
+import { JobFitBreakdownPanel } from "@/components/portal/job-fit-breakdown-panel"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -39,41 +40,75 @@ function RoleDiscoveryCard({
   role: CareerDiscoveryRole
   addToProfileLabel: string
 }) {
+  const [expanded, setExpanded] = useState(false)
+
   return (
     <Card className="py-0">
-      <CardContent className="flex flex-col gap-6 p-6 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 flex-1 space-y-4">
-          <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-            {role.category}
-          </p>
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">{role.title}</h2>
-          <div className="flex flex-wrap gap-2">
-            {role.skills.map((skill) => (
-              <Badge
-                key={skill}
-                variant="outline"
-                className="rounded-md text-[10px] font-medium uppercase tracking-wide"
-              >
-                {skill}
-              </Badge>
-            ))}
-          </div>
-          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            {role.description}
-          </p>
-        </div>
-
-        <div className="flex shrink-0 flex-col items-end justify-between gap-8 sm:min-h-[180px] sm:pl-6">
-          <div className="text-right">
-            <p className="text-4xl font-bold tracking-tight text-foreground">{role.match_score}%</p>
-            <p className="mt-1 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-              &bull; {role.match_label}
+      <CardContent className="flex flex-col gap-6 p-6">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1 space-y-4">
+            <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+              {role.category}
+            </p>
+            <h2 className="text-2xl font-bold tracking-tight text-foreground">{role.title}</h2>
+            {role.subtitle ? (
+              <p className="text-sm text-muted-foreground">{role.subtitle}</p>
+            ) : null}
+            <div className="flex flex-wrap gap-2">
+              {role.skills.map((skill) => (
+                <Badge
+                  key={skill}
+                  variant="outline"
+                  className="rounded-md text-[10px] font-medium uppercase tracking-wide"
+                >
+                  {skill}
+                </Badge>
+              ))}
+            </div>
+            <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              {role.description}
             </p>
           </div>
-          <Button variant="link" className="h-auto cursor-pointer p-0 text-sm font-medium">
-            {addToProfileLabel}
-          </Button>
+
+          <div className="flex shrink-0 flex-col items-end justify-between gap-8 sm:min-h-[180px] sm:pl-6">
+            <div className="text-right">
+              <p className="text-4xl font-bold tracking-tight text-foreground">{role.match_score}%</p>
+              <p className="mt-1 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+                &bull; {role.match_label}
+              </p>
+            </div>
+            {role.external_url ? (
+              <a
+                href={role.external_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex cursor-pointer items-center gap-1.5 text-sm font-medium text-primary underline-offset-4 hover:underline"
+              >
+                View on Placement
+                <ExternalLink className="size-3.5" />
+              </a>
+            ) : (
+              <Button variant="link" className="h-auto cursor-pointer p-0 text-sm font-medium">
+                {addToProfileLabel}
+              </Button>
+            )}
+          </div>
         </div>
+
+        {role.fit_breakdown ? (
+          <div className="border-t border-border/60 pt-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-auto cursor-pointer gap-2 px-0 text-sm font-medium text-primary hover:bg-transparent hover:text-primary/80"
+              onClick={() => setExpanded((open) => !open)}
+            >
+              {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+              {expanded ? "Hide match breakdown" : "How this score is calculated"}
+            </Button>
+            {expanded ? <JobFitBreakdownPanel breakdown={role.fit_breakdown} className="mt-4" /> : null}
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   )

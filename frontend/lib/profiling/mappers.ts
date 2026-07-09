@@ -4,6 +4,7 @@ import type {
   TraitEvidenceResponse,
 } from "@/lib/api/profiler"
 import type { CareerDiscoveryResponse } from "@/lib/profiling/career-discovery-types"
+import { mapJobFitBreakdown } from "@/lib/profiling/job-fit-breakdown"
 import type { CompetencyEvidence, EvidenceGroup, EvidenceItem } from "@/lib/profiling/evidence-types"
 import {
   formatObservationTypeLabel,
@@ -180,6 +181,18 @@ export function traitPercent(value: number): number {
   return Math.round(value * 100)
 }
 
+function weightLabelFromFit(
+  weight: number,
+  traits: JobFitResponse["traits"]
+): "High" | "Medium" | "Low" {
+  const maxWeight = Math.max(...traits.map((t) => t.weight), 0)
+  if (maxWeight <= 0) return "Low"
+  const ratio = weight / maxWeight
+  if (ratio >= 0.85) return "High"
+  if (ratio >= 0.55) return "Medium"
+  return "Low"
+}
+
 export function mapRoleFromJobFit(
   job: JobWithCriteria,
   fit: JobFitResponse
@@ -195,9 +208,21 @@ export function mapRoleFromJobFit(
         name: formatTraitName(traitReading.trait),
         score: traitPercent(traitReading.trait_value),
         verified: traitReading.usable && !traitReading.missing,
+        weight: traitReading.weight,
+        weightLabel: weightLabelFromFit(traitReading.weight, fit.traits),
+        roleWeightPct:
+          fit.weight_sum > 0
+            ? Math.round((traitReading.weight / fit.weight_sum) * 1000) / 10
+            : 0,
+        matchPoints:
+          fit.weight_sum > 0
+            ? Math.round((traitReading.contribution / fit.weight_sum) * 1000) / 10
+            : 0,
+        missing: traitReading.missing,
         sourceIds: [],
       }))
-      .sort((a, b) => b.score - a.score),
+      .sort((a, b) => b.matchPoints - a.matchPoints),
+    fitBreakdown: mapJobFitBreakdown(fit),
   }
 }
 
@@ -248,14 +273,18 @@ export function mapCareerDiscovery(
 
       return {
         id: job.id,
-        category: formatRewardSystemId(job.reward_system_id),
+        category: job.company_name ?? formatRewardSystemId(job.reward_system_id),
         title: job.title,
+        company_name: job.company_name,
+        subtitle: job.subtitle,
+        external_url: job.external_url,
         skills,
         description: fit
           ? discoverDescription(job, fit)
           : `Explore how your profile aligns with ${job.title}.`,
         match_score: matchScore,
         match_label: matchLabelFromPercent(matchScore),
+        fit_breakdown: fit ? mapJobFitBreakdown(fit) : undefined,
       }
     }),
   }
@@ -269,8 +298,8 @@ function streamIdForConnector(connector: string): string | undefined {
   return undefined
 }
 
-function aggregateHighlights(
-  evidenceList: TraitEvidenceResponse[]
+function aggregateHighlightsFromActivity(
+  observations: Array<{ connector: string; observation_type: string }>
 ): Record<string, string[]> {
   const counts: Record<string, Record<string, number>> = {
     vtu: {},
@@ -278,18 +307,14 @@ function aggregateHighlights(
     mentorship: {},
   }
 
-  for (const evidence of evidenceList) {
-    for (const signal of evidence.signals) {
-      for (const obs of signal.canonical_observations) {
-        const streamId = streamIdForConnector(obs.source.connector)
-        if (!streamId) continue
-        const type = obs.observation_type.toLowerCase()
-        for (const rule of HIGHLIGHT_RULES) {
-          if (rule.streamId !== streamId || !rule.match(type)) continue
-          const key = rule.label(0)
-          counts[streamId][key] = (counts[streamId][key] ?? 0) + 1
-        }
-      }
+  for (const obs of observations) {
+    const streamId = streamIdForConnector(obs.connector)
+    if (!streamId) continue
+    const type = obs.observation_type.toLowerCase()
+    for (const rule of HIGHLIGHT_RULES) {
+      if (rule.streamId !== streamId || !rule.match(type)) continue
+      const key = rule.label(0)
+      counts[streamId][key] = (counts[streamId][key] ?? 0) + 1
     }
   }
 
@@ -306,6 +331,43 @@ function aggregateHighlights(
   }
 
   return highlights
+}
+
+function aggregateHighlights(
+  evidenceList: TraitEvidenceResponse[]
+): Record<string, string[]> {
+  const observations: Array<{ connector: string; observation_type: string }> = []
+  for (const evidence of evidenceList) {
+    for (const signal of evidence.signals) {
+      for (const obs of signal.canonical_observations) {
+        observations.push({
+          connector: obs.source.connector,
+          observation_type: obs.observation_type,
+        })
+      }
+    }
+  }
+  return aggregateHighlightsFromActivity(observations)
+}
+
+export function mapThreeStreamsFromActivity(
+  observations: Array<{ connector: string; observation_type: string }>
+): ThreeStreamsResponse {
+  const highlights = aggregateHighlightsFromActivity(observations)
+
+  return {
+    title: "How Your Profile Is Built",
+    streams: Object.entries(STREAM_STATIC).map(([id, config]) => ({
+      id,
+      label: config.label,
+      subtitle: config.subtitle,
+      icon: config.icon,
+      contributes: config.contributes,
+      activities_we_consider: config.activities_we_consider,
+      what_activities_show: config.what_activities_show,
+      recent_highlights: highlights[id] ?? [],
+    })),
+  }
 }
 
 export function mapThreeStreams(
