@@ -2,7 +2,10 @@
 
 import { ArrowRight, ArrowUp, Info } from "lucide-react"
 
+import { ProgressRing } from "@/components/portal/progress-ring"
 import { Badge } from "@/components/ui/badge"
+import { tone } from "@/lib/ui/status-tones"
+import { cn } from "@/lib/utils"
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { CompetencyView, RoleView } from "@/lib/profiling/types"
 
@@ -65,7 +68,7 @@ export function ProfileKpis({ roles, competencies }: ProfileKpisProps) {
             <div className="flex items-center gap-2">
               <span className="text-3xl leading-none tracking-tight text-foreground">{item.value}</span>
               {item.positive && (
-                <Badge className="rounded-sm border-green-600/50 bg-green-500/10 px-1 font-normal text-xs text-green-700 dark:border-green-800/50 dark:bg-green-500/15 dark:text-green-300">
+                <Badge className={cn("rounded-sm px-1 font-normal text-xs", tone.success.badge)}>
                   <ArrowUp />
                   Active
                 </Badge>
@@ -86,19 +89,29 @@ export function ProfileHeaderCard({
   name: string
   roleCount: number
 }) {
+  const strength = roleCount > 0 ? Math.min(100, 40 + roleCount * 15) : 0
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm text-muted-foreground">Learner Profile</CardTitle>
+        <CardTitle className="text-sm text-muted-foreground">Learner profile</CardTitle>
         <CardAction className="flex items-center gap-1 text-xs text-muted-foreground">
-          View Insights <ArrowRight className="size-4" />
+          View insights <ArrowRight className="size-4" />
         </CardAction>
       </CardHeader>
-      <CardContent className="space-y-1">
-        <h1 className="text-2xl tracking-tight sm:text-3xl">{name}</h1>
-        <p className="text-sm text-muted-foreground">
-          Verified signals from Placement, Mentorship, and Proje-x across {roleCount} career paths.
-        </p>
+      <CardContent>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+          <ProgressRing value={strength} size={64} strokeWidth={6}>
+            <span className="text-sm font-semibold tabular-nums">{roleCount}</span>
+          </ProgressRing>
+          <div className="space-y-1">
+            <h1 className="text-2xl tracking-tight sm:text-3xl">{name}</h1>
+            <p className="text-sm text-muted-foreground">
+              Verified signals from Placement, Mentorship, and Proje-x across {roleCount} career
+              paths.
+            </p>
+          </div>
+        </div>
       </CardContent>
     </Card>
   )
