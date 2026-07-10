@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { AdminShell } from "@/components/admin/admin-shell"
+import { PageHeader } from "@/components/layout/page-header"
 import { Alert } from "@/components/admin/alert"
 import { ConnectorIcon } from "@/components/admin/connector-icon"
 import { LoadingState } from "@/components/admin/loading-state"
@@ -68,15 +68,15 @@ export default function NewDataSourcePage() {
   const selectedMeta = getConnectorMeta(selectedConnector?.slug)
 
   return (
-    <AdminShell
-      email={me?.email}
-      title="Add data source"
-      description="Pick a connector type, name the integration, then configure credentials on the next screen."
-      breadcrumbs={[
-        { label: "Data sources", href: "/admin" },
-        { label: "New" },
-      ]}
-    >
+    <>
+      <PageHeader
+        title="Add data source"
+        description="Pick a connector type, name the integration, then configure credentials on the next screen."
+        breadcrumbs={[
+          { label: "Data sources", href: "/admin" },
+          { label: "New" },
+        ]}
+      />
       <form onSubmit={submit} className="space-y-8">
         <section className="rounded-2xl border border-gray-200 bg-white p-6">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
@@ -170,6 +170,6 @@ export default function NewDataSourcePage() {
           </button>
         </div>
       </form>
-    </AdminShell>
+    </>
   )
 }
