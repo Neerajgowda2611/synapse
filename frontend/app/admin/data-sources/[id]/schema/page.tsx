@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { AdminShell } from "@/components/admin/admin-shell"
+import { PageHeader } from "@/components/layout/page-header"
 import { Alert } from "@/components/admin/alert"
 import { LoadingState } from "@/components/admin/loading-state"
 import { useAdminAuth } from "@/hooks/use-admin-auth"
@@ -44,24 +44,24 @@ export default function SchemaExplorerPage() {
   const tables = snapshot?.schema_json.tables ?? []
 
   return (
-    <AdminShell
-      email={me?.email}
-      title="Schema explorer"
-      description={`Snapshot v${snapshot?.version ?? "-"} · ${tables.length} ${tables.length === 1 ? "entity" : "entities"} discovered`}
-      breadcrumbs={[
-        { label: "Data sources", href: "/admin" },
-        { label: dataSourceName, href: `/admin/data-sources/${id}` },
-        { label: "Schema" },
-      ]}
-      action={
-        <button
-          onClick={() => router.push(`/admin/data-sources/${id}/entities`)}
-          className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-        >
-          Map entities
-        </button>
-      }
-    >
+    <>
+      <PageHeader
+        title="Schema explorer"
+        description={`Snapshot v${snapshot?.version ?? "-"} · ${tables.length} ${tables.length === 1 ? "entity" : "entities"} discovered`}
+        breadcrumbs={[
+          { label: "Data sources", href: "/admin" },
+          { label: dataSourceName, href: `/admin/data-sources/${id}` },
+          { label: "Schema" },
+        ]}
+        action={
+          <button
+            onClick={() => router.push(`/admin/data-sources/${id}/entities`)}
+            className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+          >
+            Map entities
+          </button>
+        }
+      />
       {error ? (
         <Alert variant="error">{error}</Alert>
       ) : tables.length === 0 ? (
@@ -114,6 +114,6 @@ export default function SchemaExplorerPage() {
           ))}
         </div>
       )}
-    </AdminShell>
+    </>
   )
 }

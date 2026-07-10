@@ -2,7 +2,7 @@
 
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { AdminShell } from "@/components/admin/admin-shell"
+import { PageHeader } from "@/components/layout/page-header"
 import { Alert } from "@/components/admin/alert"
 import { ConnectorBadge } from "@/components/admin/connector-badge"
 import { CopyField } from "@/components/admin/copy-field"
@@ -227,33 +227,33 @@ export default function DataSourceDetailPage() {
   const activeMeta = setupSteps.find((step) => step.id === activeStep)
 
   return (
-    <AdminShell
-      email={me?.email}
-      title={dataSource?.name ?? "Data source"}
-      description={
-        isWebhook
-          ? "Receive JSON events via HTTP and map them into learner profiles."
-          : "Connect to PostgreSQL, discover tables, and map them to domains."
-      }
-      breadcrumbs={[
-        { label: "Data sources", href: "/admin" },
-        { label: dataSource?.name ?? "Details" },
-      ]}
-      action={
-        <div className="flex flex-wrap items-center gap-2">
-          <ConnectorBadge slug={slug} name={dataSource?.connector_definition?.name} />
-          <span
-            className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-              dataSource?.status === "active"
-                ? "bg-emerald-50 text-emerald-700"
-                : "bg-gray-100 text-gray-600"
-            }`}
-          >
-            {dataSource?.status}
-          </span>
-        </div>
-      }
-    >
+    <>
+      <PageHeader
+        title={dataSource?.name ?? "Data source"}
+        description={
+          isWebhook
+            ? "Receive JSON events via HTTP and map them into learner profiles."
+            : "Connect to PostgreSQL, discover tables, and map them to domains."
+        }
+        breadcrumbs={[
+          { label: "Data sources", href: "/admin" },
+          { label: dataSource?.name ?? "Details" },
+        ]}
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <ConnectorBadge slug={slug} name={dataSource?.connector_definition?.name} />
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                dataSource?.status === "active"
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-gray-100 text-gray-600"
+              }`}
+            >
+              {dataSource?.status}
+            </span>
+          </div>
+        }
+      />
       <div className="space-y-6">
         <SetupSteps
           steps={setupSteps}
@@ -492,7 +492,7 @@ export default function DataSourceDetailPage() {
           )}
         </section>
       </div>
-    </AdminShell>
+    </>
   )
 }
 

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { AdminShell } from "@/components/admin/admin-shell"
+import { PageHeader } from "@/components/layout/page-header"
 import { Alert } from "@/components/admin/alert"
 import { ConnectorBadge } from "@/components/admin/connector-badge"
 import { LoadingState } from "@/components/admin/loading-state"
@@ -142,44 +142,44 @@ export default function CollectedDataPage() {
     : byEntity.reduce((sum, item) => sum + item.count, 0)
 
   return (
-    <AdminShell
-      email={me?.email}
-      title="Collected data"
-      description={
-        grandTotal > 0
-          ? isWebhook
-            ? `${grandTotal} ${grandTotal === 1 ? "observation" : "observations"} received from this webhook.`
-            : `${grandTotal} raw ${grandTotal === 1 ? "record" : "records"} stored from this connector.`
-          : isWebhook
-            ? "Observations appear here after apps POST to your ingest URL."
-            : "Records appear here after a database sync."
-      }
-      breadcrumbs={[
-        { label: "Data sources", href: "/admin" },
-        { label: dataSource.name, href: `/admin/data-sources/${id}` },
-        { label: "Collected data" },
-      ]}
-      action={
-        <div className="flex flex-wrap items-center gap-2">
-          {dataSource.connector_definition && (
-            <ConnectorBadge
-              slug={dataSource.connector_definition.slug}
-              name={dataSource.connector_definition.name}
-            />
-          )}
-          <button
-            onClick={() => {
-              void loadData(offset, activeFilter, true)
-              void loadSyncJob()
-            }}
-            disabled={refreshing}
-            className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            {refreshing ? "Refreshing..." : "Refresh"}
-          </button>
-        </div>
-      }
-    >
+    <>
+      <PageHeader
+        title="Collected data"
+        description={
+          grandTotal > 0
+            ? isWebhook
+              ? `${grandTotal} ${grandTotal === 1 ? "observation" : "observations"} received from this webhook.`
+              : `${grandTotal} raw ${grandTotal === 1 ? "record" : "records"} stored from this connector.`
+            : isWebhook
+              ? "Observations appear here after apps POST to your ingest URL."
+              : "Records appear here after a database sync."
+        }
+        breadcrumbs={[
+          { label: "Data sources", href: "/admin" },
+          { label: dataSource.name, href: `/admin/data-sources/${id}` },
+          { label: "Collected data" },
+        ]}
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            {dataSource.connector_definition && (
+              <ConnectorBadge
+                slug={dataSource.connector_definition.slug}
+                name={dataSource.connector_definition.name}
+              />
+            )}
+            <button
+              onClick={() => {
+                void loadData(offset, activeFilter, true)
+                void loadSyncJob()
+              }}
+              disabled={refreshing}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              {refreshing ? "Refreshing..." : "Refresh"}
+            </button>
+          </div>
+        }
+      />
       {error && (
         <div className="mb-4">
           <Alert variant="error">{error}</Alert>
@@ -431,7 +431,7 @@ export default function CollectedDataPage() {
           </>
         )}
       </section>
-    </AdminShell>
+    </>
   )
 }
 

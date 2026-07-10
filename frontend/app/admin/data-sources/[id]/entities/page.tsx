@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { AdminShell } from "@/components/admin/admin-shell"
+import { PageHeader } from "@/components/layout/page-header"
 import { Alert } from "@/components/admin/alert"
 import { LoadingState } from "@/components/admin/loading-state"
 import { useAdminAuth } from "@/hooks/use-admin-auth"
@@ -90,25 +90,25 @@ export default function EntitySelectionPage() {
   }
 
   return (
-    <AdminShell
-      email={me?.email}
-      title="Map entities"
-      description="Assign each source table or event type to a learner profile domain."
-      breadcrumbs={[
-        { label: "Data sources", href: "/admin" },
-        { label: dataSourceName, href: `/admin/data-sources/${id}` },
-        { label: "Entities" },
-      ]}
-      action={
-        <button
-          onClick={submit}
-          disabled={saving || tableNames.length === 0}
-          className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
-        >
-          {saving ? "Saving..." : "Save mappings"}
-        </button>
-      }
-    >
+    <>
+      <PageHeader
+        title="Map entities"
+        description="Assign each source table or event type to a learner profile domain."
+        breadcrumbs={[
+          { label: "Data sources", href: "/admin" },
+          { label: dataSourceName, href: `/admin/data-sources/${id}` },
+          { label: "Entities" },
+        ]}
+        action={
+          <button
+            onClick={submit}
+            disabled={saving || tableNames.length === 0}
+            className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+          >
+            {saving ? "Saving..." : "Save mappings"}
+          </button>
+        }
+      />
       <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-gray-500">
         <span>{tableNames.length} sources</span>
         <span className="text-gray-300">·</span>
@@ -186,6 +186,6 @@ export default function EntitySelectionPage() {
           </table>
         )}
       </div>
-    </AdminShell>
+    </>
   )
 }
