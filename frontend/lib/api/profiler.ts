@@ -175,6 +175,15 @@ export function listUserStreamActivity(userId: string, asOf?: string) {
   )
 }
 
+export async function listUserStreamActivitySafe(userId: string, asOf?: string) {
+  try {
+    return await listUserStreamActivity(userId, asOf)
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null
+    throw error
+  }
+}
+
 export interface StreamActivityObservation {
   connector: string
   observation_type: string
