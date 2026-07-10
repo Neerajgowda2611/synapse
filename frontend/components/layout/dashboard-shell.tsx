@@ -4,16 +4,18 @@ import { ReactNode, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
 import { AppSidebar } from "@/components/layout/sidebar/app-sidebar"
+import { SkipToContent } from "@/components/layout/skip-to-content"
 import { LayoutControls } from "@/components/layout/sidebar/layout-controls"
 import { SearchDialog } from "@/components/layout/sidebar/search-dialog"
-import { ThemeSwitcher } from "@/components/layout/sidebar/theme-switcher"
+import { ThemePanelTrigger } from "@/components/theme/theme-panel"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { LoadingState } from "@/components/admin/loading-state"
 import { DashboardUserProvider } from "@/contexts/dashboard-user-context"
 import { getMe } from "@/lib/api/data-sources"
 import { clearAccessToken, getAccessToken } from "@/lib/config"
-import { adminSidebarItems, platformSidebarItems } from "@/navigation/sidebar-items"
+import { getProfilerMe } from "@/lib/api/profiler"
+import { adminSidebarItems, platformSidebarItems, portalSidebarItems } from "@/navigation/sidebar-items"
 import { cn } from "@/lib/utils"
 
 const SURFACE_CONFIG = {
@@ -29,17 +31,25 @@ const SURFACE_CONFIG = {
     requiredUserType: "platform" as const,
     searchPlaceholder: "Search platform pages…",
   },
+  portal: {
+    items: portalSidebarItems,
+    homeHref: "/portal/player-card",
+    requiredUserType: "learner" as const,
+    searchPlaceholder: "Search your portal…",
+  },
 }
 
 type DashboardShellProps = {
   children: ReactNode
   surface: keyof typeof SURFACE_CONFIG
+  userName?: string
 }
 
-export function DashboardShell({ children, surface }: DashboardShellProps) {
+export function DashboardShell({ children, surface, userName }: DashboardShellProps) {
   const { items, homeHref, requiredUserType, searchPlaceholder } = SURFACE_CONFIG[surface]
   const router = useRouter()
   const [email, setEmail] = useState<string>("")
+  const [displayName, setDisplayName] = useState<string>(userName ?? "")
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -48,13 +58,18 @@ export function DashboardShell({ children, surface }: DashboardShellProps) {
       return
     }
 
-    getMe()
+    const loadMe = requiredUserType === "learner" ? getProfilerMe() : getMe()
+
+    loadMe
       .then((me) => {
         if (me.user_type !== requiredUserType) {
           router.replace("/dashboard")
           return
         }
         setEmail(me.email)
+        if (requiredUserType === "learner" && "name" in me && typeof me.name === "string") {
+          setDisplayName(me.name)
+        }
       })
       .catch(() => {
         clearAccessToken()
@@ -68,7 +83,8 @@ export function DashboardShell({ children, surface }: DashboardShellProps) {
   }
 
   return (
-    <DashboardUserProvider email={email}>
+    <DashboardUserProvider email={email} name={displayName}>
+      <SkipToContent />
       <SidebarProvider
       style={
         {
@@ -88,6 +104,7 @@ export function DashboardShell({ children, surface }: DashboardShellProps) {
         )}
       >
         <header
+          aria-label="Dashboard"
           className={cn(
             "flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12",
             "[html[data-navbar-style=sticky]_&]:sticky [html[data-navbar-style=sticky]_&]:top-0 [html[data-navbar-style=sticky]_&]:z-50 [html[data-navbar-style=sticky]_&]:overflow-hidden [html[data-navbar-style=sticky]_&]:rounded-t-[inherit] [html[data-navbar-style=sticky]_&]:bg-background/50 [html[data-navbar-style=sticky]_&]:backdrop-blur-md",
@@ -104,11 +121,15 @@ export function DashboardShell({ children, surface }: DashboardShellProps) {
             </div>
             <div className="flex items-center gap-2">
               <LayoutControls />
-              <ThemeSwitcher />
+              <ThemePanelTrigger />
             </div>
           </div>
         </header>
-        <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden p-4 md:p-6">
+        <div
+          id="main-content"
+          tabIndex={-1}
+          className="min-h-0 min-w-0 flex-1 overflow-x-hidden p-4 outline-none md:p-6"
+        >
           {children}
         </div>
       </SidebarInset>
