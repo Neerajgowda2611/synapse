@@ -8,6 +8,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { ProgressRing } from "@/components/portal/progress-ring"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -62,19 +63,22 @@ function ObservationRow({ item }: { item: EvidenceItem }) {
   const occurredAt = formatOccurredAt(item.occurred_at)
 
   return (
-    <Card className="bg-muted py-2 shadow-none">
-      <CardContent className="flex items-start justify-between gap-3 px-3 py-2">
-        <div className="min-w-0 flex-1 space-y-0.5">
-          <p className="text-sm font-medium text-foreground">{item.text}</p>
-          {item.detail && (
-            <p className="text-xs leading-relaxed text-muted-foreground">{item.detail}</p>
-          )}
-        </div>
-        {occurredAt && (
-          <span className="shrink-0 pt-0.5 text-xs text-muted-foreground">{occurredAt}</span>
-        )}
-      </CardContent>
-    </Card>
+    <div className="relative pl-6">
+      <span className="absolute top-3 left-0 size-2 rounded-full bg-chart-3 ring-4 ring-background" />
+      <Card className="bg-muted/50 py-2 shadow-none">
+        <CardContent className="flex flex-col gap-2 px-3 py-2 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <p className="text-sm font-medium text-foreground">{item.text}</p>
+            {item.detail ? (
+              <p className="text-xs leading-relaxed text-muted-foreground">{item.detail}</p>
+            ) : null}
+          </div>
+          {occurredAt ? (
+            <span className="shrink-0 text-xs text-muted-foreground">{occurredAt}</span>
+          ) : null}
+        </CardContent>
+      </Card>
+    </div>
   )
 }
 
@@ -98,7 +102,7 @@ function EvidenceGroupSection({ group }: { group: EvidenceGroup }) {
           </div>
         </AccordionTrigger>
         <AccordionContent className="border-t border-border px-3 pb-3">
-          <div className="mt-2 space-y-2">
+          <div className="relative mt-3 space-y-3 border-l border-border pl-4">
             {group.items.map((item) => (
               <ObservationRow key={item.id} item={item} />
             ))}
@@ -152,25 +156,28 @@ export function CompetencyEvidenceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="flex h-[75vh] w-[75vw] max-w-[75vw] flex-col gap-0 overflow-hidden p-0 sm:max-w-[75vw] **:data-[slot=accordion-trigger]:cursor-pointer **:data-[slot=dropdown-menu-item]:cursor-pointer [&_button]:cursor-pointer"
+        className="flex h-[min(85vh,900px)] w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl md:max-w-4xl lg:max-w-5xl **:data-[slot=accordion-trigger]:cursor-pointer **:data-[slot=dropdown-menu-item]:cursor-pointer [&_button]:cursor-pointer"
       >
-        <DialogHeader className="border-b border-border px-8 py-6">
-          <div className="flex items-start gap-6">
-            <Card className="flex size-20 shrink-0 items-center justify-center rounded-full py-0 shadow-none ring-1 ring-border">
+        <DialogHeader className="border-b border-border px-4 py-5 sm:px-8 sm:py-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
+            <ProgressRing value={score} size={72} strokeWidth={6} className="sm:hidden">
+              <span className="text-lg font-bold tabular-nums">{score}</span>
+            </ProgressRing>
+            <Card className="hidden size-20 shrink-0 items-center justify-center rounded-full py-0 shadow-none ring-1 ring-border sm:flex">
               <CardContent className="flex items-center justify-center p-0 text-3xl font-bold text-foreground">
                 {score}
               </CardContent>
             </Card>
-            <div className="flex-1 space-y-2">
+            <div className="min-w-0 flex-1 space-y-2">
               <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
                 Metric &bull; {roleTitle}
               </p>
-              <DialogTitle className="text-3xl font-bold text-foreground">
+              <DialogTitle className="text-2xl font-bold text-foreground sm:text-3xl">
                 {competencyName}
               </DialogTitle>
-              {evidence && (
+              {evidence ? (
                 <p className="text-sm text-muted-foreground">{evidence.description}</p>
-              )}
+              ) : null}
             </div>
           </div>
           {evidence && (
@@ -215,7 +222,7 @@ export function CompetencyEvidenceDialog({
           )}
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-8 py-6">
+        <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-8 sm:py-6">
           {loading && (
             <div className="space-y-4">
               <Skeleton className="h-4 w-36" />
@@ -281,8 +288,8 @@ export function CompetencyEvidenceDialog({
                       </AccordionTrigger>
 
                       {source.groups.length > 0 && (
-                        <AccordionContent className="border-t border-border px-4 pb-4">
-                          <div className="mt-4 space-y-2 border-l border-border pl-4">
+                        <AccordionContent className="border-t border-border px-3 pb-4 sm:px-4">
+                          <div className="mt-4 space-y-3 border-l border-border pl-4">
                             <Accordion multiple className="space-y-2">
                               {source.groups.map((group) => (
                                 <EvidenceGroupSection key={group.group_id} group={group} />
@@ -299,7 +306,7 @@ export function CompetencyEvidenceDialog({
           )}
         </div>
 
-        <DialogFooter className="mx-0 mb-0 border-t border-border bg-muted/50 px-8 pt-4 pb-6 sm:justify-end">
+        <DialogFooter className="mx-0 mb-0 border-t border-border bg-muted/50 px-4 pt-4 pb-5 sm:px-8 sm:pb-6 sm:justify-end">
           <DialogClose asChild>
             <Button className="cursor-pointer">Close Details</Button>
           </DialogClose>

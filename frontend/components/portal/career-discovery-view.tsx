@@ -4,8 +4,11 @@ import { useMemo, useState } from "react"
 import { ArrowRight, ChevronDown, ChevronUp, ExternalLink } from "lucide-react"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 
-import { MatchDistributionChart } from "@/components/portal/charts/match-distribution-chart"
+import { DiscoveryKpis } from "@/components/portal/charts/discovery-kpis"
+import { LazyMatchDistributionChart } from "@/components/charts/lazy-charts"
 import { JobFitBreakdownPanel } from "@/components/portal/job-fit-breakdown-panel"
+import { PortalPageHeader } from "@/components/portal/portal-page-header"
+import { ProgressRing } from "@/components/portal/progress-ring"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -39,36 +42,51 @@ function sortRoles(roles: CareerDiscoveryRole[], sortId: string): CareerDiscover
 
 function MatchScoreChart({ roles }: { roles: CareerDiscoveryRole[] }) {
   const chartData = roles.slice(0, 6).map((role) => ({
-    role: role.title.length > 14 ? `${role.title.slice(0, 12)}…` : role.title,
+    role: role.title.length > 18 ? `${role.title.slice(0, 16)}…` : role.title,
+    fullTitle: role.title,
     match: role.match_score,
   }))
+  const chartHeight = Math.max(220, chartData.length * 44 + 48)
 
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle className="text-sm">Match Performance</CardTitle>
+        <CardTitle className="text-sm">Role comparison</CardTitle>
         <CardAction className="flex items-center gap-1 text-xs text-muted-foreground">
-          Compare Roles <ArrowRight className="size-4" />
+          Match scores <ArrowRight className="size-4" />
         </CardAction>
       </CardHeader>
-      <CardContent className="overflow-x-auto">
-        <ChartContainer config={chartConfig} className="h-64 min-w-[280px] w-full">
-          <BarChart accessibilityLayer data={chartData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
-            <CartesianGrid vertical={false} strokeDasharray="4 4" />
-            <XAxis
-              axisLine={false}
-              dataKey="role"
-              interval={0}
-              tickLine={false}
-              tickMargin={10}
-              angle={-20}
-              textAnchor="end"
-              height={56}
-            />
-            <YAxis axisLine={false} domain={[0, 100]} tickLine={false} tickMargin={10} width={32} />
-            <Bar dataKey="match" fill="var(--color-match)" radius={[6, 6, 0, 0]} maxBarSize={48} />
-          </BarChart>
-        </ChartContainer>
+      <CardContent>
+        {chartData.length === 0 ? (
+          <p className="py-10 text-center text-sm text-muted-foreground">No roles to compare.</p>
+        ) : (
+          <ChartContainer config={chartConfig} className="w-full" style={{ height: chartHeight }}>
+            <BarChart
+              accessibilityLayer
+              data={chartData}
+              layout="vertical"
+              margin={{ left: 4, right: 16, top: 4, bottom: 4 }}
+            >
+              <CartesianGrid horizontal={false} strokeDasharray="4 4" />
+              <YAxis
+                axisLine={false}
+                dataKey="role"
+                tickLine={false}
+                tickMargin={8}
+                type="category"
+                width={112}
+              />
+              <XAxis
+                axisLine={false}
+                domain={[0, 100]}
+                tickFormatter={(value) => `${value}%`}
+                tickLine={false}
+                type="number"
+              />
+              <Bar dataKey="match" fill="var(--color-match)" radius={4} barSize={24} />
+            </BarChart>
+          </ChartContainer>
+        )}
       </CardContent>
     </Card>
   )
@@ -84,10 +102,16 @@ function RoleDiscoveryCard({
   const [expanded, setExpanded] = useState(false)
 
   return (
-    <Card>
+    <Card className="overflow-hidden transition hover:shadow-sm">
       <CardContent className="flex flex-col gap-6 p-4 sm:p-6">
-        <div className="grid gap-6 lg:grid-cols-[1fr_auto]">
-          <div className="min-w-0 space-y-4">
+        <div className="grid gap-6 lg:grid-cols-[auto_1fr_auto] lg:items-start">
+          <ProgressRing value={role.match_score} size={72} strokeWidth={6}>
+            <div className="text-center">
+              <p className="text-base font-semibold tabular-nums leading-none">{role.match_score}%</p>
+            </div>
+          </ProgressRing>
+
+          <div className="min-w-0 space-y-3">
             <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
               {role.category}
             </p>
@@ -103,15 +127,10 @@ function RoleDiscoveryCard({
             <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">{role.description}</p>
           </div>
 
-          <div className="flex flex-row items-center justify-between gap-6 lg:min-w-44 lg:flex-col lg:items-end">
-            <div className="text-left lg:text-right">
-              <p className="text-3xl font-semibold tabular-nums tracking-tight sm:text-4xl">
-                {role.match_score}%
-              </p>
-              <p className="mt-1 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-                {role.match_label}
-              </p>
-            </div>
+          <div className="flex flex-col items-start gap-2 lg:items-end">
+            <Badge variant="secondary" className="font-normal">
+              {role.match_label}
+            </Badge>
             {role.external_url ? (
               <a
                 href={role.external_url}
@@ -157,41 +176,42 @@ export function CareerDiscoveryView({ data }: CareerDiscoveryViewProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl tracking-tight sm:text-3xl">{data.title}</h1>
-          <p className="text-sm text-muted-foreground">{data.subtitle}</p>
-        </div>
+      <PortalPageHeader
+        title={data.title}
+        description={data.subtitle}
+        action={
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="shrink-0">{data.sort.label}:</span>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 min-w-36 justify-between gap-2">
+                  <span className="truncate">{activeSort.label}</span>
+                  <ChevronDown className="size-4 shrink-0 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuGroup>
+                  {data.sort.options.map((option) => (
+                    <DropdownMenuItem
+                      key={option.id}
+                      className={cn(sortId === option.id && "bg-accent")}
+                      onClick={() => setSortId(option.id)}
+                    >
+                      {option.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        }
+      />
 
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span className="shrink-0">{data.sort.label}:</span>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 min-w-36 justify-between gap-2">
-                <span className="truncate">{activeSort.label}</span>
-                <ChevronDown className="size-4 shrink-0 opacity-60" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuGroup>
-                {data.sort.options.map((option) => (
-                  <DropdownMenuItem
-                    key={option.id}
-                    className={cn(sortId === option.id && "bg-accent")}
-                    onClick={() => setSortId(option.id)}
-                  >
-                    {option.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
+      <DiscoveryKpis roles={sortedRoles} />
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="xl:col-span-5">
-          <MatchDistributionChart roles={sortedRoles} />
+          <LazyMatchDistributionChart roles={sortedRoles} />
         </div>
         <div className="xl:col-span-7">
           <MatchScoreChart roles={sortedRoles} />

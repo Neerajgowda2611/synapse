@@ -21,8 +21,8 @@ import { getInitials } from "@/lib/utils"
 export function NavUser() {
   const router = useRouter()
   const { isMobile } = useSidebar()
-  const { email } = useDashboardUser()
-  const displayName = email.split("@")[0] || "User"
+  const { email, name } = useDashboardUser()
+  const displayName = name || email.split("@")[0] || "User"
 
   function signOut() {
     clearAccessToken()

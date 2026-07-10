@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { type FontKey, fontOptions } from "@/lib/fonts/registry";
 import type { ContentLayout, NavbarStyle, SidebarCollapsible, SidebarVariant } from "@/lib/preferences/layout";
-import { THEME_PRESET_OPTIONS, type ThemeMode, type ThemePreset } from "@/lib/preferences/theme";
+import { THEME_PRESET_OPTIONS, type ThemePreset } from "@/lib/preferences/theme";
 import { usePreferencesStore } from "@/stores/preferences/preferences-provider";
 
 export function LayoutControls() {
@@ -24,7 +24,6 @@ export function LayoutControls() {
   );
 
   const {
-    theme_mode: themeMode,
     theme_preset: themePreset,
     content_layout: contentLayout,
     navbar_style: navbarStyle,
@@ -35,11 +34,6 @@ export function LayoutControls() {
 
   const onThemePresetChange = (preset: ThemePreset) => {
     setPreference("theme_preset", preset);
-  };
-
-  const onThemeModeChange = (mode: ThemeMode | "") => {
-    if (!mode) return;
-    setPreference("theme_mode", mode);
   };
 
   const onContentLayoutChange = (layout: ContentLayout | "") => {
@@ -82,7 +76,7 @@ export function LayoutControls() {
           </div>
           <div className="space-y-3 **:data-[slot=toggle-group]:w-full **:data-[slot=toggle-group-item]:flex-1 **:data-[slot=toggle-group-item]:text-xs">
             <div className="space-y-1">
-              <Label className="font-medium text-xs">Theme Preset</Label>
+              <Label className="font-medium text-xs">Theme preset</Label>
               <Select value={themePreset} onValueChange={onThemePresetChange}>
                 <SelectTrigger size="sm" className="w-full text-xs">
                   <SelectValue placeholder="Preset" />
@@ -106,7 +100,7 @@ export function LayoutControls() {
             </div>
 
             <div className="space-y-1">
-              <Label className="font-medium text-xs">Fonts</Label>
+              <Label className="font-medium text-xs">Font</Label>
               <Select value={font} onValueChange={onFontChange}>
                 <SelectTrigger size="sm" className="w-full text-xs">
                   <SelectValue placeholder="Select font" />
@@ -124,29 +118,7 @@ export function LayoutControls() {
             </div>
 
             <div className="space-y-1">
-              <Label className="font-medium text-xs">Theme Mode</Label>
-              <ToggleGroup
-                size="sm"
-                spacing={0}
-                variant="outline"
-                type="single"
-                value={themeMode}
-                onValueChange={onThemeModeChange}
-              >
-                <ToggleGroupItem value="light" aria-label="Toggle light">
-                  Light
-                </ToggleGroupItem>
-                <ToggleGroupItem value="dark" aria-label="Toggle dark">
-                  Dark
-                </ToggleGroupItem>
-                <ToggleGroupItem value="system" aria-label="Toggle system">
-                  System
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
-
-            <div className="space-y-1">
-              <Label className="font-medium text-xs">Page Layout</Label>
+              <Label className="font-medium text-xs">Page layout</Label>
               <ToggleGroup
                 size="sm"
                 spacing={0}
