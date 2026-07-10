@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { ThreeStreamsView } from "@/components/portal/three-streams-view"
+import { ErrorState } from "@/components/ui/error-state"
 import { Skeleton } from "@/components/ui/skeleton"
 import { usePortalUser } from "@/contexts/portal-user-context"
 import { loadThreeStreamsData } from "@/lib/profiling/load-three-streams"
@@ -56,19 +57,11 @@ export default function ThreeStreamsPage() {
   }
 
   if (error) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <p className="text-muted-foreground">{error}</p>
-      </div>
-    )
+    return <ErrorState message={error} className="my-8" />
   }
 
   if (!data) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <p className="text-muted-foreground">Unable to load streams.</p>
-      </div>
-    )
+    return <ErrorState message="Unable to load streams." className="my-8" />
   }
 
   return <ThreeStreamsView data={data} />
