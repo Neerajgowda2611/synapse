@@ -46,7 +46,11 @@ export function ThemeBootScript() {
           var value = readPreference(key, definition);
 
           preferences[key] = value;
-          root.setAttribute(definition.attribute, value);
+          if (key === "color_theme" && value === "studio") {
+            root.removeAttribute("data-theme");
+          } else {
+            root.setAttribute(definition.attribute, value);
+          }
         });
 
         var mode = preferences.theme_mode;

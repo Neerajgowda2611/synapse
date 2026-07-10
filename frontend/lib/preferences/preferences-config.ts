@@ -1,4 +1,5 @@
 import { fontKeys } from "@/lib/fonts/registry"
+import { COLOR_THEME_VALUES, RADIUS_STYLE_VALUES } from "@/lib/themes/color-themes"
 
 import {
   CONTENT_LAYOUT_VALUES,
@@ -87,6 +88,20 @@ export const PREFERENCE_REGISTRY = {
     defaultValue: "icon",
     persistence: "client-cookie",
     attribute: "data-sidebar-collapsible",
+  }),
+
+  color_theme: definePreference({
+    values: COLOR_THEME_VALUES,
+    defaultValue: "studio",
+    persistence: "localStorage",
+    attribute: "data-theme",
+  }),
+
+  radius_style: definePreference({
+    values: RADIUS_STYLE_VALUES,
+    defaultValue: "studio",
+    persistence: "localStorage",
+    attribute: "data-radius-style",
   }),
 } as const
 

@@ -12,6 +12,16 @@ export function applyPreference<K extends PreferenceKey>(
     return applyThemeMode(value as PreferenceValueMap["theme_mode"])
   }
 
+  if (key === "color_theme") {
+    const root = document.documentElement
+    if (value === "studio") {
+      root.removeAttribute("data-theme")
+    } else {
+      root.setAttribute("data-theme", value as string)
+    }
+    return undefined
+  }
+
   document.documentElement.setAttribute(PREFERENCE_REGISTRY[key].attribute, value)
   return undefined
 }
