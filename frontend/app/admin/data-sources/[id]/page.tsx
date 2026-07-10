@@ -1,17 +1,20 @@
 "use client"
 
-import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react"
+import { FormEvent, ReactNode, useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { PageHeader } from "@/components/layout/page-header"
+
 import { Alert } from "@/components/admin/alert"
-import { ConnectorBadge } from "@/components/admin/connector-badge"
 import { CopyField } from "@/components/admin/copy-field"
+import { DataSourceWorkspace } from "@/components/admin/data-sources/data-source-workspace"
 import { LoadingState } from "@/components/admin/loading-state"
-import { SetupSteps } from "@/components/admin/setup-steps"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { useAdminAuth } from "@/hooks/use-admin-auth"
+import type { SetupStepId } from "@/lib/admin/setup-steps"
 import {
   CredentialsResponse,
-  DataSource,
   discoverSchema,
   generateWebhookCredentials,
   getCredentials,
@@ -22,15 +25,13 @@ import {
 } from "@/lib/api/data-sources"
 import { getConnectorMeta } from "@/lib/connector-meta"
 
-type StepId = "credentials" | "verify" | "discover" | "entities" | "data"
-
 export default function DataSourceDetailPage() {
   const router = useRouter()
   const params = useParams<{ id: string }>()
   const id = params.id
-  const { me, loading: authLoading } = useAdminAuth()
-  const [dataSource, setDataSource] = useState<DataSource | null>(null)
-  const [activeStep, setActiveStep] = useState<StepId>("credentials")
+  const { loading: authLoading } = useAdminAuth()
+  const [slug, setSlug] = useState<string | undefined>()
+  const [activeStep, setActiveStep] = useState<SetupStepId>("credentials")
   const [hasCredentials, setHasCredentials] = useState(false)
   const [verified, setVerified] = useState(false)
   const [webhookToken, setWebhookToken] = useState("")
@@ -51,7 +52,6 @@ export default function DataSourceDetailPage() {
   const [discovering, setDiscovering] = useState(false)
   const [consentAccepted, setConsentAccepted] = useState(false)
 
-  const slug = dataSource?.connector_definition?.slug
   const isWebhook = slug === "webhook"
   const meta = getConnectorMeta(slug)
 
@@ -60,7 +60,7 @@ export default function DataSourceDetailPage() {
 
     Promise.all([getDataSource(id), getCredentials(id).catch(() => null)])
       .then(([ds, creds]) => {
-        setDataSource(ds)
+        setSlug(ds.connector_definition?.slug)
         if (ds.raw_storage_consent_at) {
           setConsentAccepted(true)
         }
@@ -87,52 +87,6 @@ export default function DataSourceDetailPage() {
       schema: creds.schema || "public",
     })
   }
-
-  const setupSteps = useMemo(
-    () => [
-      {
-        id: "credentials" as const,
-        label: isWebhook ? "Ingest URL" : "Credentials",
-        description: isWebhook
-          ? "Generate a secure token and copy your endpoint."
-          : "Save database host, user, and password.",
-        status: hasCredentials ? ("complete" as const) : ("current" as const),
-      },
-      {
-        id: "verify" as const,
-        label: "Verify",
-        description: isWebhook ? "Confirm the endpoint is ready." : "Test the database connection.",
-        status: verified
-          ? ("complete" as const)
-          : hasCredentials
-            ? ("current" as const)
-            : ("upcoming" as const),
-      },
-      {
-        id: "discover" as const,
-        label: "Discover",
-        description: isWebhook
-          ? "Infer schema from received payloads."
-          : "Scan tables and columns from the database.",
-        status: verified ? ("current" as const) : ("upcoming" as const),
-      },
-      {
-        id: "entities" as const,
-        label: "Map entities",
-        description: "Assign sources to learner profile domains.",
-        status: "upcoming" as const,
-      },
-      {
-        id: "data" as const,
-        label: "Collected data",
-        description: isWebhook
-          ? "Browse observations received from this webhook."
-          : "Browse raw records synced from this connector.",
-        status: "upcoming" as const,
-      },
-    ],
-    [hasCredentials, isWebhook, verified]
-  )
 
   async function generateOrSaveCredentials() {
     setError("")
@@ -204,14 +158,14 @@ export default function DataSourceDetailPage() {
       await discoverSchema(id)
       if (isWebhook) {
         setMessage("Schema discovered — review tables and map entities.")
+        router.push(`/admin/data-sources/${id}/schema`)
       } else {
         setMessage(
-          "Schema saved. Raw import started for all discovered tables — check Collected data for progress."
+          "Schema saved. Raw import started for all discovered tables — check Data tab for progress."
         )
         setActiveStep("data")
+        router.push(`/admin/data-sources/${id}/data`)
       }
-      if (!isWebhook) return
-      router.push(`/admin/data-sources/${id}/schema`)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to discover schema")
     } finally {
@@ -220,52 +174,71 @@ export default function DataSourceDetailPage() {
   }
 
   if (authLoading || loading) {
-    return <LoadingState />
+    return <LoadingState label="Loading setup..." />
   }
 
   const ingestURL = webhookToken ? webhookIngestURL(webhookToken) : ""
-  const activeMeta = setupSteps.find((step) => step.id === activeStep)
+
+  const stepCopy: Record<SetupStepId, { title: string; description: string }> = {
+    credentials: {
+      title: isWebhook ? "Ingest URL" : "Credentials",
+      description: isWebhook
+        ? "Generate a secure token and copy your endpoint."
+        : "Save database host, user, and password.",
+    },
+    verify: {
+      title: "Verify",
+      description: isWebhook
+        ? "Run a quick check that your ingest token is configured."
+        : "Confirm Profiler can reach your PostgreSQL instance.",
+    },
+    discover: {
+      title: "Discover",
+      description: isWebhook
+        ? "Send at least one payload, then discover schema."
+        : "Scan tables and columns from the database.",
+    },
+    entities: {
+      title: "Map entities",
+      description: "Assign sources to learner profile domains.",
+    },
+    data: {
+      title: "Collected data",
+      description: isWebhook
+        ? "Browse observations received from this webhook."
+        : "Browse raw records synced from this connector.",
+    },
+  }
 
   return (
-    <>
-      <PageHeader
-        title={dataSource?.name ?? "Data source"}
-        description={
-          isWebhook
-            ? "Receive JSON events via HTTP and map them into learner profiles."
-            : "Connect to PostgreSQL, discover tables, and map them to domains."
+    <DataSourceWorkspace
+      dataSourceId={id}
+      title="Setup"
+      description={
+        isWebhook
+          ? "Receive JSON events via HTTP and map them into learner profiles."
+          : "Connect to PostgreSQL, discover tables, and map them to domains."
+      }
+      breadcrumbLabel="Setup"
+      activeSetupStep={activeStep}
+      onSetupStepClick={(stepId) => {
+        if (stepId === "entities") {
+          router.push(`/admin/data-sources/${id}/entities`)
+          return
         }
-        breadcrumbs={[
-          { label: "Data sources", href: "/admin" },
-          { label: dataSource?.name ?? "Details" },
-        ]}
-        action={
-          <div className="flex flex-wrap items-center gap-2">
-            <ConnectorBadge slug={slug} name={dataSource?.connector_definition?.name} />
-            <span
-              className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                dataSource?.status === "active"
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "bg-gray-100 text-gray-600"
-              }`}
-            >
-              {dataSource?.status}
-            </span>
-          </div>
+        if (stepId === "data") {
+          router.push(`/admin/data-sources/${id}/data`)
+          return
         }
-      />
-      <div className="space-y-6">
-        <SetupSteps
-          steps={setupSteps}
-          activeStepId={activeStep}
-          onStepClick={(stepId) => setActiveStep(stepId as StepId)}
-        />
-
-        <section className="rounded-2xl border border-gray-200 bg-white p-6">
-          <div className="flex items-start justify-between gap-4 border-b border-gray-100 pb-5">
+        setActiveStep(stepId)
+      }}
+    >
+      <Card>
+        <CardHeader className="border-b border-border/60">
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-base font-semibold text-gray-900">{activeMeta?.label}</h2>
-              <p className="mt-1 text-sm text-gray-500">{activeMeta?.description}</p>
+              <CardTitle className="text-base">{stepCopy[activeStep].title}</CardTitle>
+              <p className="mt-1 text-sm text-muted-foreground">{stepCopy[activeStep].description}</p>
             </div>
             <span
               className={`hidden rounded-lg border px-2 py-1 text-xs sm:inline ${meta.accentBg} ${meta.accentBorder} ${meta.accent}`}
@@ -273,231 +246,192 @@ export default function DataSourceDetailPage() {
               {meta.typeLabel}
             </span>
           </div>
+        </CardHeader>
 
-          <div className="mt-6">
-            {activeStep === "credentials" && (
-              <>
-                {isWebhook ? (
-                  <div className="space-y-5">
-                    {webhookToken ? (
-                      <>
-                        <CopyField
-                          label="Ingest URL"
-                          value={ingestURL}
-                        />
-                        <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                            Example request — wrap your event in the observation envelope
+        <CardContent className="space-y-6 pt-6">
+          {activeStep === "credentials" && (
+            <>
+              {isWebhook ? (
+                <div className="space-y-5">
+                  {webhookToken ? (
+                    <>
+                      <CopyField label="Ingest URL" value={ingestURL} />
+                      <Card className="bg-muted/30">
+                        <CardContent className="p-4">
+                          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            Example request
                           </p>
-                          <pre className="mt-2 overflow-x-auto font-mono text-xs leading-relaxed text-gray-700">
+                          <pre className="mt-2 overflow-x-auto font-mono text-xs leading-relaxed text-foreground">
 {`curl -X POST '${ingestURL}' \\
   -H 'Content-Type: application/json' \\
-  -d '{
-    "source_id": "evt-001",
-    "idempotency_key": "myapp:evt-001",
-    "source_connector": "myapp",
-    "source_event_type": "attendance.checkin",
-    "ingestion_altitude": "observation",
-    "occurred_at": "2026-06-22T09:00:00Z",
-    "payload": {
-      "student_id": "S-22",
-      "present": true
-    }
-  }'`}
+  -d '{"source_id":"evt-001","payload":{"student_id":"S-22"}}'`}
                           </pre>
-                        </div>
-                        <p className="text-xs text-amber-700">
-                          Regenerating the token invalidates the previous URL. Update any
-                          automations that use the old endpoint.
-                        </p>
-                      </>
-                    ) : (
-                      <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center">
-                        <p className="text-sm text-gray-600">
-                          Generate credentials to create your unique ingest endpoint.
-                        </p>
+                        </CardContent>
+                      </Card>
+                    </>
+                  ) : (
+                    <Card className="border-dashed">
+                      <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                        Generate credentials to create your unique ingest endpoint.
+                      </CardContent>
+                    </Card>
+                  )}
+                  <RawStorageConsent
+                    checked={consentAccepted}
+                    onChange={setConsentAccepted}
+                    disabled={Boolean(consentAccepted && webhookToken)}
+                  />
+                  <StepActions>
+                    <Button
+                      type="button"
+                      onClick={generateOrSaveCredentials}
+                      disabled={saving || !consentAccepted}
+                    >
+                      {saving
+                        ? "Generating…"
+                        : webhookToken
+                          ? "Regenerate token"
+                          : "Generate ingest URL"}
+                    </Button>
+                  </StepActions>
+                </div>
+              ) : (
+                <form onSubmit={saveCredentials} className="space-y-5">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {[
+                      ["host", "Host", "text"],
+                      ["port", "Port", "number"],
+                      ["database", "Database", "text"],
+                      ["username", "Username", "text"],
+                      ["password", "Password", "password"],
+                      ["sslmode", "SSL mode", "text"],
+                      ["schema", "Schema", "text"],
+                    ].map(([key, label, type]) => (
+                      <div key={key} className="space-y-2">
+                        <Label htmlFor={key}>{label}</Label>
+                        <Input
+                          id={key}
+                          type={type}
+                          value={form[key as keyof typeof form]}
+                          onChange={(e) =>
+                            setForm((current) => ({ ...current, [key]: e.target.value }))
+                          }
+                          required={key !== "sslmode" && key !== "schema"}
+                        />
                       </div>
-                    )}
-                    <RawStorageConsent
-                      checked={consentAccepted}
-                      onChange={setConsentAccepted}
-                      disabled={Boolean(dataSource?.raw_storage_consent_at)}
-                    />
-                    <StepActions>
-                      <button
-                        type="button"
-                        onClick={generateOrSaveCredentials}
-                        disabled={saving || !consentAccepted}
-                        className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
-                      >
-                        {saving
-                          ? "Generating..."
-                          : webhookToken
-                            ? "Regenerate token"
-                            : "Generate ingest URL"}
-                      </button>
-                    </StepActions>
+                    ))}
                   </div>
-                ) : (
-                  <form onSubmit={saveCredentials} className="space-y-5">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      {[
-                        ["host", "Host", "text"],
-                        ["port", "Port", "number"],
-                        ["database", "Database", "text"],
-                        ["username", "Username", "text"],
-                        ["password", "Password", "password"],
-                        ["sslmode", "SSL mode", "text"],
-                        ["schema", "Schema", "text"],
-                      ].map(([key, label, type]) => (
-                        <label key={key} className="block">
-                          <span className="text-sm font-medium text-gray-700">{label}</span>
-                          <input
-                            type={type}
-                            value={form[key as keyof typeof form]}
-                            onChange={(e) =>
-                              setForm((current) => ({ ...current, [key]: e.target.value }))
-                            }
-                            required={key !== "sslmode" && key !== "schema"}
-                            className="mt-1.5 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-gray-400 focus:outline-none"
-                          />
-                        </label>
-                      ))}
-                    </div>
-                    <RawStorageConsent
-                      checked={consentAccepted}
-                      onChange={setConsentAccepted}
-                      disabled={Boolean(dataSource?.raw_storage_consent_at)}
-                    />
-                    <StepActions>
-                      <button
-                        type="submit"
-                        disabled={saving || !consentAccepted}
-                        className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
-                      >
-                        {saving ? "Saving..." : "Save credentials"}
-                      </button>
-                    </StepActions>
-                  </form>
-                )}
-              </>
-            )}
+                  <RawStorageConsent
+                    checked={consentAccepted}
+                    onChange={setConsentAccepted}
+                    disabled={Boolean(consentAccepted && hasCredentials)}
+                  />
+                  <StepActions>
+                    <Button type="submit" disabled={saving || !consentAccepted}>
+                      {saving ? "Saving…" : "Save credentials"}
+                    </Button>
+                  </StepActions>
+                </form>
+              )}
+            </>
+          )}
 
-            {activeStep === "verify" && (
-              <div className="space-y-5">
-                <p className="text-sm text-gray-600">
-                  {isWebhook
-                    ? "Run a quick check that your ingest token is configured and the endpoint is ready to receive payloads."
-                    : "Confirm Profiler can reach your PostgreSQL instance with the saved credentials."}
-                </p>
-                {!hasCredentials && (
-                  <p className="text-sm text-amber-700">
-                    Complete the credentials step before testing the connection.
-                  </p>
-                )}
-                <StepActions>
-                  <button
-                    type="button"
-                    onClick={runTest}
-                    disabled={testing || !hasCredentials || (isWebhook && !webhookToken)}
-                    className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
-                  >
-                    {testing
-                      ? "Testing..."
-                      : isWebhook
-                        ? "Test configuration"
-                        : "Test connection"}
-                  </button>
-                </StepActions>
-              </div>
-            )}
-
-            {activeStep === "discover" && (
-              <div className="space-y-5">
-                <p className="text-sm text-gray-600">
-                  {isWebhook
-                    ? "Send at least one payload to your ingest URL, then discover schema to infer fields from received events."
-                    : "Scan the connected database and store a schema snapshot. All discovered tables will be imported as raw JSON records automatically."}
-                </p>
-                {!hasCredentials && (
-                  <p className="text-sm text-amber-700">Save credentials before discovering schema.</p>
-                )}
-                <StepActions>
-                  <button
-                    type="button"
-                    onClick={runDiscovery}
-                    disabled={discovering || !hasCredentials || (isWebhook && !webhookToken)}
-                    className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
-                  >
-                    {discovering ? "Discovering..." : "Discover schema"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => router.push(`/admin/data-sources/${id}/schema`)}
-                    className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    Open schema explorer
-                  </button>
-                </StepActions>
-              </div>
-            )}
-
-            {activeStep === "entities" && (
-              <div className="space-y-5">
-                <p className="text-sm text-gray-600">
-                  Map each discovered table or event type to a learner profile domain — identity,
-                  attendance, assessments, and more.
-                </p>
-                <StepActions>
-                  <button
-                    type="button"
-                    onClick={() => router.push(`/admin/data-sources/${id}/entities`)}
-                    className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-                  >
-                    Map entities
-                  </button>
-                </StepActions>
-              </div>
-            )}
-
-            {activeStep === "data" && (
-              <div className="space-y-5">
-                <p className="text-sm text-gray-600">
-                  {isWebhook
-                    ? "Browse observations stored for this webhook. Events appear here as soon as apps POST to your ingest URL."
-                    : "Browse raw records stored for this data source. Database sync data appears once import jobs complete."}
-                </p>
-                <StepActions>
-                  <button
-                    type="button"
-                    onClick={() => router.push(`/admin/data-sources/${id}/data`)}
-                    className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-                  >
-                    View collected data
-                  </button>
-                </StepActions>
-              </div>
-            )}
-          </div>
-
-          {message && (
-            <div className="mt-6">
-              <Alert variant="success">{message}</Alert>
+          {activeStep === "verify" && (
+            <div className="space-y-5">
+              <p className="text-sm text-muted-foreground">
+                {isWebhook
+                  ? "Run a quick check that your ingest token is configured and the endpoint is ready."
+                  : "Confirm Profiler can reach your PostgreSQL instance with the saved credentials."}
+              </p>
+              {!hasCredentials ? (
+                <Alert variant="info">Complete the credentials step before testing the connection.</Alert>
+              ) : null}
+              <StepActions>
+                <Button
+                  type="button"
+                  onClick={runTest}
+                  disabled={testing || !hasCredentials || (isWebhook && !webhookToken)}
+                >
+                  {testing
+                    ? "Testing…"
+                    : isWebhook
+                      ? "Test configuration"
+                      : "Test connection"}
+                </Button>
+              </StepActions>
             </div>
           )}
-          {error && (
-            <div className="mt-6">
-              <Alert variant="error">{error}</Alert>
+
+          {activeStep === "discover" && (
+            <div className="space-y-5">
+              <p className="text-sm text-muted-foreground">
+                {isWebhook
+                  ? "Send at least one payload to your ingest URL, then discover schema to infer fields."
+                  : "Scan the connected database and store a schema snapshot. Discovered tables import automatically."}
+              </p>
+              <StepActions>
+                <Button
+                  type="button"
+                  onClick={runDiscovery}
+                  disabled={discovering || !hasCredentials || (isWebhook && !webhookToken)}
+                >
+                  {discovering ? "Discovering…" : "Discover schema"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.push(`/admin/data-sources/${id}/schema`)}
+                >
+                  Open schema explorer
+                </Button>
+              </StepActions>
             </div>
           )}
-        </section>
-      </div>
-    </>
+
+          {activeStep === "entities" && (
+            <div className="space-y-5">
+              <p className="text-sm text-muted-foreground">
+                Map each discovered table or event type to a learner profile domain.
+              </p>
+              <StepActions>
+                <Button onClick={() => router.push(`/admin/data-sources/${id}/entities`)}>
+                  Map entities
+                </Button>
+              </StepActions>
+            </div>
+          )}
+
+          {activeStep === "data" && (
+            <div className="space-y-5">
+              <p className="text-sm text-muted-foreground">
+                Browse imported records or webhook observations for this connector.
+              </p>
+              <StepActions>
+                <Button onClick={() => router.push(`/admin/data-sources/${id}/data`)}>
+                  View collected data
+                </Button>
+                {!isWebhook ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push(`/admin/data-sources/${id}/health`)}
+                  >
+                    View sync health
+                  </Button>
+                ) : null}
+              </StepActions>
+            </div>
+          )}
+
+          {message ? <Alert variant="success">{message}</Alert> : null}
+          {error ? <Alert variant="error">{error}</Alert> : null}
+        </CardContent>
+      </Card>
+    </DataSourceWorkspace>
   )
 }
 
 function StepActions({ children }: { children: ReactNode }) {
-  return <div className="flex flex-wrap gap-2 border-t border-gray-100 pt-5">{children}</div>
+  return <div className="flex flex-wrap gap-2 border-t border-border/60 pt-5">{children}</div>
 }
 
 function RawStorageConsent({
@@ -510,26 +444,30 @@ function RawStorageConsent({
   disabled?: boolean
 }) {
   return (
-    <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4">
-      <p className="text-sm text-gray-800">
-        Profiler stores a complete copy of incoming source data as JSON in our database for
-        processing, audit, and future transformation into learner profiles.
-      </p>
-      <label className="mt-3 flex items-start gap-2 text-sm text-gray-800">
-        <input
-          type="checkbox"
-          checked={checked}
-          disabled={disabled}
-          onChange={(e) => onChange(e.target.checked)}
-          className="mt-0.5 rounded border-gray-300"
-        />
-        <span>
-          I understand and consent to raw data storage in Profiler&apos;s database.
-          {disabled && (
-            <span className="mt-1 block text-xs text-gray-500">Consent recorded for this data source.</span>
-          )}
-        </span>
-      </label>
-    </div>
+    <Card className="border-primary/20 bg-primary/5">
+      <CardContent className="space-y-3 p-4 text-sm">
+        <p>
+          Profiler stores a complete copy of incoming source data as JSON for processing, audit, and
+          future transformation into learner profiles.
+        </p>
+        <label className="flex items-start gap-2">
+          <input
+            type="checkbox"
+            checked={checked}
+            disabled={disabled}
+            onChange={(e) => onChange(e.target.checked)}
+            className="mt-0.5 rounded border-input"
+          />
+          <span>
+            I understand and consent to raw data storage in Profiler&apos;s database.
+            {disabled ? (
+              <span className="mt-1 block text-xs text-muted-foreground">
+                Consent recorded for this data source.
+              </span>
+            ) : null}
+          </span>
+        </label>
+      </CardContent>
+    </Card>
   )
 }
