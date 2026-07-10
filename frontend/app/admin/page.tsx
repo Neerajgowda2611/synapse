@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { AdminShell } from "@/components/admin/admin-shell"
+import { PageHeader } from "@/components/layout/page-header"
+import { Button } from "@/components/ui/button"
 import { ConnectorBadge } from "@/components/admin/connector-badge"
 import { ConnectorIcon } from "@/components/admin/connector-icon"
 import { LoadingState } from "@/components/admin/loading-state"
@@ -42,35 +43,29 @@ export default function AdminPage() {
   }
 
   return (
-    <AdminShell
-      email={me?.email}
-      title="Data sources"
-      description="Connect external systems and map incoming data to learner profile domains."
-      action={
-        <button
-          onClick={() => router.push("/admin/data-sources/new")}
-          className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-        >
-          Add data source
-        </button>
-      }
-    >
+    <>
+      <PageHeader
+        title="Data sources"
+        description="Connect external systems and map incoming data to learner profile domains."
+        action={
+          <Button onClick={() => router.push("/admin/data-sources/new")}>
+            Add data source
+          </Button>
+        }
+      />
       {dataSources.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-16 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 text-gray-500">
+        <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-16 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-muted-foreground">
             <ConnectorIcon className="h-6 w-6" />
           </div>
-          <h2 className="mt-4 text-lg font-medium text-gray-900">No connectors yet</h2>
-          <p className="mx-auto mt-2 max-w-md text-sm text-gray-500">
+          <h2 className="mt-4 text-lg font-medium text-foreground">No connectors yet</h2>
+          <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
             Start by choosing a connector type — PostgreSQL for database sync, or Webhook for
             event-driven ingestion from tools like n8n.
           </p>
-          <button
-            onClick={() => router.push("/admin/data-sources/new")}
-            className="mt-6 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-          >
+          <Button className="mt-6" onClick={() => router.push("/admin/data-sources/new")}>
             Add your first data source
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
@@ -82,7 +77,7 @@ export default function AdminPage() {
               <button
                 key={ds.id}
                 onClick={() => router.push(`/admin/data-sources/${ds.id}`)}
-                className={`group rounded-2xl border bg-white p-5 text-left transition hover:-translate-y-0.5 hover:shadow-md ${meta.accentBorder}`}
+                className={`group rounded-2xl border bg-card p-5 text-left transition hover:-translate-y-0.5 hover:shadow-md ${meta.accentBorder}`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className={`rounded-xl border p-2.5 ${meta.accentBg} ${meta.accentBorder} ${meta.accent}`}>
@@ -91,21 +86,21 @@ export default function AdminPage() {
                   <StatusBadge status={ds.status} />
                 </div>
 
-                <h2 className="mt-4 text-base font-semibold text-gray-900 group-hover:text-gray-700">
+                <h2 className="mt-4 text-base font-semibold text-foreground group-hover:text-muted-foreground">
                   {ds.name}
                 </h2>
 
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <ConnectorBadge slug={slug} name={ds.connector_definition?.name} size="sm" />
-                  <span className="text-xs text-gray-400">{meta.typeLabel}</span>
+                  <span className="text-xs text-muted-foreground">{meta.typeLabel}</span>
                 </div>
 
-                <p className="mt-3 text-sm text-gray-500">Configure credentials and map entities →</p>
+                <p className="mt-3 text-sm text-muted-foreground">Configure credentials and map entities →</p>
               </button>
             )
           })}
         </div>
       )}
-    </AdminShell>
+    </>
   )
 }

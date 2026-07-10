@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 
+import { AuthLoadingState } from "@/components/auth/auth-page-state"
 import {
   clearAuthxCallbackState,
   exchangeAuthxCode,
@@ -11,13 +12,11 @@ import {
 import { exchangeAuthxSessionToken } from "@/lib/auth/session-token"
 import { AUTHX_REFRESH_TOKEN_KEY, setAccessToken } from "@/lib/config"
 
-// Guard against React StrictMode double-invocation consuming the OAuth code twice.
 let callbackInFlight: Promise<void> | null = null
 
 export function AuthxCallback() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (callbackInFlight) {
@@ -33,8 +32,7 @@ export function AuthxCallback() {
     const run = async () => {
       const state = peekAuthxCallbackState(searchParams)
       if (!state) {
-        setError("Invalid or missing callback parameters")
-        failTo("/login")
+        failTo("/login?error=authx_failed")
         return
       }
 
@@ -47,17 +45,13 @@ export function AuthxCallback() {
 
         setAccessToken(session.access_token)
         if (tokens.refresh_token) {
-          window.localStorage.setItem(
-            AUTHX_REFRESH_TOKEN_KEY,
-            tokens.refresh_token
-          )
+          window.localStorage.setItem(AUTHX_REFRESH_TOKEN_KEY, tokens.refresh_token)
         }
 
         clearAuthxCallbackState()
         router.replace("/dashboard")
       } catch (err) {
         const message = err instanceof Error ? err.message : "Sign in failed"
-        setError(message)
         const errorParam = message.includes("user_not_provisioned")
           ? "user_not_provisioned"
           : "authx_failed"
@@ -70,20 +64,10 @@ export function AuthxCallback() {
     })
   }, [router, searchParams])
 
-  if (error) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-2 bg-gray-50 text-center">
-        <p className="text-red-600">{error}</p>
-        <a href="/login" className="text-sm text-indigo-600 underline">
-          Back to sign in
-        </a>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <p className="text-gray-600">Signing you in…</p>
-    </div>
+    <AuthLoadingState
+      title="Signing you in"
+      description="Verifying your Xcelerator account and opening Profiler."
+    />
   )
 }
