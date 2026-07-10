@@ -2,16 +2,16 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { PortalShell } from "@/components/portal/portal-shell"
+
+import { DashboardShell } from "@/components/layout/dashboard-shell"
+import { LoadingState } from "@/components/admin/loading-state"
 import { PortalUserProvider } from "@/contexts/portal-user-context"
 import { getProfilerMe } from "@/lib/api/profiler"
 import { clearAccessToken, getAccessToken } from "@/lib/config"
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const [me, setMe] = useState<{ userId: string; name: string; email: string } | null>(
-    null
-  )
+  const [me, setMe] = useState<{ userId: string; name: string; email: string } | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -40,18 +40,16 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   }, [router])
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
-    )
+    return <LoadingState label="Loading your portal..." />
   }
 
   if (!me) return null
 
   return (
     <PortalUserProvider user={me}>
-      <PortalShell>{children}</PortalShell>
+      <DashboardShell surface="portal" userName={me.name}>
+        {children}
+      </DashboardShell>
     </PortalUserProvider>
   )
 }
