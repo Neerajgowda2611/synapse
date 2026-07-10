@@ -300,11 +300,9 @@ export function CompetencyEvidenceDialog({
         </div>
 
         <DialogFooter className="mx-0 mb-0 border-t border-border bg-muted/50 px-8 pt-4 pb-6 sm:justify-end">
-          <DialogClose
-            render={
-              <Button className="cursor-pointer">Close Details</Button>
-            }
-          />
+          <DialogClose asChild>
+            <Button className="cursor-pointer">Close Details</Button>
+          </DialogClose>
         </DialogFooter>
       </DialogContent>
     </Dialog>

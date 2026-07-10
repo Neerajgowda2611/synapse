@@ -3,7 +3,9 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { ReactNode } from "react"
-import { Bell, Search, Settings } from "lucide-react"
+import { GraduationCap } from "lucide-react"
+
+import { ThemeSwitcher } from "@/components/layout/sidebar/theme-switcher"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,12 +17,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Separator } from "@/components/ui/separator"
 import { usePortalUser } from "@/contexts/portal-user-context"
 import { clearAccessToken } from "@/lib/config"
+import { getInitials } from "@/lib/utils"
 
 const NAV_TABS = [
   { label: "Player Card", href: "/portal/player-card" },
-  { label: "Three streams", href: "/portal/three-streams" },
+  { label: "Three Streams", href: "/portal/three-streams" },
   { label: "Discover", href: "/portal/discover" },
 ] as const
 
@@ -38,29 +42,25 @@ export function PortalShell({ children }: PortalShellProps) {
     router.push("/login")
   }
 
-  const initials = name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase()
-
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="relative flex h-14 items-center justify-between px-[20px]">
-          <span className="text-base font-bold tracking-tight text-foreground">Profiler</span>
+      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
+        <div className="mx-auto flex h-12 max-w-screen-2xl items-center justify-between px-4 lg:px-6">
+          <div className="flex items-center gap-2">
+            <GraduationCap className="size-4" />
+            <span className="text-sm font-semibold tracking-tight">Profiler</span>
+          </div>
 
-          <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-8 md:flex">
+          <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 md:flex">
             {NAV_TABS.map((tab) => {
               const isActive = pathname === tab.href
               return (
                 <Link
                   key={tab.href}
                   href={tab.href}
-                  className={`cursor-pointer pb-0.5 text-sm transition-colors ${
+                  className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
                     isActive
-                      ? "border-b-2 border-foreground font-semibold text-foreground"
+                      ? "bg-accent font-medium text-foreground"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -70,60 +70,42 @@ export function PortalShell({ children }: PortalShellProps) {
             })}
           </nav>
 
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <Button variant="ghost" size="icon-sm" aria-label="Search" className="cursor-pointer">
-              <Search />
-            </Button>
-            <Button variant="ghost" size="icon-sm" aria-label="Notifications" className="cursor-pointer">
-              <Bell />
-            </Button>
-            <Button variant="ghost" size="icon-sm" aria-label="Settings" className="cursor-pointer">
-              <Settings />
-            </Button>
+          <div className="flex items-center gap-2">
+            <ThemeSwitcher />
+            <Separator orientation="vertical" className="mx-1 h-4" />
             <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button variant="ghost" size="icon-sm" className="cursor-pointer p-0">
-                    <Avatar size="sm">
-                      <AvatarFallback className="bg-muted text-xs font-medium text-foreground">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                }
-              />
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col gap-1">
-                      <p className="text-sm font-medium text-foreground">{name}</p>
-                      <p className="text-xs text-muted-foreground">{email}</p>
-                    </div>
-                  </DropdownMenuLabel>
-                </DropdownMenuGroup>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon-sm" className="rounded-lg">
+                  <Avatar className="size-7 rounded-lg">
+                    <AvatarFallback className="rounded-lg text-xs">{getInitials(name)}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-56">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-medium">{name}</p>
+                    <p className="text-xs text-muted-foreground">{email}</p>
+                  </div>
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DropdownMenuItem
-                    onClick={signOut}
-                    className="cursor-pointer hover:bg-primary/10! hover:text-primary! focus:bg-primary/10! focus:text-primary! not-data-[variant=destructive]:hover:**:text-primary! not-data-[variant=destructive]:focus:**:text-primary!"
-                  >
-                    Sign out
-                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={signOut}>Sign out</DropdownMenuItem>
                 </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
 
-        <nav className="flex justify-center gap-6 border-t border-border px-[20px] py-2 md:hidden">
+        <nav className="flex justify-center gap-2 border-t px-4 py-2 md:hidden">
           {NAV_TABS.map((tab) => {
             const isActive = pathname === tab.href
             return (
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`cursor-pointer text-sm ${
-                  isActive ? "font-semibold text-foreground" : "text-muted-foreground"
+                className={`rounded-md px-3 py-1.5 text-sm ${
+                  isActive ? "bg-accent font-medium text-foreground" : "text-muted-foreground"
                 }`}
               >
                 {tab.label}
@@ -133,9 +115,7 @@ export function PortalShell({ children }: PortalShellProps) {
         </nav>
       </header>
 
-      <main className="px-[20px] py-6 sm:py-8 **:data-[slot=accordion-trigger]:cursor-pointer **:data-[slot=dropdown-menu-item]:cursor-pointer **:data-[slot=dropdown-menu-trigger]:cursor-pointer **:data-[slot=tabs-trigger]:cursor-pointer [&_a]:cursor-pointer [&_button]:cursor-pointer **:[[role=menuitem]]:cursor-pointer **:[[role=tab]]:cursor-pointer">
-        {children}
-      </main>
+      <main className="mx-auto w-full max-w-screen-2xl p-4 md:p-6">{children}</main>
     </div>
   )
 }
