@@ -1,9 +1,16 @@
 import {
+  BarChart3,
   Building2,
+  Compass,
   Database,
+  GitBranch,
+  GraduationCap,
   LayoutDashboard,
   type LucideIcon,
   Plus,
+  Sparkles,
+  Users,
+  Waves,
 } from "lucide-react"
 
 export type NavBadge = "new" | "soon"
@@ -72,6 +79,58 @@ export const adminSidebarItems: NavGroup[] = [
             icon: Plus,
           },
         ],
+      },
+      {
+        id: "learners",
+        title: "Learners",
+        url: "/admin/learners",
+        icon: GraduationCap,
+      },
+      {
+        id: "analytics",
+        title: "Analytics",
+        url: "/admin/analytics",
+        icon: BarChart3,
+      },
+      {
+        id: "users",
+        title: "Users",
+        url: "/admin/users",
+        icon: Users,
+      },
+      {
+        id: "workflows",
+        title: "Workflows",
+        url: "/admin/workflows",
+        icon: GitBranch,
+        badge: "soon",
+      },
+    ],
+  },
+]
+
+export const portalSidebarItems: NavGroup[] = [
+  {
+    id: 1,
+    label: "Your portal",
+    items: [
+      {
+        id: "player-card",
+        title: "Player Card",
+        url: "/portal/player-card",
+        icon: Sparkles,
+      },
+      {
+        id: "three-streams",
+        title: "Three Streams",
+        url: "/portal/three-streams",
+        icon: Waves,
+      },
+      {
+        id: "discover",
+        title: "Discover",
+        url: "/portal/discover",
+        icon: Compass,
       },
     ],
   },

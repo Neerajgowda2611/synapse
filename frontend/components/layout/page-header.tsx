@@ -34,13 +34,13 @@ export function PageHeader({ title, description, action, breadcrumbs }: PageHead
       )}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
           {description && (
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{description}</p>
           )}
         </div>
-        {action}
+        {action ? <div className="shrink-0">{action}</div> : null}
       </div>
     </div>
   )

@@ -2,17 +2,22 @@
 
 import { createContext, useContext } from "react"
 
-const DashboardUserContext = createContext<{ email: string }>({ email: "" })
+const DashboardUserContext = createContext<{ email: string; name: string }>({
+  email: "",
+  name: "",
+})
 
 export function DashboardUserProvider({
   email,
+  name = "",
   children,
 }: {
   email: string
+  name?: string
   children: React.ReactNode
 }) {
   return (
-    <DashboardUserContext.Provider value={{ email }}>{children}</DashboardUserContext.Provider>
+    <DashboardUserContext.Provider value={{ email, name }}>{children}</DashboardUserContext.Provider>
   )
 }
 
