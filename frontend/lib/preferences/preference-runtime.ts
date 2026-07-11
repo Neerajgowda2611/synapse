@@ -2,6 +2,7 @@
 
 import { PREFERENCE_REGISTRY, type PreferenceKey, type PreferenceValueMap } from "./preferences-config"
 import type { ResolvedThemeMode } from "./theme"
+import { applyThemePresetToDocument } from "./theme-preset-runtime"
 import { applyThemeMode } from "./theme-utils"
 
 export function applyPreference<K extends PreferenceKey>(
@@ -12,13 +13,8 @@ export function applyPreference<K extends PreferenceKey>(
     return applyThemeMode(value as PreferenceValueMap["theme_mode"])
   }
 
-  if (key === "color_theme") {
-    const root = document.documentElement
-    if (value === "studio") {
-      root.removeAttribute("data-theme")
-    } else {
-      root.setAttribute("data-theme", value as string)
-    }
+  if (key === "theme_preset") {
+    applyThemePresetToDocument(value as string)
     return undefined
   }
 

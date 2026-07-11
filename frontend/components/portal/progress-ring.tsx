@@ -1,4 +1,8 @@
+import { CHART_COLOR_VARS, type ChartColorIndex } from "@/lib/themes/chart-colors"
 import { cn } from "@/lib/utils"
+
+export type { ChartColorIndex } from "@/lib/themes/chart-colors"
+export { chartColorVar } from "@/lib/themes/chart-colors"
 
 type ProgressRingProps = {
   value: number
@@ -6,6 +10,8 @@ type ProgressRingProps = {
   strokeWidth?: number
   className?: string
   trackClassName?: string
+  /** Chart token 1–5 for the progress arc color (theme-harmonic). */
+  indicatorChart?: ChartColorIndex
   indicatorClassName?: string
   children?: React.ReactNode
 }
@@ -16,6 +22,7 @@ export function ProgressRing({
   strokeWidth = 6,
   className,
   trackClassName,
+  indicatorChart = 3,
   indicatorClassName,
   children,
 }: ProgressRingProps) {
@@ -33,7 +40,8 @@ export function ProgressRing({
           r={radius}
           fill="none"
           strokeWidth={strokeWidth}
-          className={cn("stroke-muted", trackClassName)}
+          className={cn(trackClassName)}
+          stroke="var(--muted)"
         />
         <circle
           cx={size / 2}
@@ -44,7 +52,8 @@ export function ProgressRing({
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
-          className={cn("stroke-chart-3 transition-[stroke-dashoffset] duration-500", indicatorClassName)}
+          className={cn("transition-[stroke-dashoffset] duration-500", indicatorClassName)}
+          stroke={CHART_COLOR_VARS[indicatorChart]}
         />
       </svg>
       <div className="absolute inset-0 grid place-items-center">{children}</div>

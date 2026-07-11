@@ -11,6 +11,7 @@ import {
 } from "@/components/portal/charts/upcoming-activities-card"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { chartColorVar } from "@/lib/themes/chart-colors"
 import type { Stream, StreamIcon, ThreeStreamsResponse } from "@/lib/profiling/three-streams-types"
 import { cn } from "@/lib/utils"
 
@@ -20,10 +21,17 @@ const ICON_MAP: Record<StreamIcon, LucideIcon> = {
   "messages-square": MessagesSquare,
 }
 
-const STREAM_ACCENTS: Record<string, string> = {
-  vtu: "border-t-chart-1",
-  projex: "border-t-chart-2",
-  mentorship: "border-t-chart-3",
+const STREAM_CHART_INDEX: Record<string, 1 | 2 | 3 | 4> = {
+  vtu: 1,
+  projex: 2,
+  mentorship: 3,
+}
+
+const STREAM_BORDER_CLASS: Record<1 | 2 | 3 | 4, string> = {
+  1: "border-t-chart-1",
+  2: "border-t-chart-2",
+  3: "border-t-chart-3",
+  4: "border-t-chart-4",
 }
 
 type ThreeStreamsViewProps = {
@@ -63,8 +71,10 @@ function StreamCourseCard({ stream }: { stream: Stream }) {
   const contributes = stream.contributes ?? []
   const progress = streamProgress(stream)
 
+  const chartIndex = STREAM_CHART_INDEX[stream.id] ?? 4
+
   return (
-    <Card className={cn("min-w-0 border-t-4", STREAM_ACCENTS[stream.id] ?? "border-t-chart-4")}>
+    <Card className={cn("min-w-0 border-t-4", STREAM_BORDER_CLASS[chartIndex])}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -76,7 +86,7 @@ function StreamCourseCard({ stream }: { stream: Stream }) {
               <p className="truncate text-xs text-muted-foreground">{stream.subtitle}</p>
             </div>
           </div>
-          <ProgressRing value={progress} size={48} strokeWidth={4}>
+          <ProgressRing value={progress} size={48} strokeWidth={4} indicatorChart={chartIndex}>
             <span className="text-[10px] font-semibold tabular-nums">{highlightCount}</span>
           </ProgressRing>
         </div>
@@ -89,8 +99,11 @@ function StreamCourseCard({ stream }: { stream: Stream }) {
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-chart-3 transition-all"
-              style={{ width: `${Math.max(progress, highlightCount > 0 ? 8 : 0)}%` }}
+              className="h-full rounded-full transition-all"
+              style={{
+                width: `${Math.max(progress, highlightCount > 0 ? 8 : 0)}%`,
+                backgroundColor: chartColorVar(chartIndex - 1),
+              }}
             />
           </div>
         </div>
