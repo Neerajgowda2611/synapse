@@ -1,3 +1,5 @@
+import { COLOR_THEME_OPTIONS } from "@/lib/themes/color-themes"
+
 const THEME_MODE_OPTIONS = [
   { label: "Light", value: "light" },
   { label: "Dark", value: "dark" },
@@ -7,9 +9,19 @@ const THEME_MODE_OPTIONS = [
 export const THEME_MODE_VALUES = THEME_MODE_OPTIONS.map((o) => o.value)
 export type ThemeMode = (typeof THEME_MODE_VALUES)[number]
 export type ResolvedThemeMode = "light" | "dark"
+export { THEME_MODE_OPTIONS }
 
-export const THEME_PRESET_OPTIONS = [
+export const STUDIO_THEME_PRESET_VALUES = ["default", "brutalist", "soft-pop", "tangerine"] as const
+export type StudioThemePreset = (typeof STUDIO_THEME_PRESET_VALUES)[number]
+
+export const COLOR_THEME_PRESET_VALUES = COLOR_THEME_OPTIONS.filter((theme) => theme.id !== "studio").map(
+  (theme) => theme.id,
+)
+export type ColorThemePreset = (typeof COLOR_THEME_PRESET_VALUES)[number]
+
+const STUDIO_THEME_PRESET_OPTIONS = [
   {
+    kind: "studio" as const,
     label: "Default",
     value: "default",
     primary: {
@@ -18,6 +30,7 @@ export const THEME_PRESET_OPTIONS = [
     },
   },
   {
+    kind: "studio" as const,
     label: "Brutalist",
     value: "brutalist",
     primary: {
@@ -26,6 +39,7 @@ export const THEME_PRESET_OPTIONS = [
     },
   },
   {
+    kind: "studio" as const,
     label: "Soft Pop",
     value: "soft-pop",
     primary: {
@@ -34,6 +48,7 @@ export const THEME_PRESET_OPTIONS = [
     },
   },
   {
+    kind: "studio" as const,
     label: "Tangerine",
     value: "tangerine",
     primary: {
@@ -43,5 +58,22 @@ export const THEME_PRESET_OPTIONS = [
   },
 ] as const
 
-export const THEME_PRESET_VALUES = THEME_PRESET_OPTIONS.map((p) => p.value)
-export type ThemePreset = (typeof THEME_PRESET_OPTIONS)[number]["value"]
+const COLOR_THEME_PRESET_OPTIONS = COLOR_THEME_OPTIONS.filter((theme) => theme.id !== "studio").map((theme) => ({
+  kind: "color" as const,
+  label: theme.name,
+  value: theme.id,
+  previewColors: theme.previewColors,
+}))
+
+export const THEME_PRESET_OPTIONS = [...STUDIO_THEME_PRESET_OPTIONS, ...COLOR_THEME_PRESET_OPTIONS]
+
+export const THEME_PRESET_VALUES = THEME_PRESET_OPTIONS.map((preset) => preset.value)
+export type ThemePreset = (typeof THEME_PRESET_VALUES)[number]
+
+export function isStudioThemePreset(value: string): value is StudioThemePreset {
+  return (STUDIO_THEME_PRESET_VALUES as readonly string[]).includes(value)
+}
+
+export function isColorThemePreset(value: string): value is ColorThemePreset {
+  return (COLOR_THEME_PRESET_VALUES as readonly string[]).includes(value)
+}
