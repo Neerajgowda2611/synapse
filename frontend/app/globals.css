@@ -7,6 +7,7 @@
 @import "../styles/presets/soft-pop.css";
 @import "../styles/presets/tangerine.css";
 @import "../styles/color-themes.css";
+@import "../styles/color-theme-charts.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -73,11 +74,6 @@ These serve as the fallback; there is no separate default.css file. */
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -113,11 +109,6 @@ These serve as the fallback; there is no separate default.css file. */
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -126,6 +117,23 @@ These serve as the fallback; there is no separate default.css file. */
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+}
+
+/* Default chart palette — subtle blue-gray family for the Default studio preset only */
+:root:not([data-theme]):is(:not([data-theme-preset]), [data-theme-preset="default"]) {
+  --chart-1: oklch(0.52 0.1 250);
+  --chart-2: oklch(0.58 0.085 245);
+  --chart-3: oklch(0.46 0.095 255);
+  --chart-4: oklch(0.54 0.075 235);
+  --chart-5: oklch(0.5 0.065 260);
+}
+
+html.dark:not([data-theme]):is(:not([data-theme-preset]), [data-theme-preset="default"]) {
+  --chart-1: oklch(0.7 0.11 250);
+  --chart-2: oklch(0.76 0.095 245);
+  --chart-3: oklch(0.64 0.105 255);
+  --chart-4: oklch(0.72 0.085 235);
+  --chart-5: oklch(0.68 0.075 260);
 }
 
 @layer base {

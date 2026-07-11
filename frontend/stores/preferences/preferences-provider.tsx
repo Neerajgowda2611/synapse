@@ -11,6 +11,7 @@ import {
   type PreferenceValueMap,
   parsePreference,
 } from "@/lib/preferences/preferences-config"
+import { isColorThemePreset } from "@/lib/preferences/theme"
 import { applyThemeMode, subscribeToSystemTheme } from "@/lib/preferences/theme-utils"
 
 import { createPreferencesStore, type PreferencesState } from "./preferences-store"
@@ -18,6 +19,16 @@ import { createPreferencesStore, type PreferencesState } from "./preferences-sto
 const PreferencesStoreContext = createContext<StoreApi<PreferencesState> | null>(null)
 
 function readDomPreference<K extends PreferenceKey>(key: K): PreferenceValueMap[K] {
+  if (key === "theme_preset") {
+    const colorTheme = document.documentElement.getAttribute("data-theme")
+    if (colorTheme && isColorThemePreset(colorTheme)) {
+      return colorTheme as PreferenceValueMap[K]
+    }
+
+    const studioPreset = document.documentElement.getAttribute("data-theme-preset")
+    return parsePreference(key, studioPreset)
+  }
+
   const definition = PREFERENCE_REGISTRY[key]
   const rawValue = document.documentElement.getAttribute(definition.attribute)
   return parsePreference(key, rawValue)
