@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { type FontKey, fontOptions } from "@/lib/fonts/registry";
 import type { ContentLayout, NavbarStyle, SidebarCollapsible, SidebarVariant } from "@/lib/preferences/layout";
-import { THEME_PRESET_OPTIONS, type ThemePreset } from "@/lib/preferences/theme";
+import { THEME_PRESET_OPTIONS, type ThemeMode, type ThemePreset } from "@/lib/preferences/theme";
+import { cn } from "@/lib/utils";
 import { usePreferencesStore } from "@/stores/preferences/preferences-provider";
 
 export function LayoutControls() {
@@ -24,6 +25,7 @@ export function LayoutControls() {
   );
 
   const {
+    theme_mode: themeMode,
     theme_preset: themePreset,
     content_layout: contentLayout,
     navbar_style: navbarStyle,
@@ -34,6 +36,11 @@ export function LayoutControls() {
 
   const onThemePresetChange = (preset: ThemePreset) => {
     setPreference("theme_preset", preset);
+  };
+
+  const onThemeModeChange = (mode: ThemeMode | "") => {
+    if (!mode) return;
+    setPreference("theme_mode", mode);
   };
 
   const onContentLayoutChange = (layout: ContentLayout | "") => {
@@ -68,35 +75,51 @@ export function LayoutControls() {
           <Settings />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end">
+      <PopoverContent align="end" className="w-80 max-h-[85vh] overflow-y-auto">
         <div className="flex flex-col gap-5">
           <div className="space-y-1.5">
             <h4 className="font-medium text-sm leading-none">Preferences</h4>
-            <p className="text-muted-foreground text-xs">Customize your dashboard layout preferences.</p>
+            <p className="text-muted-foreground text-xs">Customize your dashboard layout and preferences.</p>
           </div>
           <div className="space-y-3 **:data-[slot=toggle-group]:w-full **:data-[slot=toggle-group-item]:flex-1 **:data-[slot=toggle-group-item]:text-xs">
-            <div className="space-y-1">
+            <div className="space-y-2">
               <Label className="font-medium text-xs">Theme preset</Label>
-              <Select value={themePreset} onValueChange={onThemePresetChange}>
-                <SelectTrigger size="sm" className="w-full text-xs">
-                  <SelectValue placeholder="Preset" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {THEME_PRESET_OPTIONS.map((preset) => (
-                      <SelectItem key={preset.value} className="text-xs" value={preset.value}>
-                        <span
-                          className="size-2.5 rounded-full"
-                          style={{
-                            backgroundColor: resolvedThemeMode === "dark" ? preset.primary.dark : preset.primary.light,
-                          }}
-                        />
-                        {preset.label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+              <div className="grid grid-cols-4 gap-1.5">
+                {THEME_PRESET_OPTIONS.map((preset) => (
+                  <button
+                    key={preset.value}
+                    type="button"
+                    onClick={() => onThemePresetChange(preset.value)}
+                    className={cn(
+                      "flex flex-col items-center gap-1 rounded-md border p-1.5 text-[10px] leading-tight transition-colors",
+                      themePreset === preset.value
+                        ? "border-primary bg-accent text-accent-foreground"
+                        : "border-transparent hover:bg-muted",
+                    )}
+                    aria-pressed={themePreset === preset.value}
+                    aria-label={`${preset.label} theme`}
+                  >
+                    {preset.kind === "studio" ? (
+                      <span
+                        className="size-4 rounded-full ring-1 ring-border"
+                        style={{
+                          backgroundColor:
+                            resolvedThemeMode === "dark" ? preset.primary.dark : preset.primary.light,
+                        }}
+                      />
+                    ) : (
+                      <span className="flex size-4 items-center justify-center overflow-hidden rounded-full ring-1 ring-border">
+                        <span className="grid h-full w-full grid-cols-2">
+                          {preset.previewColors.slice(0, 4).map((color, index) => (
+                            <span key={index} style={{ backgroundColor: color }} />
+                          ))}
+                        </span>
+                      </span>
+                    )}
+                    <span className="line-clamp-2 w-full text-center">{preset.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-1">
@@ -115,6 +138,28 @@ export function LayoutControls() {
                   </SelectGroup>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="font-medium text-xs">Theme mode</Label>
+              <ToggleGroup
+                size="sm"
+                spacing={0}
+                variant="outline"
+                type="single"
+                value={themeMode}
+                onValueChange={onThemeModeChange}
+              >
+                <ToggleGroupItem value="light" aria-label="Toggle light">
+                  Light
+                </ToggleGroupItem>
+                <ToggleGroupItem value="dark" aria-label="Toggle dark">
+                  Dark
+                </ToggleGroupItem>
+                <ToggleGroupItem value="system" aria-label="Toggle system">
+                  System
+                </ToggleGroupItem>
+              </ToggleGroup>
             </div>
 
             <div className="space-y-1">

@@ -61,7 +61,7 @@ function CompetencyGrid({
                   value={competency.missing ? 0 : competency.score}
                   size={56}
                   strokeWidth={5}
-                  indicatorClassName={competency.verified ? "stroke-chart-3" : "stroke-chart-2"}
+                  indicatorChart={competency.verified ? 3 : 2}
                 >
                   <span className="text-sm font-semibold tabular-nums">
                     {competency.missing ? "—" : `${competency.score}%`}

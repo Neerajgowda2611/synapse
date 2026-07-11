@@ -7,7 +7,7 @@ import { AppSidebar } from "@/components/layout/sidebar/app-sidebar"
 import { SkipToContent } from "@/components/layout/skip-to-content"
 import { LayoutControls } from "@/components/layout/sidebar/layout-controls"
 import { SearchDialog } from "@/components/layout/sidebar/search-dialog"
-import { ThemePanelTrigger } from "@/components/theme/theme-panel"
+import { ThemeSwitcher } from "@/components/layout/sidebar/theme-switcher"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { LoadingState } from "@/components/admin/loading-state"
@@ -121,7 +121,7 @@ export function DashboardShell({ children, surface, userName }: DashboardShellPr
             </div>
             <div className="flex items-center gap-2">
               <LayoutControls />
-              <ThemePanelTrigger />
+              <ThemeSwitcher />
             </div>
           </div>
         </header>
