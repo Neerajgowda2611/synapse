@@ -26,6 +26,22 @@ export async function exchangeAuthxSessionToken(
   return data
 }
 
+/**
+ * Revoke the AuthX offline_access refresh token server-side so an explicit
+ * logout cannot be silently re-minted. Best-effort: never throws.
+ */
+export async function revokeAuthxSession(refreshToken: string): Promise<void> {
+  try {
+    await fetch(`${appConfig.apiUrl}/api/v1/auth/authx/logout`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    })
+  } catch (error) {
+    console.error("AuthX session revoke failed:", error)
+  }
+}
+
 export async function refreshAuthxSession(
   refreshToken: string
 ): Promise<ProfilerSessionTokenResponse> {

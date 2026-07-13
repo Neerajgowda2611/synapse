@@ -2,7 +2,7 @@
 
 import { ReactNode } from "react"
 import { useRouter } from "next/navigation"
-import { clearAccessToken } from "@/lib/config"
+import { performLogout } from "@/lib/auth-logout"
 
 type AdminShellProps = {
   email?: string
@@ -24,8 +24,7 @@ export function AdminShell({
   const router = useRouter()
 
   function signOut() {
-    clearAccessToken()
-    router.push("/login")
+    void performLogout("/login")
   }
 
   return (

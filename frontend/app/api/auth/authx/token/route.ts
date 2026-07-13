@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 
-import { isAuthxEnabled } from "@/lib/authx-config"
+import { isAuthxEnabledServer } from "@/lib/authx-config"
+import { getAuthxRedirectUri } from "@/lib/auth/authx"
 
 export async function POST(request: NextRequest) {
-  if (!isAuthxEnabled) {
+  if (!isAuthxEnabledServer()) {
     return NextResponse.json({ error: "AuthX is not enabled" }, { status: 400 })
   }
 
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
     const discovery = (await discoveryRes.json()) as { token_endpoint: string }
 
-    const redirectUri = `${request.nextUrl.origin}/auth/callback`
+    const redirectUri = getAuthxRedirectUri(request.nextUrl.origin)
 
     const tokenRes = await fetch(discovery.token_endpoint, {
       method: "POST",

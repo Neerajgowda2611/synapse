@@ -1,4 +1,13 @@
-import { appConfig, getAccessToken } from "@/lib/config"
+import {
+  appConfig,
+  getAccessToken,
+  getAuthxRefreshToken,
+  setAccessToken,
+  setAuthxRefreshToken,
+  clearAccessToken,
+} from "@/lib/config"
+import { isAuthxEnabled } from "@/lib/authx-config"
+import { refreshAuthxSession } from "@/lib/auth/session-token"
 
 export class ApiError extends Error {
   constructor(
@@ -11,9 +20,38 @@ export class ApiError extends Error {
   }
 }
 
+let refreshInFlight: Promise<string | null> | null = null
+
+async function tryRefreshAccessToken(): Promise<string | null> {
+  if (!isAuthxEnabled) return null
+  const refreshToken = getAuthxRefreshToken()
+  if (!refreshToken) return null
+
+  if (refreshInFlight) return refreshInFlight
+
+  refreshInFlight = (async () => {
+    try {
+      const data = await refreshAuthxSession(refreshToken)
+      setAccessToken(data.access_token)
+      if (data.refresh_token) {
+        setAuthxRefreshToken(data.refresh_token)
+      }
+      return data.access_token
+    } catch {
+      clearAccessToken()
+      return null
+    } finally {
+      refreshInFlight = null
+    }
+  })()
+
+  return refreshInFlight
+}
+
 export async function apiClient<T>(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  retried = false
 ): Promise<T> {
   const token = getAccessToken()
 
@@ -30,6 +68,13 @@ export async function apiClient<T>(
     ...options,
     headers,
   })
+
+  if (res.status === 401 && !retried) {
+    const refreshed = await tryRefreshAccessToken()
+    if (refreshed) {
+      return apiClient<T>(path, options, true)
+    }
+  }
 
   if (!res.ok) {
     let body: unknown

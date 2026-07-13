@@ -10,9 +10,10 @@ import (
 	"github.com/profiler/backend/internal/logs"
 )
 
-// AuthxHandler exposes the two AuthX-bridge endpoints:
+// AuthxHandler exposes the AuthX-bridge endpoints:
 //   POST /auth/authx/session-token   — exchange an AuthX id_token for a profiler access token.
 //   POST /auth/authx/refresh-session — exchange an AuthX refresh_token for a fresh profiler access token.
+//   POST /auth/authx/logout          — revoke an AuthX refresh_token (best-effort).
 type AuthxHandler struct {
 	svc     *auth.AuthxSessionService
 	enabled bool
@@ -74,6 +75,32 @@ func (h *AuthxHandler) RefreshSession(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, resp)
+}
+
+type authxLogoutRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+// Logout revokes the AuthX offline_access refresh token so an explicit logout
+// cannot be silently re-minted from a surviving refresh token.
+func (h *AuthxHandler) Logout(c *gin.Context) {
+	if !h.enabled {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "authx is not enabled"})
+		return
+	}
+
+	var req authxLogoutRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.svc.RevokeSession(c.Request.Context(), req.RefreshToken); err != nil {
+		// Best-effort: log but do not block the client's logout flow.
+		logs.Info("authx logout revoke failed", "error", err.Error())
+	}
+
+	c.JSON(http.StatusOK, gin.H{"revoked": true})
 }
 
 func statusForAuthxError(err error) (int, string) {

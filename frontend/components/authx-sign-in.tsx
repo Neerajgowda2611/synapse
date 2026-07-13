@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useSearchParams } from "next/navigation"
 
 import { beginAuthxLogin } from "@/lib/auth/authx"
+import { AUTH_REDIRECT_KEY } from "@/lib/config"
 
 function errorMessage(code: string | null): string | null {
   switch (code) {
@@ -20,9 +21,18 @@ function errorMessage(code: string | null): string | null {
   }
 }
 
+function safeCallbackUrl(value: string | null): string | undefined {
+  if (!value) return undefined
+  if (value.startsWith("/") && !value.startsWith("//")) return value
+  return undefined
+}
+
 export function AuthxSignIn() {
   const searchParams = useSearchParams()
   const urlError = errorMessage(searchParams.get("error"))
+  const callbackUrl = safeCallbackUrl(
+    searchParams.get("callbackUrl") || searchParams.get("next")
+  )
   const [error, setError] = useState<string | null>(urlError)
   const [redirecting, setRedirecting] = useState(false)
 
@@ -30,7 +40,10 @@ export function AuthxSignIn() {
     setRedirecting(true)
     setError(null)
     try {
-      await beginAuthxLogin()
+      if (callbackUrl) {
+        sessionStorage.setItem(AUTH_REDIRECT_KEY, callbackUrl)
+      }
+      await beginAuthxLogin(callbackUrl)
     } catch (err) {
       setRedirecting(false)
       setError(err instanceof Error ? err.message : "Authentication redirect failed")

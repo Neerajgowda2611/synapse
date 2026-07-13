@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { api } from "@/lib/api/client"
 import { clearAccessToken, getAccessToken } from "@/lib/config"
+import { performLogout } from "@/lib/auth-logout"
 
 interface Institution {
   id: string
@@ -49,8 +50,7 @@ export default function PlatformPage() {
   }, [router])
 
   function signOut() {
-    clearAccessToken()
-    router.push("/login")
+    void performLogout("/login")
   }
 
   if (loading) {

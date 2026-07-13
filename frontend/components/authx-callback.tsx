@@ -9,10 +9,22 @@ import {
   peekAuthxCallbackState,
 } from "@/lib/auth/authx"
 import { exchangeAuthxSessionToken } from "@/lib/auth/session-token"
-import { AUTHX_REFRESH_TOKEN_KEY, setAccessToken } from "@/lib/config"
+import {
+  AUTH_REDIRECT_KEY,
+  AUTHX_LOGGED_OUT_KEY,
+  AUTHX_REFRESH_TOKEN_KEY,
+  setAccessToken,
+} from "@/lib/config"
 
 // Guard against React StrictMode double-invocation consuming the OAuth code twice.
 let callbackInFlight: Promise<void> | null = null
+
+function safeRedirectPath(value: string | null): string | null {
+  if (!value) return null
+  if (value.startsWith("http://") || value.startsWith("https://")) return value
+  if (value.startsWith("/") && !value.startsWith("//")) return value
+  return null
+}
 
 export function AuthxCallback() {
   const router = useRouter()
@@ -30,7 +42,20 @@ export function AuthxCallback() {
       window.location.replace(path)
     }
 
+    const finish = (path: string) => {
+      clearAuthxCallbackState()
+      if (path.startsWith("http://") || path.startsWith("https://")) {
+        window.location.replace(path)
+        return
+      }
+      router.replace(path)
+    }
+
     const run = async () => {
+      // Reaching the OIDC callback means the user is interactively signing in
+      // again, so lift the post-logout suppression.
+      sessionStorage.removeItem(AUTHX_LOGGED_OUT_KEY)
+
       const state = peekAuthxCallbackState(searchParams)
       if (!state) {
         setError("Invalid or missing callback parameters")
@@ -52,9 +77,19 @@ export function AuthxCallback() {
             tokens.refresh_token
           )
         }
+        if (session.refresh_token) {
+          window.localStorage.setItem(
+            AUTHX_REFRESH_TOKEN_KEY,
+            session.refresh_token
+          )
+        }
 
+        const storedRedirect = safeRedirectPath(
+          sessionStorage.getItem(AUTH_REDIRECT_KEY)
+        )
+        sessionStorage.removeItem(AUTH_REDIRECT_KEY)
         clearAuthxCallbackState()
-        router.replace("/dashboard")
+        finish(storedRedirect || "/dashboard")
       } catch (err) {
         const message = err instanceof Error ? err.message : "Sign in failed"
         setError(message)
