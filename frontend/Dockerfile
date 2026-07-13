@@ -32,6 +32,10 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
+RUN echo "nameserver 1.1.1.1" > /etc/resolv.conf && \
+    apk update && \
+    apk add curl
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME=0.0.0.0
