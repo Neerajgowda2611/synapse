@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 
-import { isAuthxEnabled } from "@/lib/authx-config"
+import { isAuthxEnabledServer } from "@/lib/authx-config"
 
 export async function POST(request: NextRequest) {
-  if (!isAuthxEnabled) {
+  if (!isAuthxEnabledServer()) {
     return NextResponse.json({ error: "AuthX is not enabled" }, { status: 400 })
   }
 

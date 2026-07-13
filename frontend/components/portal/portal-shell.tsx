@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { ReactNode } from "react"
 import { Bell, Search, Settings } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { usePortalUser } from "@/contexts/portal-user-context"
-import { clearAccessToken } from "@/lib/config"
+import { performLogout } from "@/lib/auth-logout"
 
 const NAV_TABS = [
   { label: "Player Card", href: "/portal/player-card" },
@@ -30,12 +30,10 @@ type PortalShellProps = {
 
 export function PortalShell({ children }: PortalShellProps) {
   const pathname = usePathname()
-  const router = useRouter()
   const { name, email } = usePortalUser()
 
   function signOut() {
-    clearAccessToken()
-    router.push("/login")
+    void performLogout("/login")
   }
 
   const initials = name
