@@ -1,6 +1,5 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { CircleUser, EllipsisVertical, LogOut } from "lucide-react"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -15,18 +14,16 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar"
 import { useDashboardUser } from "@/contexts/dashboard-user-context"
-import { clearAccessToken } from "@/lib/config"
+import { performLogout } from "@/lib/auth-logout"
 import { getInitials } from "@/lib/utils"
 
 export function NavUser() {
-  const router = useRouter()
   const { isMobile } = useSidebar()
   const { email, name } = useDashboardUser()
   const displayName = name || email.split("@")[0] || "User"
 
   function signOut() {
-    clearAccessToken()
-    router.push("/login")
+    void performLogout("/login")
   }
 
   return (

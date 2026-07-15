@@ -15,6 +15,7 @@ import {
   AUTHX_LOGGED_OUT_KEY,
   AUTHX_REFRESH_TOKEN_KEY,
   setAccessToken,
+  setAuthxIdToken,
 } from "@/lib/config"
 
 let callbackInFlight: Promise<void> | null = null
@@ -69,6 +70,7 @@ export function AuthxCallback() {
         const session = await exchangeAuthxSessionToken(tokens.id_token)
 
         setAccessToken(session.access_token)
+        setAuthxIdToken(tokens.id_token)
         if (tokens.refresh_token) {
           window.localStorage.setItem(AUTHX_REFRESH_TOKEN_KEY, tokens.refresh_token)
         }
