@@ -1,9 +1,27 @@
-export function LoadingState({ label = "Loading..." }: { label?: string }) {
+import { Loader2 } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+
+export function LoadingState({
+  label = "Loading...",
+  className,
+}: {
+  label?: string
+  className?: string
+}) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f6f7f9]">
-      <div className="flex items-center gap-3 text-sm text-gray-500">
-        <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-700" />
-        {label}
+    <div
+      className={cn(
+        "flex min-h-[40vh] items-center justify-center bg-background",
+        className
+      )}
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" aria-hidden />
+        <span>{label}</span>
       </div>
     </div>
   )

@@ -126,7 +126,7 @@ function InstitutionDashboardPanel() {
 
 function EmployerMatchPanel() {
   const candidates = [
-    { name: "Arjun K.", fit: 96, badge: "Top Match", traits: ["High Agency", "Reliable", "Early Submitter"] },
+    { name: "Shreenath G L.", fit: 96, badge: "Top Match", traits: ["High Agency", "Reliable", "Early Submitter"] },
     { name: "Priya M.", fit: 91, badge: "Strong Fit", traits: ["Leader", "Consistent", "Verified"] },
   ]
   return (

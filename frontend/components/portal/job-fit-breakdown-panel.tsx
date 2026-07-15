@@ -1,6 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import { chartColorVar } from "@/lib/themes/chart-colors"
 import type { JobFitBreakdown, JobFitTraitBreakdown } from "@/lib/profiling/job-fit-types"
 
 type JobFitBreakdownPanelProps = {
@@ -8,8 +9,15 @@ type JobFitBreakdownPanelProps = {
   className?: string
 }
 
-function TraitBreakdownRow({ trait }: { trait: JobFitTraitBreakdown }) {
+function TraitBreakdownRow({
+  trait,
+  colorIndex,
+}: {
+  trait: JobFitTraitBreakdown
+  colorIndex: number
+}) {
   const levelBarWidth = trait.missing ? 0 : Math.min(100, Math.max(4, trait.your_score))
+  const barColor = chartColorVar(colorIndex)
 
   return (
     <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3">
@@ -47,8 +55,8 @@ function TraitBreakdownRow({ trait }: { trait: JobFitTraitBreakdown }) {
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-primary transition-all"
-              style={{ width: `${levelBarWidth}%` }}
+              className="h-full rounded-full transition-all"
+              style={{ width: `${levelBarWidth}%`, backgroundColor: barColor }}
             />
           </div>
         </div>
@@ -68,8 +76,8 @@ export function JobFitBreakdownPanel({ breakdown, className }: JobFitBreakdownPa
       </div>
 
       <div className="space-y-3">
-        {breakdown.traits.map((trait) => (
-          <TraitBreakdownRow key={trait.trait} trait={trait} />
+        {breakdown.traits.map((trait, index) => (
+          <TraitBreakdownRow key={trait.trait} trait={trait} colorIndex={index} />
         ))}
       </div>
 

@@ -1,8 +1,14 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { ReactNode } from "react"
+import { usePathname, useRouter } from "next/navigation"
+import { Menu } from "lucide-react"
+import { ReactNode, useState } from "react"
+
+import { ThemeSwitcher } from "@/components/layout/sidebar/theme-switcher"
+import { SkipToContent } from "@/components/layout/skip-to-content"
+import { PortalBrandMark } from "@/components/portal/portal-page-header"
+
 import { Bell, Search, Settings } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -15,123 +21,175 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Separator } from "@/components/ui/separator"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 import { usePortalUser } from "@/contexts/portal-user-context"
+import { clearAccessToken } from "@/lib/config"
+import { cn, getInitials } from "@/lib/utils"
 import { performLogout } from "@/lib/auth-logout"
 
 const NAV_TABS = [
-  { label: "Player Card", href: "/portal/player-card" },
-  { label: "Three streams", href: "/portal/three-streams" },
-  { label: "Discover", href: "/portal/discover" },
+  { label: "Player Card", href: "/portal/player-card", short: "Card" },
+  { label: "Three Streams", href: "/portal/three-streams", short: "Streams" },
+  { label: "Discover", href: "/portal/discover", short: "Discover" },
 ] as const
 
 type PortalShellProps = {
   children: ReactNode
 }
 
+function NavLink({
+  href,
+  label,
+  isActive,
+  onClick,
+  className,
+}: {
+  href: string
+  label: string
+  isActive: boolean
+  onClick?: () => void
+  className?: string
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      aria-current={isActive ? "page" : undefined}
+      className={cn(
+        "rounded-md px-3 py-2 text-sm transition-colors",
+        isActive
+          ? "bg-accent font-medium text-foreground"
+          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+        className
+      )}
+    >
+      {label}
+    </Link>
+  )
+}
+
 export function PortalShell({ children }: PortalShellProps) {
   const pathname = usePathname()
   const { name, email } = usePortalUser()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   function signOut() {
     void performLogout("/login")
   }
 
-  const initials = name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase()
-
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="relative flex h-14 items-center justify-between px-[20px]">
-          <span className="text-base font-bold tracking-tight text-foreground">Profiler</span>
+      <SkipToContent />
+      <header className="sticky top-0 z-50 border-b bg-background/90 backdrop-blur-md supports-backdrop-filter:bg-background/75">
+        <div className="mx-auto flex h-14 max-w-screen-2xl items-center justify-between gap-3 px-4 lg:px-6">
+          <div className="flex min-w-0 items-center gap-2">
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon-sm" className="md:hidden" aria-label="Open menu">
+                  <Menu className="size-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[min(100vw-2rem,20rem)] p-0">
+                <SheetHeader className="border-b px-4 py-4 text-left">
+                  <SheetTitle className="text-base">Your portal</SheetTitle>
+                  <p className="text-xs text-muted-foreground">{name}</p>
+                </SheetHeader>
+                <nav className="flex flex-col gap-1 p-3">
+                  {NAV_TABS.map((tab) => (
+                    <NavLink
+                      key={tab.href}
+                      href={tab.href}
+                      label={tab.label}
+                      isActive={pathname === tab.href}
+                      onClick={() => setMobileOpen(false)}
+                    />
+                  ))}
+                </nav>
+                <div className="mt-auto border-t p-4">
+                  <Button variant="outline" className="w-full" onClick={signOut}>
+                    Sign out
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
+            <PortalBrandMark />
+          </div>
 
-          <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-8 md:flex">
-            {NAV_TABS.map((tab) => {
-              const isActive = pathname === tab.href
-              return (
-                <Link
-                  key={tab.href}
-                  href={tab.href}
-                  className={`cursor-pointer pb-0.5 text-sm transition-colors ${
-                    isActive
-                      ? "border-b-2 border-foreground font-semibold text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {tab.label}
-                </Link>
-              )
-            })}
+          <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 md:flex" aria-label="Portal sections">
+            {NAV_TABS.map((tab) => (
+              <NavLink
+                key={tab.href}
+                href={tab.href}
+                label={tab.label}
+                isActive={pathname === tab.href}
+              />
+            ))}
           </nav>
 
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <Button variant="ghost" size="icon-sm" aria-label="Search" className="cursor-pointer">
-              <Search />
-            </Button>
-            <Button variant="ghost" size="icon-sm" aria-label="Notifications" className="cursor-pointer">
-              <Bell />
-            </Button>
-            <Button variant="ghost" size="icon-sm" aria-label="Settings" className="cursor-pointer">
-              <Settings />
-            </Button>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <ThemeSwitcher />
+            <Separator orientation="vertical" className="mx-0.5 hidden h-4 sm:block" />
             <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button variant="ghost" size="icon-sm" className="cursor-pointer p-0">
-                    <Avatar size="sm">
-                      <AvatarFallback className="bg-muted text-xs font-medium text-foreground">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                }
-              />
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col gap-1">
-                      <p className="text-sm font-medium text-foreground">{name}</p>
-                      <p className="text-xs text-muted-foreground">{email}</p>
-                    </div>
-                  </DropdownMenuLabel>
-                </DropdownMenuGroup>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon-sm" className="rounded-lg" aria-label="Account menu">
+                  <Avatar className="size-7 rounded-lg">
+                    <AvatarFallback className="rounded-lg text-xs">{getInitials(name)}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-56">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-medium">{name}</p>
+                    <p className="text-xs text-muted-foreground">{email}</p>
+                  </div>
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DropdownMenuItem
-                    onClick={signOut}
-                    className="cursor-pointer hover:bg-primary/10! hover:text-primary! focus:bg-primary/10! focus:text-primary! not-data-[variant=destructive]:hover:**:text-primary! not-data-[variant=destructive]:focus:**:text-primary!"
-                  >
-                    Sign out
-                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={signOut}>Sign out</DropdownMenuItem>
                 </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
 
-        <nav className="flex justify-center gap-6 border-t border-border px-[20px] py-2 md:hidden">
+        <nav
+          className="flex justify-center gap-1 overflow-x-auto border-t px-3 py-2 md:hidden"
+          aria-label="Portal sections"
+        >
           {NAV_TABS.map((tab) => {
             const isActive = pathname === tab.href
             return (
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`cursor-pointer text-sm ${
-                  isActive ? "font-semibold text-foreground" : "text-muted-foreground"
-                }`}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                  isActive
+                    ? "bg-foreground text-background"
+                    : "bg-muted text-muted-foreground"
+                )}
               >
-                {tab.label}
+                {tab.short}
               </Link>
             )
           })}
         </nav>
       </header>
 
-      <main className="px-[20px] py-6 sm:py-8 **:data-[slot=accordion-trigger]:cursor-pointer **:data-[slot=dropdown-menu-item]:cursor-pointer **:data-[slot=dropdown-menu-trigger]:cursor-pointer **:data-[slot=tabs-trigger]:cursor-pointer [&_a]:cursor-pointer [&_button]:cursor-pointer **:[[role=menuitem]]:cursor-pointer **:[[role=tab]]:cursor-pointer">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="mx-auto w-full max-w-screen-2xl p-4 outline-none md:p-6"
+      >
         {children}
       </main>
     </div>

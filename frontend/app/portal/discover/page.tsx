@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { CareerDiscoveryView } from "@/components/portal/career-discovery-view"
+import { ErrorState } from "@/components/ui/error-state"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getUserJobFit, listJobs } from "@/lib/api/profiler"
 import { usePortalUser } from "@/contexts/portal-user-context"
@@ -56,19 +57,11 @@ export default function DiscoverPage() {
   }
 
   if (error) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <p className="text-muted-foreground">{error}</p>
-      </div>
-    )
+    return <ErrorState message={error} className="my-8" />
   }
 
   if (!data) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <p className="text-muted-foreground">Unable to load career discovery.</p>
-      </div>
-    )
+    return <ErrorState message="Unable to load career discovery." className="my-8" />
   }
 
   return <CareerDiscoveryView data={data} />
