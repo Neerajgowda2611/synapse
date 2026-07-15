@@ -124,6 +124,48 @@ func (s *AuthxSessionService) RefreshSession(ctx context.Context, refreshToken s
 	return resp, nil
 }
 
+// RevokeSession revokes the AuthX offline_access refresh token so an explicit
+// logout is durable. Clearing the browser session alone leaves this token
+// valid, letting the client silently re-mint a session via RefreshSession.
+func (s *AuthxSessionService) RevokeSession(ctx context.Context, refreshToken string) error {
+	if !s.cfg.Enabled {
+		return errors.New("authx is not enabled")
+	}
+	if strings.TrimSpace(refreshToken) == "" {
+		return errors.New("refresh_token is required")
+	}
+	if s.cfg.AuthIdpUrl == "" {
+		return errors.New("AUTH_IDP_URL is not configured")
+	}
+
+	revokeURL := strings.TrimRight(s.cfg.AuthIdpUrl, "/") + "/api/oauth2/revoke"
+	form := url.Values{
+		"token":           {refreshToken},
+		"token_type_hint": {"refresh_token"},
+		"client_id":       {s.cfg.ClientID},
+		"client_secret":   {s.cfg.ClientSecret},
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, revokeURL, strings.NewReader(form.Encode()))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("authx revoke request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("authx revoke failed: %s", string(body))
+	}
+
+	return nil
+}
+
 type oidcDiscovery struct {
 	TokenEndpoint    string `json:"token_endpoint"`
 	UserinfoEndpoint string `json:"userinfo_endpoint"`

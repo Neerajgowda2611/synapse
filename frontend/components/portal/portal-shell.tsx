@@ -8,6 +8,8 @@ import { ReactNode, useState } from "react"
 import { ThemeSwitcher } from "@/components/layout/sidebar/theme-switcher"
 import { SkipToContent } from "@/components/layout/skip-to-content"
 import { PortalBrandMark } from "@/components/portal/portal-page-header"
+
+import { Bell, Search, Settings } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -30,6 +32,7 @@ import {
 import { usePortalUser } from "@/contexts/portal-user-context"
 import { clearAccessToken } from "@/lib/config"
 import { cn, getInitials } from "@/lib/utils"
+import { performLogout } from "@/lib/auth-logout"
 
 const NAV_TABS = [
   { label: "Player Card", href: "/portal/player-card", short: "Card" },
@@ -74,13 +77,11 @@ function NavLink({
 
 export function PortalShell({ children }: PortalShellProps) {
   const pathname = usePathname()
-  const router = useRouter()
   const { name, email } = usePortalUser()
   const [mobileOpen, setMobileOpen] = useState(false)
 
   function signOut() {
-    clearAccessToken()
-    router.push("/login")
+    void performLogout("/login")
   }
 
   return (

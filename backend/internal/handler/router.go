@@ -108,6 +108,7 @@ func RegisterRoutes(
 		authPublic.POST("/token-exchange", authLoginHandler.TokenExchange)
 		authPublic.POST("/authx/session-token", authxHandler.SessionToken)
 		authPublic.POST("/authx/refresh-session", authxHandler.RefreshSession)
+		authPublic.POST("/authx/logout", authxHandler.Logout)
 	}
 
 	// Auth — requires a valid token but no specific role

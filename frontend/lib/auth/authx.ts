@@ -1,4 +1,5 @@
 import {
+  AUTH_REDIRECT_KEY,
   AUTHX_CODE_VERIFIER_KEY,
   AUTHX_FLOW_KEY,
   AUTHX_OAUTH_STATE_KEY,
@@ -29,17 +30,23 @@ function generateState(): string {
 }
 
 export function getAuthxRedirectUri(origin?: string): string {
+  // The redirect_uri sent to the token endpoint must byte-match the one used in
+  // the authorize request (the browser's public origin). Behind a
+  // TLS-terminating proxy the server-side request origin is http/internal, so
+  // prefer the configured app URL: APP_URL is runtime (server), while
+  // NEXT_PUBLIC_APP_URL is inlined at build time.
   const appUrl =
+    process.env.APP_URL ||
     process.env.NEXT_PUBLIC_APP_URL ||
     origin ||
     (typeof window !== "undefined" ? window.location.origin : "")
   if (!appUrl) {
-    throw new Error("NEXT_PUBLIC_APP_URL is not configured")
+    throw new Error("APP_URL / NEXT_PUBLIC_APP_URL is not configured")
   }
   return `${appUrl.replace(/\/$/, "")}/auth/callback`
 }
 
-export async function beginAuthxLogin(): Promise<void> {
+export async function beginAuthxLogin(callbackUrl?: string): Promise<void> {
   if (!isAuthxEnabled) return
 
   const clientId = process.env.NEXT_PUBLIC_AUTHX_CLIENT_ID
@@ -59,6 +66,10 @@ export async function beginAuthxLogin(): Promise<void> {
   sessionStorage.setItem(AUTHX_CODE_VERIFIER_KEY, codeVerifier)
   sessionStorage.setItem(AUTHX_OAUTH_STATE_KEY, state)
   sessionStorage.setItem(AUTHX_FLOW_KEY, "authx")
+
+  if (callbackUrl) {
+    sessionStorage.setItem(AUTH_REDIRECT_KEY, callbackUrl)
+  }
 
   const params = new URLSearchParams({
     client_id: clientId,

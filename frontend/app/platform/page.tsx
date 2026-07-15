@@ -6,7 +6,8 @@ import { LoadingState } from "@/components/admin/loading-state"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { api } from "@/lib/api/client"
-import { getAccessToken } from "@/lib/config"
+import { clearAccessToken, getAccessToken } from "@/lib/config"
+import { performLogout } from "@/lib/auth-logout"
 
 interface Institution {
   id: string
@@ -35,7 +36,11 @@ export default function PlatformPage() {
         setInstitutions(instData.data ?? [])
       })
       .finally(() => setLoading(false))
-  }, [])
+  }, [router])
+
+  function signOut() {
+    void performLogout("/login")
+  }
 
   if (loading) {
     return <LoadingState />
