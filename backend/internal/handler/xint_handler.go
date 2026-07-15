@@ -14,10 +14,15 @@ import (
 type XintHandler struct {
 	resolver  *xint.Resolver
 	jobIngest *service.JobIngestService
+	batchFit  *service.BatchFitService
 }
 
-func NewXintHandler(resolver *xint.Resolver, jobIngest *service.JobIngestService) *XintHandler {
-	return &XintHandler{resolver: resolver, jobIngest: jobIngest}
+func NewXintHandler(
+	resolver *xint.Resolver,
+	jobIngest *service.JobIngestService,
+	batchFit *service.BatchFitService,
+) *XintHandler {
+	return &XintHandler{resolver: resolver, jobIngest: jobIngest, batchFit: batchFit}
 }
 
 func (h *XintHandler) Health(c *gin.Context) {
@@ -143,4 +148,27 @@ func (h *XintHandler) LookupJob(c *gin.Context) {
 		resp["institution_id"] = *job.InstitutionID
 	}
 	c.JSON(http.StatusOK, resp)
+}
+
+func (h *XintHandler) BatchFit(c *gin.Context) {
+	var req service.BatchFitRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+
+	result, err := h.batchFit.BatchFitByXintSource(c.Request.Context(), middleware.XintSource(c), req)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrInvalidBatchFitRequest):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		case errors.Is(err, service.ErrJobNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "job not found"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to compute batch fit"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
 }

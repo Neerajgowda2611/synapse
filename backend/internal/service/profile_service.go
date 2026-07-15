@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -31,11 +32,11 @@ type JobCriteriaMetric struct {
 }
 
 type JobRewardCriteria struct {
-	ID         string              `json:"id"`
-	Label      string              `json:"label"`
-	Version    string              `json:"version"`
-	WeightSum  float64             `json:"weight_sum"`
-	Metrics    []JobCriteriaMetric `json:"metrics"`
+	ID        string              `json:"id"`
+	Label     string              `json:"label"`
+	Version   string              `json:"version"`
+	WeightSum float64             `json:"weight_sum"`
+	Metrics   []JobCriteriaMetric `json:"metrics"`
 }
 
 type JobWithCriteria struct {
@@ -50,11 +51,11 @@ type JobWithCriteria struct {
 }
 
 type UserTraitSummary struct {
-	Trait      string                     `json:"trait"`
-	Value      float64                    `json:"value"`
-	Confidence metric.ConfidenceInterval  `json:"confidence"`
-	Evidence   metric.EvidenceDensity     `json:"evidence"`
-	AsOf       time.Time                  `json:"as_of"`
+	Trait      string                    `json:"trait"`
+	Value      float64                   `json:"value"`
+	Confidence metric.ConfidenceInterval `json:"confidence"`
+	Evidence   metric.EvidenceDensity    `json:"evidence"`
+	AsOf       time.Time                 `json:"as_of"`
 }
 
 type JobFitTraitReading struct {
@@ -69,29 +70,29 @@ type JobFitTraitReading struct {
 }
 
 type JobFitResponse struct {
-	JobID             uuid.UUID            `json:"job_id"`
-	JobTitle          string               `json:"job_title"`
-	RewardSystemID    string               `json:"reward_system_id"`
-	AsOf              time.Time            `json:"as_of"`
-	FitPercent        float64              `json:"fit_percent"`
-	Score             float64              `json:"score"`
-	RawScore          float64              `json:"raw_score"`
-	WeightSum         float64              `json:"weight_sum"`
+	JobID             uuid.UUID                 `json:"job_id"`
+	JobTitle          string                    `json:"job_title"`
+	RewardSystemID    string                    `json:"reward_system_id"`
+	AsOf              time.Time                 `json:"as_of"`
+	FitPercent        float64                   `json:"fit_percent"`
+	Score             float64                   `json:"score"`
+	RawScore          float64                   `json:"raw_score"`
+	WeightSum         float64                   `json:"weight_sum"`
 	Confidence        metric.ConfidenceInterval `json:"confidence"`
-	SuppressedMetrics []string             `json:"suppressed_metrics"`
-	Traits            []JobFitTraitReading `json:"traits"`
-	MissingTraits     []string             `json:"missing_traits"`
-	TraitsAutoRefresh bool                 `json:"traits_auto_refreshed"`
+	SuppressedMetrics []string                  `json:"suppressed_metrics"`
+	Traits            []JobFitTraitReading      `json:"traits"`
+	MissingTraits     []string                  `json:"missing_traits"`
+	TraitsAutoRefresh bool                      `json:"traits_auto_refreshed"`
 }
 
 type EvidenceSource struct {
-	Connector       string         `json:"connector"`
-	EventType       string         `json:"event_type"`
-	BindingID       string         `json:"binding_id"`
-	RawObservationID uuid.UUID     `json:"raw_observation_id"`
-	OccurredAt      time.Time      `json:"occurred_at"`
-	ReceivedAt      time.Time      `json:"received_at"`
-	Payload         map[string]any `json:"payload,omitempty"`
+	Connector        string         `json:"connector"`
+	EventType        string         `json:"event_type"`
+	BindingID        string         `json:"binding_id"`
+	RawObservationID uuid.UUID      `json:"raw_observation_id"`
+	OccurredAt       time.Time      `json:"occurred_at"`
+	ReceivedAt       time.Time      `json:"received_at"`
+	Payload          map[string]any `json:"payload,omitempty"`
 }
 
 type EvidenceCanonicalObservation struct {
@@ -113,14 +114,14 @@ type EvidenceSignal struct {
 }
 
 type TraitEvidenceResponse struct {
-	Trait      string                        `json:"trait"`
-	Value      float64                       `json:"value"`
-	Confidence metric.ConfidenceInterval   `json:"confidence"`
-	Evidence   metric.EvidenceDensity        `json:"evidence"`
+	Trait      string                         `json:"trait"`
+	Value      float64                        `json:"value"`
+	Confidence metric.ConfidenceInterval      `json:"confidence"`
+	Evidence   metric.EvidenceDensity         `json:"evidence"`
 	Construct  *metric.ConstructRegisterEntry `json:"construct,omitempty"`
-	Claims     []metric.ConstructClaim       `json:"claims"`
-	Signals    []EvidenceSignal              `json:"signals"`
-	AsOf       time.Time                     `json:"as_of"`
+	Claims     []metric.ConstructClaim        `json:"claims"`
+	Signals    []EvidenceSignal               `json:"signals"`
+	AsOf       time.Time                      `json:"as_of"`
 }
 
 type StreamActivityObservation struct {
@@ -157,6 +158,9 @@ func (s *MetricService) GetJobWithCriteria(ctx context.Context, jobID uuid.UUID,
 		return nil, err
 	}
 	if !jobVisibleToLearner(job, learnerInstitutionID) {
+		return nil, ErrJobNotFound
+	}
+	if isCareerProfileRef(job.XintSourceRef) {
 		return nil, ErrJobNotFound
 	}
 	rewardSystems, err := metric.LoadRewardSystems(ctx, s.rewardRepo)
@@ -240,6 +244,9 @@ func (s *MetricService) GetUserJobFit(ctx context.Context, userID, jobID uuid.UU
 		return nil, err
 	}
 	if !jobVisibleToLearner(job, learnerInstitutionID) {
+		return nil, ErrJobNotFound
+	}
+	if isCareerProfileRef(job.XintSourceRef) {
 		return nil, ErrJobNotFound
 	}
 
@@ -523,4 +530,11 @@ func jobVisibleToLearner(job *model.Job, learnerInstitutionID *uuid.UUID) bool {
 		return true
 	}
 	return *job.InstitutionID == *learnerInstitutionID
+}
+
+func isCareerProfileRef(ref *string) bool {
+	if ref == nil {
+		return false
+	}
+	return strings.HasPrefix(strings.TrimSpace(*ref), "placement:career_profile:")
 }

@@ -1260,6 +1260,8 @@ XINT_SHIPX_URL=https://mentorship.example.com
 
 ### Job ingest (implemented)
 
+Placement handoff (why weightage, templates, what to build): [placement-job-trait-weightage.md](../integrations/placement-job-trait-weightage.md).
+
 Placement (or other xint peers) can push institution-scoped jobs with trait weightages. Jobs appear in the learner portal discover flow automatically (`GET /api/v1/jobs`).
 
 #### `POST /api/v1/xint/jobs`
@@ -1347,3 +1349,12 @@ Reconcile a previously ingested job from the caller's source.
 | Set to institution X (future) | Learners in institution X only |
 
 Platform admins and institution admins see all active jobs when listing via the authenticated jobs API.
+
+#### Career profile refs + batch fit
+
+Placement can ingest both real jobs and career profiles through the same endpoint, differentiated only by `xint_source_ref`:
+
+- `placement:job:{id}` -> learner-visible job target
+- `placement:career_profile:{id}` -> scoring-only target (hidden from learner job list/get/fit)
+
+For finder scoring at scale, use `POST /api/v1/xint/fit/batch` (service token auth). This endpoint scores up to 500 emails against one ingested target and returns per-email statuses. Batch flow uses the same scoring math but does not persist per-row `metric_runs`.

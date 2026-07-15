@@ -91,7 +91,8 @@ func RegisterRoutes(
 	authxHandler := NewAuthxHandler(authxSvc, authxEnabled)
 	xintResolver := xint.NewResolver(userRepo)
 	jobIngestService := service.NewJobIngestService(db, jobRepo, rewardRepo, institutionRepo, registerRepo)
-	xintHandler := NewXintHandler(xintResolver, jobIngestService)
+	batchFitService := service.NewBatchFitService(jobRepo, userRepo, rewardRepo, metricService)
+	xintHandler := NewXintHandler(xintResolver, jobIngestService, batchFitService)
 	institutionHandler := NewInstitutionHandler(institutionService)
 	institutionUserHandler := NewInstitutionUserHandler(institutionUserService, enforcer)
 	dataSourceHandler := NewDataSourceHandler(dataSourceService)
@@ -126,6 +127,7 @@ func RegisterRoutes(
 		xintGroup.GET("/users/resolve", xintHandler.ResolveUser)
 		xintGroup.POST("/jobs", xintHandler.UpsertJob)
 		xintGroup.GET("/jobs/lookup", xintHandler.LookupJob)
+		xintGroup.POST("/fit/batch", xintHandler.BatchFit)
 	}
 
 	api.GET("/connectors",

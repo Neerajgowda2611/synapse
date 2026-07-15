@@ -208,6 +208,31 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*model.U
 	return &user, nil
 }
 
+func (r *UserRepository) ListByEmails(ctx context.Context, emails []string) ([]model.User, error) {
+	normalized := make([]string, 0, len(emails))
+	seen := make(map[string]struct{}, len(emails))
+	for _, email := range emails {
+		cleaned := strings.ToLower(strings.TrimSpace(email))
+		if cleaned == "" {
+			continue
+		}
+		if _, exists := seen[cleaned]; exists {
+			continue
+		}
+		seen[cleaned] = struct{}{}
+		normalized = append(normalized, cleaned)
+	}
+	if len(normalized) == 0 {
+		return []model.User{}, nil
+	}
+
+	var users []model.User
+	if err := r.dbCtx(ctx).Where("lower(email) IN ?", normalized).Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
 func (r *UserRepository) Create(ctx context.Context, user *model.User) error {
 	return r.dbCtx(ctx).Create(user).Error
 }

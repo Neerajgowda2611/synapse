@@ -1,0 +1,110 @@
+# Profiler API Contract: Career Profile Batch Fit
+
+Contract for Profiler changes needed by Placement backend to support finder filtering/ranking by Career Profile fit at org scale.
+
+This document describes Profiler-side behavior for XINT flows (service token auth, no JWT).
+
+---
+
+## Jobs vs Career Profiles
+
+Both use the same ingest endpoint (`POST /api/v1/xint/jobs`) and the same `jobs` table.
+
+Discrimination is only by `xint_source_ref` prefix:
+
+| Kind | `xint_source_ref` |
+|------|-------------------|
+| Real job | `placement:job:{id}` |
+| Career profile | `placement:career_profile:{id}` |
+
+There is no `target_kind` column.
+
+Learner-facing job surfaces hide career profiles:
+
+- `GET /api/v1/jobs` excludes refs like `placement:career_profile:%`
+- `GET /api/v1/jobs/:id` returns 404 for career-profile refs
+- `GET /api/v1/users/:userId/jobs/:jobId/fit` returns 404 for career-profile refs
+
+XINT lookup and XINT batch fit can resolve both kinds.
+
+---
+
+## Batch fit endpoint
+
+### Endpoint
+
+`POST /api/v1/xint/fit/batch`
+
+### Auth
+
+Same XINT auth as existing XINT routes:
+
+- `X-Xint-Token: <shared_secret>`
+- `X-Xint-Source: placement`
+
+### Request body
+
+```json
+{
+  "xint_source_ref": "placement:career_profile:42",
+  "emails": ["student1@college.edu", "student2@college.edu"],
+  "as_of": null
+}
+```
+
+Rules:
+
+- `xint_source_ref` is required.
+- `emails` is required, non-empty, max 500.
+- `as_of` is optional RFC3339 timestamp (or omitted/null for now).
+
+### Response body
+
+```json
+{
+  "xint_source_ref": "placement:career_profile:42",
+  "job_id": "4a295ca4-6275-4d6c-b0f4-3a1f79a50784",
+  "results": [
+    {
+      "email": "student1@college.edu",
+      "status": "available",
+      "fit_percent": 86.5,
+      "score": 0.865
+    },
+    {
+      "email": "student2@college.edu",
+      "status": "unavailable"
+    }
+  ],
+  "summary": {
+    "requested": 2,
+    "available": 1,
+    "unavailable": 1,
+    "error": 0
+  }
+}
+```
+
+`results[].status`:
+
+- `available` -> fit computed successfully
+- `unavailable` -> user not found or no usable scoring data
+- `error` -> per-row processing failure (request still returns 200)
+
+---
+
+## Scoring behavior
+
+Batch fit uses the same reward-scoring math as single-user fit (same reward system, same trait pipeline), but does not persist per-row `metric_runs` / `reward_scores`.
+
+Single-user JWT fit behavior remains unchanged.
+
+---
+
+## Error handling
+
+- `200` processed (including partial row failures)
+- `400` invalid body (including empty emails or >500)
+- `401` invalid XINT token/source
+- `404` unknown `xint_source_ref`
+- `503` XINT disabled

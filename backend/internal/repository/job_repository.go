@@ -9,6 +9,8 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+const careerProfileRefPrefixSQL = "placement:career_profile:%"
+
 type JobRepository struct {
 	*BaseRepository[model.Job]
 }
@@ -21,6 +23,7 @@ func (r *JobRepository) ListActive(ctx context.Context) ([]model.Job, error) {
 	var rows []model.Job
 	err := r.dbWithContext(ctx).
 		Where("status = ?", "active").
+		Where("xint_source_ref IS NULL OR xint_source_ref NOT LIKE ?", careerProfileRefPrefixSQL).
 		Order("created_at DESC").
 		Find(&rows).Error
 	if err != nil {
@@ -30,7 +33,9 @@ func (r *JobRepository) ListActive(ctx context.Context) ([]model.Job, error) {
 }
 
 func (r *JobRepository) ListActiveForInstitution(ctx context.Context, institutionID *uuid.UUID) ([]model.Job, error) {
-	query := r.dbWithContext(ctx).Where("status = ?", "active")
+	query := r.dbWithContext(ctx).
+		Where("status = ?", "active").
+		Where("xint_source_ref IS NULL OR xint_source_ref NOT LIKE ?", careerProfileRefPrefixSQL)
 	if institutionID != nil {
 		query = query.Where("institution_id IS NULL OR institution_id = ?", *institutionID)
 	}
