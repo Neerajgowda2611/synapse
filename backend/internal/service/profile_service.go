@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -160,7 +159,7 @@ func (s *MetricService) GetJobWithCriteria(ctx context.Context, jobID uuid.UUID,
 	if !jobVisibleToLearner(job, learnerInstitutionID) {
 		return nil, ErrJobNotFound
 	}
-	if isCareerProfileRef(job.XintSourceRef) {
+	if job.TargetKind != model.JobTargetKindJob {
 		return nil, ErrJobNotFound
 	}
 	rewardSystems, err := metric.LoadRewardSystems(ctx, s.rewardRepo)
@@ -246,7 +245,7 @@ func (s *MetricService) GetUserJobFit(ctx context.Context, userID, jobID uuid.UU
 	if !jobVisibleToLearner(job, learnerInstitutionID) {
 		return nil, ErrJobNotFound
 	}
-	if isCareerProfileRef(job.XintSourceRef) {
+	if job.TargetKind != model.JobTargetKindJob {
 		return nil, ErrJobNotFound
 	}
 
@@ -530,11 +529,4 @@ func jobVisibleToLearner(job *model.Job, learnerInstitutionID *uuid.UUID) bool {
 		return true
 	}
 	return *job.InstitutionID == *learnerInstitutionID
-}
-
-func isCareerProfileRef(ref *string) bool {
-	if ref == nil {
-		return false
-	}
-	return strings.HasPrefix(strings.TrimSpace(*ref), "placement:career_profile:")
 }

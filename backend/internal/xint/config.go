@@ -4,12 +4,13 @@ import "strings"
 
 // Config drives inbound/outbound xint integration behavior.
 type Config struct {
-	Enabled        bool
-	ServiceToken   string
-	AllowedSources map[string]struct{}
-	PlacementURL   string
-	ProjexURL      string
-	ShipxURL       string
+	Enabled           bool
+	ServiceToken      string
+	AllowedSources    map[string]struct{}
+	PlacementURL      string
+	ProjexURL         string
+	ShipxURL          string
+	ProfileLinkSigner *ProfileLinkSigner
 }
 
 func ParseAllowedSources(raw string) map[string]struct{} {

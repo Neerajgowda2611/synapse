@@ -1262,7 +1262,11 @@ XINT_SHIPX_URL=https://mentorship.example.com
 
 Placement handoff (why weightage, templates, what to build): [placement-job-trait-weightage.md](../integrations/placement-job-trait-weightage.md).
 
-Placement (or other xint peers) can push institution-scoped jobs with trait weightages. Jobs appear in the learner portal discover flow automatically (`GET /api/v1/jobs`).
+XINT peers can push scoring targets with trait weightages. Only targets inferred as `target_kind = job` appear in the learner Discover flow.
+
+#### `GET /api/v1/xint/traits`
+
+Returns the available Profiler traits with stable trait IDs, display names, and descriptions for weight-selection UIs.
 
 #### `POST /api/v1/xint/jobs`
 
@@ -1350,11 +1354,12 @@ Reconcile a previously ingested job from the caller's source.
 
 Platform admins and institution admins see all active jobs when listing via the authenticated jobs API.
 
-#### Career profile refs + batch fit
+#### Scoring target kinds + batch fit
 
-Placement can ingest both real jobs and career profiles through the same endpoint, differentiated only by `xint_source_ref`:
+Profiler infers `target_kind` from `xint_source_ref`; callers do not send the kind:
 
-- `placement:job:{id}` -> learner-visible job target
-- `placement:career_profile:{id}` -> scoring-only target (hidden from learner job list/get/fit)
+- `placement:job:{id}` -> `job` (learner-visible)
+- `placement:career_profile:{id}` -> `career_profile` (scoring-only)
+- `projex:project:{id}` -> `project` (scoring-only)
 
-For finder scoring at scale, use `POST /api/v1/xint/fit/batch` (service token auth). This endpoint scores up to 500 emails against one ingested target and returns per-email statuses. Batch flow uses the same scoring math but does not persist per-row `metric_runs`.
+Learner job APIs only expose `target_kind = job`. For finder scoring at scale, use `POST /api/v1/xint/fit/batch` (service token auth). This endpoint scores up to 500 emails against one ingested target and returns per-email statuses and trait breakdowns. Batch flow uses the same scoring math but does not persist per-row `metric_runs`.

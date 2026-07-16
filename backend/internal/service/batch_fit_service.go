@@ -5,12 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/profiler/backend/internal/metric"
+	"github.com/profiler/backend/internal/model"
 	"github.com/profiler/backend/internal/repository"
+	"github.com/profiler/backend/internal/xint"
 	"gorm.io/gorm"
 )
 
@@ -25,11 +28,24 @@ type BatchFitRequest struct {
 }
 
 type BatchFitResultRow struct {
-	Email      string   `json:"email"`
-	Status     string   `json:"status"`
-	FitPercent *float64 `json:"fit_percent,omitempty"`
-	Score      *float64 `json:"score,omitempty"`
-	Error      *string  `json:"error,omitempty"`
+	Email      string               `json:"email"`
+	Status     string               `json:"status"`
+	FitPercent *float64             `json:"fit_percent,omitempty"`
+	Score      *float64             `json:"score,omitempty"`
+	Traits     []BatchFitTraitScore `json:"traits,omitempty"`
+	UserID     *uuid.UUID           `json:"user_id,omitempty"`
+	ProfileURL *string              `json:"profile_url,omitempty"`
+	Error      *string              `json:"error,omitempty"`
+}
+
+type BatchFitTraitScore struct {
+	Trait               string  `json:"trait"`
+	Weight              float64 `json:"weight"`
+	TraitPercent        float64 `json:"trait_percent"`
+	FitPercent          float64 `json:"fit_percent"`
+	ContributionPercent float64 `json:"contribution_percent"`
+	Usable              bool    `json:"usable"`
+	Missing             bool    `json:"missing"`
 }
 
 type BatchFitSummary struct {
@@ -51,6 +67,7 @@ type BatchFitService struct {
 	userRepo   *repository.UserRepository
 	rewardRepo *repository.RewardSystemRepository
 	metricSvc  *MetricService
+	linkSigner *xint.ProfileLinkSigner
 }
 
 func NewBatchFitService(
@@ -58,12 +75,14 @@ func NewBatchFitService(
 	userRepo *repository.UserRepository,
 	rewardRepo *repository.RewardSystemRepository,
 	metricSvc *MetricService,
+	linkSigner *xint.ProfileLinkSigner,
 ) *BatchFitService {
 	return &BatchFitService{
 		jobRepo:    jobRepo,
 		userRepo:   userRepo,
 		rewardRepo: rewardRepo,
 		metricSvc:  metricSvc,
+		linkSigner: linkSigner,
 	}
 }
 
@@ -94,6 +113,9 @@ func (s *BatchFitService) BatchFitByXintSource(ctx context.Context, sourceApp st
 			return nil, ErrJobNotFound
 		}
 		return nil, err
+	}
+	if job.Status != "active" {
+		return nil, ErrJobNotFound
 	}
 
 	rewardSystems, err := metric.LoadRewardSystems(ctx, s.rewardRepo)
@@ -149,6 +171,19 @@ func (s *BatchFitService) BatchFitByXintSource(ctx context.Context, sourceApp st
 		row.Status = "available"
 		row.FitPercent = &fitPercent
 		row.Score = &fitResult.Score.Score
+		row.Traits = buildBatchFitTraitScores(fitResult)
+		if job.TargetKind == model.JobTargetKindProject && sourceApp == "projex" {
+			if s.linkSigner == nil {
+				return nil, fmt.Errorf("project-fit profile link signer is not configured")
+			}
+			_, profileURL, linkErr := s.linkSigner.Issue(job.ID, userID, sourceApp)
+			if linkErr != nil {
+				return nil, fmt.Errorf("issue project-fit profile link: %w", linkErr)
+			}
+			profileUserID := userID
+			row.UserID = &profileUserID
+			row.ProfileURL = &profileURL
+		}
 		summary.Available++
 		results = append(results, row)
 	}
@@ -159,4 +194,32 @@ func (s *BatchFitService) BatchFitByXintSource(ctx context.Context, sourceApp st
 		Results:       results,
 		Summary:       summary,
 	}, nil
+}
+
+func buildBatchFitTraitScores(result *JobFitResult) []BatchFitTraitScore {
+	readings := buildJobFitResponse(result).Traits
+	traits := make([]BatchFitTraitScore, 0, len(readings))
+	for _, reading := range readings {
+		contributionPercent := 0.0
+		if result.Score.WeightSum > 0 {
+			contributionPercent = reading.Contribution / result.Score.WeightSum * 100
+		}
+		traits = append(traits, BatchFitTraitScore{
+			Trait:               reading.Trait,
+			Weight:              reading.Weight,
+			TraitPercent:        roundFitPercent(reading.TraitValue),
+			FitPercent:          roundFitPercent(reading.MetricValue),
+			ContributionPercent: math.Round(contributionPercent*10) / 10,
+			Usable:              reading.Usable,
+			Missing:             reading.Missing,
+		})
+	}
+	sort.Slice(traits, func(i, j int) bool {
+		return traits[i].Trait < traits[j].Trait
+	})
+	return traits
+}
+
+func roundFitPercent(value float64) float64 {
+	return math.Round(value*1000) / 10
 }

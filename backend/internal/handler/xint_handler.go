@@ -34,6 +34,15 @@ func (h *XintHandler) Health(c *gin.Context) {
 	})
 }
 
+func (h *XintHandler) ListTraits(c *gin.Context) {
+	traits, err := h.jobIngest.ListTraits(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list traits"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"traits": traits})
+}
+
 func (h *XintHandler) ResolveUser(c *gin.Context) {
 	authxSubject := strings.TrimSpace(c.Query("authx_subject"))
 	email := strings.TrimSpace(c.Query("email"))
@@ -134,6 +143,7 @@ func (h *XintHandler) LookupJob(c *gin.Context) {
 		"status":           job.Status,
 		"source_app":       job.SourceApp,
 		"xint_source_ref":  job.XintSourceRef,
+		"target_kind":      job.TargetKind,
 	}
 	if job.CompanyName != nil {
 		resp["company_name"] = *job.CompanyName

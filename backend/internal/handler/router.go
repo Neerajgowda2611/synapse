@@ -91,8 +91,10 @@ func RegisterRoutes(
 	authxHandler := NewAuthxHandler(authxSvc, authxEnabled)
 	xintResolver := xint.NewResolver(userRepo)
 	jobIngestService := service.NewJobIngestService(db, jobRepo, rewardRepo, institutionRepo, registerRepo)
-	batchFitService := service.NewBatchFitService(jobRepo, userRepo, rewardRepo, metricService)
+	batchFitService := service.NewBatchFitService(jobRepo, userRepo, rewardRepo, metricService, xintCfg.ProfileLinkSigner)
+	projectFitService := service.NewProjectFitService(jobRepo, userRepo, rewardRepo, metricService, xintCfg.ProfileLinkSigner)
 	xintHandler := NewXintHandler(xintResolver, jobIngestService, batchFitService)
+	projectFitHandler := NewProjectFitHandler(projectFitService)
 	institutionHandler := NewInstitutionHandler(institutionService)
 	institutionUserHandler := NewInstitutionUserHandler(institutionUserService, enforcer)
 	dataSourceHandler := NewDataSourceHandler(dataSourceService)
@@ -124,6 +126,7 @@ func RegisterRoutes(
 	xintGroup := api.Group("/xint", middleware.RequireXint(xintCfg))
 	{
 		xintGroup.GET("/health", xintHandler.Health)
+		xintGroup.GET("/traits", xintHandler.ListTraits)
 		xintGroup.GET("/users/resolve", xintHandler.ResolveUser)
 		xintGroup.POST("/jobs", xintHandler.UpsertJob)
 		xintGroup.GET("/jobs/lookup", xintHandler.LookupJob)
@@ -217,6 +220,8 @@ func RegisterRoutes(
 			dataSourceHandler.GetLatestSyncJob,
 		)
 	}
+
+	api.GET("/project-fit", requireAuth, projectFitHandler.Get)
 
 	jobs := api.Group("/jobs", requireAuth, authz.Require(enforcer, authz.ResourceJobs, authz.ActionRead))
 	{

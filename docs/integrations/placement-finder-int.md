@@ -10,22 +10,20 @@ This document describes Profiler-side behavior for XINT flows (service token aut
 
 Both use the same ingest endpoint (`POST /api/v1/xint/jobs`) and the same `jobs` table.
 
-Discrimination is only by `xint_source_ref` prefix:
+| Kind | `xint_source_ref` | `target_kind` (inferred) |
+|------|-------------------|--------------------------|
+| Real job | `placement:job:{id}` | `job` |
+| Career profile | `placement:career_profile:{id}` | `career_profile` |
 
-| Kind | `xint_source_ref` |
-|------|-------------------|
-| Real job | `placement:job:{id}` |
-| Career profile | `placement:career_profile:{id}` |
+`target_kind` is inferred from `xint_source_ref` on ingest (callers do not send it). See also [projex-project-fit-int.md](./projex-project-fit-int.md) for `projex:project:{id}` → `project`.
 
-There is no `target_kind` column.
+Learner-facing job surfaces only show `target_kind = 'job'`:
 
-Learner-facing job surfaces hide career profiles:
+- `GET /api/v1/jobs` excludes non-job kinds
+- `GET /api/v1/jobs/:id` returns 404 for non-job kinds
+- `GET /api/v1/users/:userId/jobs/:jobId/fit` returns 404 for non-job kinds
 
-- `GET /api/v1/jobs` excludes refs like `placement:career_profile:%`
-- `GET /api/v1/jobs/:id` returns 404 for career-profile refs
-- `GET /api/v1/users/:userId/jobs/:jobId/fit` returns 404 for career-profile refs
-
-XINT lookup and XINT batch fit can resolve both kinds.
+XINT lookup and XINT batch fit can resolve all kinds.
 
 ---
 

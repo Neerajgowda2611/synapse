@@ -10,22 +10,40 @@ import { authErrorMessage } from "@/components/auth/auth-error-messages"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { appConfig, AUTH_CODE_VERIFIER_KEY, clearAccessToken } from "@/lib/config"
+import {
+  appConfig,
+  AUTH_CODE_VERIFIER_KEY,
+  AUTH_REDIRECT_KEY,
+  clearAccessToken,
+} from "@/lib/config"
+
+function safeCallbackUrl(value: string | null): string | null {
+  if (!value) return null
+  if (value.startsWith("/") && !value.startsWith("//")) return value
+  return null
+}
 
 export function LoginForm() {
   const searchParams = useSearchParams()
   const [login, setLogin] = useState("")
   const [password, setPassword] = useState("")
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(() =>
+    authErrorMessage(searchParams.get("error"))
+  )
   const [loading, setLoading] = useState(false)
+  const callbackUrl = safeCallbackUrl(
+    searchParams.get("callbackUrl") || searchParams.get("next")
+  )
 
   useEffect(() => {
     clearAccessToken()
     sessionStorage.removeItem(AUTH_CODE_VERIFIER_KEY)
-
-    const urlError = authErrorMessage(searchParams.get("error"))
-    if (urlError) setError(urlError)
-  }, [searchParams])
+    if (callbackUrl) {
+      sessionStorage.setItem(AUTH_REDIRECT_KEY, callbackUrl)
+    } else {
+      sessionStorage.removeItem(AUTH_REDIRECT_KEY)
+    }
+  }, [callbackUrl])
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()

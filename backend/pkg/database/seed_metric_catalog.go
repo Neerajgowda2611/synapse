@@ -177,6 +177,7 @@ func seedJobs(db *gorm.DB) error {
 			ID:             jobID,
 			Title:          seed.Title,
 			RewardSystemID: seed.RewardSystemID,
+			TargetKind:     model.JobTargetKindJob,
 			Status:         status,
 			CreatedAt:      now,
 			UpdatedAt:      now,
@@ -189,7 +190,7 @@ func seedJobs(db *gorm.DB) error {
 	return db.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "id"}},
 		DoUpdates: clause.AssignmentColumns([]string{
-			"title", "reward_system_id", "status", "updated_at",
+			"title", "reward_system_id", "target_kind", "status", "updated_at",
 		}),
 	}).Create(&rows).Error
 }

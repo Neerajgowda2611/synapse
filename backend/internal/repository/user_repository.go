@@ -208,6 +208,14 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*model.U
 	return &user, nil
 }
 
+func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.User, error) {
+	var user model.User
+	if err := r.dbCtx(ctx).First(&user, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
 func (r *UserRepository) ListByEmails(ctx context.Context, emails []string) ([]model.User, error) {
 	normalized := make([]string, 0, len(emails))
 	seen := make(map[string]struct{}, len(emails))

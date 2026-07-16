@@ -9,8 +9,6 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-const careerProfileRefPrefixSQL = "placement:career_profile:%"
-
 type JobRepository struct {
 	*BaseRepository[model.Job]
 }
@@ -23,7 +21,7 @@ func (r *JobRepository) ListActive(ctx context.Context) ([]model.Job, error) {
 	var rows []model.Job
 	err := r.dbWithContext(ctx).
 		Where("status = ?", "active").
-		Where("xint_source_ref IS NULL OR xint_source_ref NOT LIKE ?", careerProfileRefPrefixSQL).
+		Where("target_kind = ?", model.JobTargetKindJob).
 		Order("created_at DESC").
 		Find(&rows).Error
 	if err != nil {
@@ -35,7 +33,7 @@ func (r *JobRepository) ListActive(ctx context.Context) ([]model.Job, error) {
 func (r *JobRepository) ListActiveForInstitution(ctx context.Context, institutionID *uuid.UUID) ([]model.Job, error) {
 	query := r.dbWithContext(ctx).
 		Where("status = ?", "active").
-		Where("xint_source_ref IS NULL OR xint_source_ref NOT LIKE ?", careerProfileRefPrefixSQL)
+		Where("target_kind = ?", model.JobTargetKindJob)
 	if institutionID != nil {
 		query = query.Where("institution_id IS NULL OR institution_id = ?", *institutionID)
 	}
@@ -73,7 +71,7 @@ func (r *JobRepository) UpsertIngested(ctx context.Context, job *model.Job) erro
 		Columns: []clause.Column{{Name: "source_app"}, {Name: "xint_source_ref"}},
 		DoUpdates: clause.AssignmentColumns([]string{
 			"title", "company_name", "subtitle", "external_url",
-			"reward_system_id", "institution_id", "status", "updated_at",
+			"reward_system_id", "institution_id", "target_kind", "status", "updated_at",
 		}),
 	}).Create(job).Error
 }
