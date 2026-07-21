@@ -216,20 +216,12 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.User
 	return &user, nil
 }
 
+func NormalizeEmail(email string) string {
+	return strings.ToLower(strings.TrimSpace(email))
+}
+
 func (r *UserRepository) ListByEmails(ctx context.Context, emails []string) ([]model.User, error) {
-	normalized := make([]string, 0, len(emails))
-	seen := make(map[string]struct{}, len(emails))
-	for _, email := range emails {
-		cleaned := strings.ToLower(strings.TrimSpace(email))
-		if cleaned == "" {
-			continue
-		}
-		if _, exists := seen[cleaned]; exists {
-			continue
-		}
-		seen[cleaned] = struct{}{}
-		normalized = append(normalized, cleaned)
-	}
+	normalized := uniqueNormalizedEmails(emails)
 	if len(normalized) == 0 {
 		return []model.User{}, nil
 	}
@@ -239,6 +231,36 @@ func (r *UserRepository) ListByEmails(ctx context.Context, emails []string) ([]m
 		return nil, err
 	}
 	return users, nil
+}
+
+// MapIDsByEmails returns user IDs keyed by normalized email.
+func (r *UserRepository) MapIDsByEmails(ctx context.Context, emails []string) (map[string]uuid.UUID, error) {
+	users, err := r.ListByEmails(ctx, emails)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]uuid.UUID, len(users))
+	for _, user := range users {
+		out[NormalizeEmail(user.Email)] = user.ID
+	}
+	return out, nil
+}
+
+func uniqueNormalizedEmails(emails []string) []string {
+	normalized := make([]string, 0, len(emails))
+	seen := make(map[string]struct{}, len(emails))
+	for _, email := range emails {
+		cleaned := NormalizeEmail(email)
+		if cleaned == "" {
+			continue
+		}
+		if _, exists := seen[cleaned]; exists {
+			continue
+		}
+		seen[cleaned] = struct{}{}
+		normalized = append(normalized, cleaned)
+	}
+	return normalized
 }
 
 func (r *UserRepository) Create(ctx context.Context, user *model.User) error {

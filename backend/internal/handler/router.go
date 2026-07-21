@@ -234,6 +234,7 @@ func RegisterRoutes(
 		users.GET("/:userId/traits", profileHandler.ListUserTraits)
 		users.POST("/:userId/traits/refresh", profileHandler.RefreshUserTraits)
 		users.GET("/:userId/streams/activity", profileHandler.ListUserStreamActivity)
+		users.GET("/:userId/jobs/fit", profileHandler.ListUserJobFits)
 		users.GET("/:userId/jobs/:jobId/fit", profileHandler.GetUserJobFit)
 		users.GET("/:userId/traits/:trait/evidence", profileHandler.GetTraitEvidence)
 	}

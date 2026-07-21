@@ -122,13 +122,12 @@ func (s *MetricService) ComputeJobFit(ctx context.Context, userID uuid.UUID, job
 	if err != nil {
 		return nil, err
 	}
-	rewardSystems, err := metric.LoadRewardSystems(ctx, s.rewardRepo)
+	rewardSystem, err := metric.LoadRewardSystem(ctx, s.rewardRepo, job.RewardSystemID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("reward system not found: %s", job.RewardSystemID)
+		}
 		return nil, err
-	}
-	rewardSystem, ok := rewardSystems[job.RewardSystemID]
-	if !ok {
-		return nil, fmt.Errorf("reward system not found: %s", job.RewardSystemID)
 	}
 	score, readings, estimates, derived, err := s.scoreRewardSystemForUser(ctx, userID, rewardSystem, asOf)
 	if err != nil {
@@ -139,36 +138,10 @@ func (s *MetricService) ComputeJobFit(ctx context.Context, userID uuid.UUID, job
 	if runNotes == "" {
 		runNotes = "metric:compute-job-fit"
 	}
-	run := &model.MetricRun{
-		AsOf:       asOf,
-		UserID:     userID,
-		NEstimates: len(estimates),
-		NScores:    1,
-		Notes:      &runNotes,
-	}
-	if err := s.metricRunRepo.Create(ctx, run); err != nil {
-		return nil, err
-	}
-
-	spec, err := json.Marshal(score)
+	run, err := s.persistFitMetricRun(ctx, userID, asOf, runNotes, len(estimates), []rewardScorePersist{
+		{RewardSystemID: rewardSystem.ID, Score: score, Readings: readings},
+	})
 	if err != nil {
-		return nil, err
-	}
-	readingsJSON, err := json.Marshal(readings)
-	if err != nil {
-		return nil, err
-	}
-	row := &model.RewardScore{
-		RunID:          run.ID,
-		UserID:         userID,
-		RewardSystemID: rewardSystem.ID,
-		Score:          score.Score,
-		CILower:        score.Confidence.Lower,
-		CIUpper:        score.Confidence.Upper,
-		Spec:           model.JSONB(spec),
-		Readings:       model.JSONB(readingsJSON),
-	}
-	if err := s.rewardScoreRepo.Upsert(ctx, row); err != nil {
 		return nil, err
 	}
 
@@ -186,14 +159,63 @@ func (s *MetricService) ComputeJobFit(ctx context.Context, userID uuid.UUID, job
 	}, nil
 }
 
-func (s *MetricService) ScoreJobFitForUser(ctx context.Context, userID uuid.UUID, job *model.Job, asOf time.Time) (*JobFitResult, error) {
-	rewardSystems, err := metric.LoadRewardSystems(ctx, s.rewardRepo)
-	if err != nil {
+type rewardScorePersist struct {
+	RewardSystemID string
+	Score          metric.RewardScore
+	Readings       map[string]metric.MetricReading
+}
+
+func (s *MetricService) persistFitMetricRun(
+	ctx context.Context,
+	userID uuid.UUID,
+	asOf time.Time,
+	notes string,
+	nEstimates int,
+	scores []rewardScorePersist,
+) (*model.MetricRun, error) {
+	run := &model.MetricRun{
+		AsOf:       asOf,
+		UserID:     userID,
+		NEstimates: nEstimates,
+		NScores:    len(scores),
+		Notes:      &notes,
+	}
+	if err := s.metricRunRepo.Create(ctx, run); err != nil {
 		return nil, err
 	}
-	rewardSystem, ok := rewardSystems[job.RewardSystemID]
-	if !ok {
-		return nil, fmt.Errorf("reward system not found: %s", job.RewardSystemID)
+	for _, item := range scores {
+		spec, err := json.Marshal(item.Score)
+		if err != nil {
+			return nil, err
+		}
+		readingsJSON, err := json.Marshal(item.Readings)
+		if err != nil {
+			return nil, err
+		}
+		row := &model.RewardScore{
+			RunID:          run.ID,
+			UserID:         userID,
+			RewardSystemID: item.RewardSystemID,
+			Score:          item.Score.Score,
+			CILower:        item.Score.Confidence.Lower,
+			CIUpper:        item.Score.Confidence.Upper,
+			Spec:           model.JSONB(spec),
+			Readings:       model.JSONB(readingsJSON),
+		}
+		if err := s.rewardScoreRepo.Upsert(ctx, row); err != nil {
+			return nil, err
+		}
+	}
+	return run, nil
+}
+
+func (s *MetricService) ScoreJobFitForUser(ctx context.Context, userID uuid.UUID, job *model.Job, asOf time.Time) (*JobFitResult, error) {
+	rewardSystem, err := metric.LoadRewardSystem(ctx, s.rewardRepo, job.RewardSystemID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("reward system not found: %s", job.RewardSystemID)
+		}
+		return nil, err
 	}
 	return s.ScoreJobFitForUserWithRewardSystem(ctx, userID, job, rewardSystem, asOf)
 }

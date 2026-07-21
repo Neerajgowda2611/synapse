@@ -107,13 +107,12 @@ func (s *ProjectFitService) GetBySignedToken(ctx context.Context, token string) 
 	if err != nil {
 		return nil, err
 	}
-	rewardSystems, err := metric.LoadRewardSystems(ctx, s.rewardRepo)
+	rewardSystem, err := metric.LoadRewardSystem(ctx, s.rewardRepo, job.RewardSystemID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("reward system not found: %s", job.RewardSystemID)
+		}
 		return nil, err
-	}
-	rewardSystem, ok := rewardSystems[job.RewardSystemID]
-	if !ok {
-		return nil, fmt.Errorf("reward system not found: %s", job.RewardSystemID)
 	}
 
 	asOf := time.Now().UTC()

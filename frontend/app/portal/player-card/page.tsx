@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { getUserJobFit, listJobs } from "@/lib/api/profiler"
+import { listJobs, listUserJobFits } from "@/lib/api/profiler"
 import { PlayerCardView } from "@/components/portal/player-card-view"
 import { ErrorState } from "@/components/ui/error-state"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -22,15 +22,14 @@ export default function PlayerCardPage() {
       setLoading(true)
       setError(null)
       try {
-        const { data: jobs } = await listJobs()
+        const [{ data: jobs }, { data: fits }] = await Promise.all([
+          listJobs(),
+          listUserJobFits(userId),
+        ])
         if (jobs.length === 0) {
           if (!cancelled) setData({ roles: [], sourceLabels: {} })
           return
         }
-
-        const fits = await Promise.all(
-          jobs.map((job) => getUserJobFit(userId, job.id))
-        )
 
         if (!cancelled) {
           setData(

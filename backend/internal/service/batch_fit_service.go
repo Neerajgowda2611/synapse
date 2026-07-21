@@ -118,28 +118,23 @@ func (s *BatchFitService) BatchFitByXintSource(ctx context.Context, sourceApp st
 		return nil, ErrJobNotFound
 	}
 
-	rewardSystems, err := metric.LoadRewardSystems(ctx, s.rewardRepo)
+	rewardSystem, err := metric.LoadRewardSystem(ctx, s.rewardRepo, job.RewardSystemID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("reward system not found: %s", job.RewardSystemID)
+		}
 		return nil, err
-	}
-	rewardSystem, ok := rewardSystems[job.RewardSystemID]
-	if !ok {
-		return nil, fmt.Errorf("reward system not found: %s", job.RewardSystemID)
 	}
 
-	users, err := s.userRepo.ListByEmails(ctx, req.Emails)
+	usersByEmail, err := s.userRepo.MapIDsByEmails(ctx, req.Emails)
 	if err != nil {
 		return nil, err
-	}
-	usersByEmail := make(map[string]uuid.UUID, len(users))
-	for _, user := range users {
-		usersByEmail[strings.ToLower(strings.TrimSpace(user.Email))] = user.ID
 	}
 
 	results := make([]BatchFitResultRow, 0, len(req.Emails))
 	summary := BatchFitSummary{Requested: len(req.Emails)}
 	for _, requestedEmail := range req.Emails {
-		normalizedEmail := strings.ToLower(strings.TrimSpace(requestedEmail))
+		normalizedEmail := repository.NormalizeEmail(requestedEmail)
 		row := BatchFitResultRow{
 			Email: requestedEmail,
 		}

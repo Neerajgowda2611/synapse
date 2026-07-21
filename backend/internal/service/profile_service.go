@@ -133,7 +133,11 @@ func (s *MetricService) ListJobsWithCriteria(ctx context.Context, learnerInstitu
 	if err != nil {
 		return nil, err
 	}
-	rewardSystems, err := metric.LoadRewardSystems(ctx, s.rewardRepo)
+	rewardIDs := make([]string, 0, len(jobs))
+	for _, job := range jobs {
+		rewardIDs = append(rewardIDs, job.RewardSystemID)
+	}
+	rewardSystems, err := metric.LoadRewardSystemsByIDs(ctx, s.rewardRepo, rewardIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -162,13 +166,12 @@ func (s *MetricService) GetJobWithCriteria(ctx context.Context, jobID uuid.UUID,
 	if job.TargetKind != model.JobTargetKindJob {
 		return nil, ErrJobNotFound
 	}
-	rewardSystems, err := metric.LoadRewardSystems(ctx, s.rewardRepo)
+	rs, err := metric.LoadRewardSystem(ctx, s.rewardRepo, job.RewardSystemID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("reward system not found: %s", job.RewardSystemID)
+		}
 		return nil, err
-	}
-	rs, ok := rewardSystems[job.RewardSystemID]
-	if !ok {
-		return nil, fmt.Errorf("reward system not found: %s", job.RewardSystemID)
 	}
 	jc := toJobWithCriteria(*job, rs)
 	return &jc, nil
@@ -257,6 +260,95 @@ func (s *MetricService) GetUserJobFit(ctx context.Context, userID, jobID uuid.UU
 		return nil, err
 	}
 	return buildJobFitResponse(result), nil
+}
+
+func (s *MetricService) ListUserJobFits(ctx context.Context, userID uuid.UUID, asOf time.Time, learnerInstitutionID *uuid.UUID) ([]JobFitResponse, error) {
+	jobs, err := s.jobRepo.ListActiveForInstitution(ctx, learnerInstitutionID)
+	if err != nil {
+		return nil, err
+	}
+	if len(jobs) == 0 {
+		return []JobFitResponse{}, nil
+	}
+
+	rewardIDs := make([]string, 0, len(jobs))
+	seen := make(map[string]struct{}, len(jobs))
+	for _, job := range jobs {
+		if _, ok := seen[job.RewardSystemID]; ok {
+			continue
+		}
+		seen[job.RewardSystemID] = struct{}{}
+		rewardIDs = append(rewardIDs, job.RewardSystemID)
+	}
+	rewardSystems, err := metric.LoadRewardSystemsByIDs(ctx, s.rewardRepo, rewardIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	estimateRows, _, err := s.estimateRepo.LatestByUser(ctx, userID, asOf)
+	derived := false
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+	estimates, err := parseEstimateRows(estimateRows)
+	if err != nil {
+		return nil, err
+	}
+	if len(estimates) == 0 {
+		_, estimates, ensureErr := s.EnsureUserTraits(ctx, userID, asOf, "metric:auto-ensure-user-traits")
+		if ensureErr != nil {
+			return nil, ensureErr
+		}
+		derived = true
+		if len(estimates) == 0 {
+			return nil, fmt.Errorf("no construct estimates generated for user %s", userID.String())
+		}
+	}
+
+	out := make([]JobFitResponse, 0, len(jobs))
+	persistScores := make([]rewardScorePersist, 0, len(jobs))
+	seenRewardPersist := make(map[string]struct{}, len(jobs))
+	for i := range jobs {
+		job := &jobs[i]
+		rs, ok := rewardSystems[job.RewardSystemID]
+		if !ok {
+			return nil, fmt.Errorf("reward system not found: %s", job.RewardSystemID)
+		}
+		score, readings := metric.ScoreRewardSystem(rs, estimates, userID)
+		// One reward_scores row per reward system (unique on run_id + user + system).
+		if _, seen := seenRewardPersist[rs.ID]; !seen {
+			seenRewardPersist[rs.ID] = struct{}{}
+			persistScores = append(persistScores, rewardScorePersist{
+				RewardSystemID: rs.ID,
+				Score:          score,
+				Readings:       readings,
+			})
+		}
+		result := &JobFitResult{
+			JobID:         job.ID,
+			JobTitle:      job.Title,
+			AsOf:          asOf,
+			RewardID:      rs.ID,
+			MetricWeights: rs.MetricWeights,
+			Score:         score,
+			Readings:      readings,
+			Estimates:     estimates,
+			WasDerived:    derived,
+		}
+		out = append(out, *buildJobFitResponse(result))
+	}
+
+	if _, err := s.persistFitMetricRun(
+		ctx,
+		userID,
+		asOf,
+		"api:list-user-job-fits",
+		len(estimates),
+		persistScores,
+	); err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (s *MetricService) GetTraitEvidence(ctx context.Context, userID uuid.UUID, trait string, asOf time.Time) (*TraitEvidenceResponse, error) {

@@ -237,6 +237,13 @@ export function refreshUserTraits(userId: string) {
   return api.post<RefreshTraitsResponse>(`/api/v1/users/${userId}/traits/refresh`, {})
 }
 
+export function listUserJobFits(userId: string, asOf?: string) {
+  const query = asOf ? `?as_of=${encodeURIComponent(asOf)}` : ""
+  return api.get<{ data: JobFitResponse[]; as_of: string }>(
+    `/api/v1/users/${userId}/jobs/fit${query}`
+  )
+}
+
 export function getUserJobFit(userId: string, jobId: string) {
   return api.get<JobFitResponse>(`/api/v1/users/${userId}/jobs/${jobId}/fit`)
 }

@@ -34,6 +34,14 @@ function clampPercent(value: number) {
   return Math.max(0, Math.min(100, value))
 }
 
+function importanceLabel(
+  weightSharePercent: number
+): "High" | "Medium" | "Low" {
+  if (weightSharePercent >= 30) return "High"
+  if (weightSharePercent >= 15) return "Medium"
+  return "Low"
+}
+
 function ProjectFitError({ message }: { message: string }) {
   return (
     <main className="grid min-h-screen place-items-center bg-muted/20 px-4">
@@ -56,7 +64,36 @@ function ProjectFitError({ message }: { message: string }) {
   )
 }
 
+function ComparisonBar({
+  label,
+  value,
+  tone = "learner",
+}: {
+  label: string
+  value: number
+  tone?: "learner" | "weight"
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>{label}</span>
+        <span className="font-medium tabular-nums text-foreground">{value}%</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-muted">
+        <div
+          className={
+            tone === "weight" ? "h-full rounded-full bg-chart-3" : "h-full rounded-full bg-chart-2"
+          }
+          style={{ width: `${clampPercent(value)}%` }}
+        />
+      </div>
+    </div>
+  )
+}
+
 function TraitFitCard({ trait }: { trait: ProjectFitTraitDetail }) {
+  const importance = importanceLabel(trait.weight_share_percent)
+
   return (
     <Card>
       <CardHeader className="border-b">
@@ -69,9 +106,12 @@ function TraitFitCard({ trait }: { trait: ProjectFitTraitDetail }) {
                 : `${trait.weight_share_percent}% of this project's scoring weight`}
             </CardDescription>
           </div>
-          <Badge variant={trait.missing ? "outline" : "secondary"}>
-            {trait.missing ? "Missing data" : `${trait.fit_percent}% trait fit`}
-          </Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline">{importance} importance</Badge>
+            <Badge variant={trait.missing ? "outline" : "secondary"}>
+              {trait.missing ? "Missing data" : `${trait.fit_percent}% trait fit`}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -85,7 +125,9 @@ function TraitFitCard({ trait }: { trait: ProjectFitTraitDetail }) {
             <p className="mt-1 text-xl font-semibold tabular-nums">
               {trait.weight_share_percent}%
             </p>
-            <p className="text-xs text-muted-foreground">Weight {trait.weight}</p>
+            <p className="text-xs text-muted-foreground">
+              {importance} · weight {trait.weight}
+            </p>
           </div>
           <div className="rounded-lg bg-muted/40 p-3">
             <p className="text-xs text-muted-foreground">Overall contribution</p>
@@ -95,17 +137,13 @@ function TraitFitCard({ trait }: { trait: ProjectFitTraitDetail }) {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Learner profile level</span>
-            <span>{trait.trait_percent}%</span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-chart-2"
-              style={{ width: `${clampPercent(trait.trait_percent)}%` }}
-            />
-          </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <ComparisonBar label="Learner profile level" value={trait.trait_percent} />
+          <ComparisonBar
+            label="Project weight share"
+            value={trait.weight_share_percent}
+            tone="weight"
+          />
         </div>
 
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
@@ -160,6 +198,13 @@ export function ProjectFitView() {
   if (error) return <ProjectFitError message={error} />
   if (!data) return <AuthLoadingState title="Loading project fit" />
 
+  const rankedTraits = [...data.traits].sort((a, b) => {
+    if (a.contribution_percent !== b.contribution_percent) {
+      return b.contribution_percent - a.contribution_percent
+    }
+    return a.trait.localeCompare(b.trait)
+  })
+
   return (
     <main className="min-h-screen bg-muted/20">
       <div className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6 sm:py-12">
@@ -193,7 +238,13 @@ export function ProjectFitView() {
                     <CircleCheck className="size-4" />
                     All selected traits available
                   </span>
-                ) : null}
+                ) : (
+                  <span className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400">
+                    <CircleAlert className="size-4" />
+                    {data.missing_traits.length} trait
+                    {data.missing_traits.length === 1 ? "" : "s"} missing evidence
+                  </span>
+                )}
               </div>
             </div>
 
@@ -212,16 +263,33 @@ export function ProjectFitView() {
           </CardContent>
         </Card>
 
+        {data.missing_traits.length > 0 ? (
+          <Card className="border-amber-500/30 bg-amber-500/5">
+            <CardContent className="flex items-start gap-3 py-4">
+              <CircleAlert className="mt-0.5 size-4 shrink-0 text-amber-700 dark:text-amber-400" />
+              <div>
+                <p className="text-sm font-medium">Some project traits lack evidence</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {data.missing_traits.map(traitLabel).join(", ")}{" "}
+                  {data.missing_traits.length === 1 ? "is" : "are"} selected by this project but
+                  do not yet have enough learner signals. Fit may improve as more activity is
+                  observed.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
+
         <div>
           <h2 className="font-heading text-xl font-semibold">Why this fit score</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            The learner profile is compared only with the traits and weights selected for this
-            project.
+            Traits are ranked by contribution so you can see how the learner profile compares
+            with this project&apos;s selected weights.
           </p>
         </div>
 
         <div className="grid gap-4">
-          {data.traits.map((trait) => (
+          {rankedTraits.map((trait) => (
             <TraitFitCard key={trait.trait} trait={trait} />
           ))}
         </div>
