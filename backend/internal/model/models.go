@@ -499,20 +499,29 @@ func (RewardSystem) TableName() string {
 	return "reward_system"
 }
 
+type JobTargetKind string
+
+const (
+	JobTargetKindJob           JobTargetKind = "job"
+	JobTargetKindCareerProfile JobTargetKind = "career_profile"
+	JobTargetKindProject       JobTargetKind = "project"
+)
+
 type Job struct {
-	ID             uuid.UUID  `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
-	Title          string     `gorm:"not null" json:"title"`
-	CompanyName    *string    `json:"company_name,omitempty"`
-	Subtitle       *string    `json:"subtitle,omitempty"`
-	ExternalURL    *string    `json:"external_url,omitempty"`
-	RewardSystemID string     `gorm:"not null;index" json:"reward_system_id"`
-	InstitutionID  *uuid.UUID `gorm:"type:uuid;index" json:"institution_id,omitempty"`
-	SourceApp      *string    `json:"source_app,omitempty"`
-	XintSourceRef  *string    `json:"xint_source_ref,omitempty"`
-	CreatedBy      *uuid.UUID `gorm:"type:uuid;index" json:"created_by,omitempty"`
-	Status         string     `gorm:"not null;default:active;index" json:"status"`
-	CreatedAt      time.Time  `gorm:"not null;default:now()" json:"created_at"`
-	UpdatedAt      time.Time  `gorm:"not null;default:now()" json:"updated_at"`
+	ID             uuid.UUID     `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	Title          string        `gorm:"not null" json:"title"`
+	CompanyName    *string       `json:"company_name,omitempty"`
+	Subtitle       *string       `json:"subtitle,omitempty"`
+	ExternalURL    *string       `json:"external_url,omitempty"`
+	RewardSystemID string        `gorm:"not null;index" json:"reward_system_id"`
+	InstitutionID  *uuid.UUID    `gorm:"type:uuid;index" json:"institution_id,omitempty"`
+	SourceApp      *string       `json:"source_app,omitempty"`
+	XintSourceRef  *string       `json:"xint_source_ref,omitempty"`
+	TargetKind     JobTargetKind `gorm:"type:text;not null;default:job;index" json:"target_kind"`
+	CreatedBy      *uuid.UUID    `gorm:"type:uuid;index" json:"created_by,omitempty"`
+	Status         string        `gorm:"not null;default:active;index" json:"status"`
+	CreatedAt      time.Time     `gorm:"not null;default:now()" json:"created_at"`
+	UpdatedAt      time.Time     `gorm:"not null;default:now()" json:"updated_at"`
 }
 
 func (Job) TableName() string {

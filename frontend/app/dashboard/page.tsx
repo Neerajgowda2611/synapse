@@ -2,6 +2,8 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
+
+import { AuthLoadingState } from "@/components/auth/auth-page-state"
 import { ApiError, api } from "@/lib/api/client"
 import { clearAccessToken, getAccessToken } from "@/lib/config"
 
@@ -57,8 +59,9 @@ export default function DashboardPage() {
   }, [router])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <p className="text-gray-600">Loading...</p>
-    </div>
+    <AuthLoadingState
+      title="Preparing your workspace"
+      description="Checking your role and routing you to the right surface."
+    />
   )
 }

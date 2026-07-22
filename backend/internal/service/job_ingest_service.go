@@ -45,11 +45,19 @@ type IngestTraitWeight struct {
 }
 
 type IngestJobResult struct {
-	JobID          uuid.UUID `json:"job_id"`
-	RewardSystemID string    `json:"reward_system_id"`
-	SourceApp      string    `json:"source_app"`
-	XintSourceRef  string    `json:"xint_source_ref"`
-	Created        bool      `json:"created"`
+	JobID          uuid.UUID           `json:"job_id"`
+	RewardSystemID string              `json:"reward_system_id"`
+	SourceApp      string              `json:"source_app"`
+	XintSourceRef  string              `json:"xint_source_ref"`
+	TargetKind     model.JobTargetKind `json:"target_kind"`
+	Created        bool                `json:"created"`
+}
+
+type XintTrait struct {
+	ConstructID string `json:"construct_id"`
+	Trait       string `json:"trait"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 type JobIngestService struct {
@@ -93,6 +101,10 @@ func (s *JobIngestService) UpsertJob(ctx context.Context, sourceApp string, req 
 		req.Criteria.Traits[i].Trait = strings.TrimSpace(req.Criteria.Traits[i].Trait)
 	}
 	if err := validateIngestRequest(req); err != nil {
+		return nil, err
+	}
+	targetKind, err := inferTargetKind(sourceApp, req.XintSourceRef)
+	if err != nil {
 		return nil, err
 	}
 
@@ -149,6 +161,7 @@ func (s *JobIngestService) UpsertJob(ctx context.Context, sourceApp string, req 
 		InstitutionID:  req.InstitutionID,
 		SourceApp:      &sourceAppCopy,
 		XintSourceRef:  &xintRefCopy,
+		TargetKind:     targetKind,
 		Status:         strings.TrimSpace(req.Status),
 		UpdatedAt:      now,
 	}
@@ -190,6 +203,7 @@ func (s *JobIngestService) UpsertJob(ctx context.Context, sourceApp string, req 
 		RewardSystemID: rewardSystemID,
 		SourceApp:      sourceApp,
 		XintSourceRef:  req.XintSourceRef,
+		TargetKind:     stored.TargetKind,
 		Created:        created,
 	}, nil
 }
@@ -207,7 +221,37 @@ func (s *JobIngestService) LookupJob(ctx context.Context, sourceApp, xintSourceR
 		}
 		return nil, err
 	}
+	// Re-derive target_kind from the ref so the API reports the correct kind
+	// even for jobs stored before target_kind inference existed.
+	if kind, kindErr := inferTargetKind(sourceApp, xintSourceRef); kindErr == nil {
+		job.TargetKind = kind
+	}
 	return job, nil
+}
+
+func (s *JobIngestService) ListTraits(ctx context.Context) ([]XintTrait, error) {
+	rows, err := s.registerRepo.ListAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	traits := make([]XintTrait, 0, len(rows))
+	for _, row := range rows {
+		var spec metric.ConstructRegisterEntry
+		if err := json.Unmarshal(row.Spec, &spec); err != nil {
+			return nil, fmt.Errorf("decode construct %s: %w", row.ConstructID, err)
+		}
+		name := strings.TrimSpace(spec.Name)
+		if name == "" {
+			name = row.Trait
+		}
+		traits = append(traits, XintTrait{
+			ConstructID: row.ConstructID,
+			Trait:       row.Trait,
+			Name:        name,
+			Description: strings.TrimSpace(spec.Definition),
+		})
+	}
+	return traits, nil
 }
 
 func validateIngestRequest(req IngestJobRequest) error {
@@ -246,6 +290,38 @@ func validateIngestRequest(req IngestJobRequest) error {
 		seen[t.Trait] = struct{}{}
 	}
 	return nil
+}
+
+func inferTargetKind(sourceApp, xintSourceRef string) (model.JobTargetKind, error) {
+	sourceApp = strings.TrimSpace(sourceApp)
+	xintSourceRef = strings.TrimSpace(xintSourceRef)
+
+	var (
+		prefix string
+		kind   model.JobTargetKind
+	)
+	switch {
+	case sourceApp == "placement" && strings.HasPrefix(xintSourceRef, "placement:job:"):
+		prefix = "placement:job:"
+		kind = model.JobTargetKindJob
+	case sourceApp == "placement" && strings.HasPrefix(xintSourceRef, "placement:career_profile:"):
+		prefix = "placement:career_profile:"
+		kind = model.JobTargetKindCareerProfile
+	case sourceApp == "projex" && strings.HasPrefix(xintSourceRef, "projex:project:"):
+		prefix = "projex:project:"
+		kind = model.JobTargetKindProject
+	default:
+		return "", fmt.Errorf(
+			"%w: unsupported xint_source_ref %q for source %q",
+			ErrInvalidIngestPayload,
+			xintSourceRef,
+			sourceApp,
+		)
+	}
+	if strings.TrimSpace(strings.TrimPrefix(xintSourceRef, prefix)) == "" {
+		return "", fmt.Errorf("%w: xint_source_ref id is required", ErrInvalidIngestPayload)
+	}
+	return kind, nil
 }
 
 func (s *JobIngestService) loadValidTraits(ctx context.Context) (map[string]struct{}, error) {

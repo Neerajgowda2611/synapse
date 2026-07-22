@@ -2,14 +2,33 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { AdminShell } from "@/components/admin/admin-shell"
+
 import { Alert } from "@/components/admin/alert"
+import { DataSourceWorkspace } from "@/components/admin/data-sources/data-source-workspace"
+import { EntityMappingKpis } from "@/components/admin/data-sources/entity-mapping-kpis"
 import { LoadingState } from "@/components/admin/loading-state"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { useAdminAuth } from "@/hooks/use-admin-auth"
 import {
   DataSourceEntity,
   SchemaSnapshot,
-  getDataSource,
   getSchema,
   listEntities,
   saveEntities,
@@ -20,8 +39,7 @@ export default function EntitySelectionPage() {
   const router = useRouter()
   const params = useParams<{ id: string }>()
   const id = params.id
-  const { me, loading: authLoading } = useAdminAuth()
-  const [dataSourceName, setDataSourceName] = useState("")
+  const { loading: authLoading } = useAdminAuth()
   const [snapshot, setSnapshot] = useState<SchemaSnapshot | null>(null)
   const [entities, setEntities] = useState<DataSourceEntity[]>([])
   const [selected, setSelected] = useState<Record<string, string>>({})
@@ -33,9 +51,8 @@ export default function EntitySelectionPage() {
   useEffect(() => {
     if (authLoading) return
 
-    Promise.all([getDataSource(id), getSchema(id), listEntities(id)])
-      .then(([ds, schema, entityData]) => {
-        setDataSourceName(ds.name)
+    Promise.all([getSchema(id), listEntities(id)])
+      .then(([schema, entityData]) => {
         setSnapshot(schema)
         setEntities(entityData.data ?? [])
         setSelected(
@@ -45,11 +62,7 @@ export default function EntitySelectionPage() {
         )
       })
       .catch((err) => {
-        if (err instanceof Error) {
-          setError(err.message)
-          return
-        }
-        setError("Failed to load entities")
+        setError(err instanceof Error ? err.message : "Failed to load entities")
       })
       .finally(() => setLoading(false))
   }, [authLoading, id])
@@ -64,6 +77,7 @@ export default function EntitySelectionPage() {
     () => tableNames.filter((name) => selected[name]).length,
     [selected, tableNames]
   )
+  const skippedCount = tableNames.length - mappedCount
 
   async function submit() {
     setError("")
@@ -86,106 +100,98 @@ export default function EntitySelectionPage() {
   }
 
   if (authLoading || loading) {
-    return <LoadingState />
+    return <LoadingState label="Loading entity mappings..." />
   }
 
   return (
-    <AdminShell
-      email={me?.email}
+    <DataSourceWorkspace
+      dataSourceId={id}
       title="Map entities"
       description="Assign each source table or event type to a learner profile domain."
-      breadcrumbs={[
-        { label: "Data sources", href: "/admin" },
-        { label: dataSourceName, href: `/admin/data-sources/${id}` },
-        { label: "Entities" },
-      ]}
+      breadcrumbLabel="Entities"
+      activeSetupStep="entities"
       action={
-        <button
-          onClick={submit}
-          disabled={saving || tableNames.length === 0}
-          className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
-        >
-          {saving ? "Saving..." : "Save mappings"}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => router.push(`/admin/data-sources/${id}/schema`)}>
+            View schema
+          </Button>
+          <Button onClick={submit} disabled={saving || tableNames.length === 0}>
+            {saving ? "Saving…" : "Save mappings"}
+          </Button>
+        </div>
       }
     >
-      <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-gray-500">
-        <span>{tableNames.length} sources</span>
-        <span className="text-gray-300">·</span>
-        <span>{mappedCount} mapped</span>
-        <button
-          onClick={() => router.push(`/admin/data-sources/${id}/schema`)}
-          className="text-gray-700 underline-offset-2 hover:underline"
-        >
-          View schema
-        </button>
-      </div>
+      <EntityMappingKpis total={tableNames.length} mapped={mappedCount} skipped={skippedCount} />
 
-      {error && (
-        <div className="mb-4">
-          <Alert variant="error">{error}</Alert>
-        </div>
-      )}
-      {message && (
-        <div className="mb-4">
-          <Alert variant="success">{message}</Alert>
-        </div>
-      )}
+      {error ? <Alert variant="error">{error}</Alert> : null}
+      {message ? <Alert variant="success">{message}</Alert> : null}
 
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
-        {tableNames.length === 0 ? (
-          <div className="px-6 py-12 text-center">
-            <p className="text-sm text-gray-500">Discover schema before mapping entities.</p>
-            <button
-              onClick={() => router.push(`/admin/data-sources/${id}`)}
-              className="mt-4 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Go to setup
-            </button>
-          </div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
-                <th className="px-5 py-3 font-medium">Source</th>
-                <th className="px-5 py-3 font-medium">Profile domain</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tableNames.map((tableName) => {
-                const mapped = Boolean(selected[tableName])
-                return (
-                  <tr
-                    key={tableName}
-                    className={`border-b border-gray-100 ${mapped ? "bg-emerald-50/30" : ""}`}
-                  >
-                    <td className="px-5 py-4">
-                      <p className="font-medium text-gray-900">{tableName}</p>
-                      <p className="text-xs text-gray-500">{mapped ? "Will import" : "Skipped"}</p>
-                    </td>
-                    <td className="px-5 py-4">
-                      <select
-                        value={selected[tableName] ?? ""}
-                        onChange={(e) =>
-                          setSelected((current) => ({ ...current, [tableName]: e.target.value }))
-                        }
-                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
-                      >
-                        <option value="">Do not import</option>
-                        {targetDomains.map((domain) => (
-                          <option key={domain} value={domain}>
-                            {domain}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </AdminShell>
+      <Card>
+        <CardContent className="p-0">
+          {tableNames.length === 0 ? (
+            <div className="px-6 py-12 text-center">
+              <p className="text-sm text-muted-foreground">Discover schema before mapping entities.</p>
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => router.push(`/admin/data-sources/${id}`)}
+              >
+                Go to setup
+              </Button>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Source</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Profile domain</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {tableNames.map((tableName) => {
+                  const mapped = Boolean(selected[tableName])
+                  return (
+                    <TableRow key={tableName} className={mapped ? "bg-chart-2/5" : undefined}>
+                      <TableCell>
+                        <p className="font-medium">{tableName}</p>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="font-normal">
+                          {mapped ? "Will import" : "Skipped"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="min-w-[220px]">
+                        <Select
+                          value={selected[tableName] ?? "__skip__"}
+                          onValueChange={(value) =>
+                            setSelected((current) => ({
+                              ...current,
+                              [tableName]: value === "__skip__" ? "" : value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Do not import" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__skip__">Do not import</SelectItem>
+                            {targetDomains.map((domain) => (
+                              <SelectItem key={domain} value={domain}>
+                                {domain}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </DataSourceWorkspace>
   )
 }

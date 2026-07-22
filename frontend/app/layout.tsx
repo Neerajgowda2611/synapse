@@ -1,23 +1,15 @@
 import type { Metadata } from "next"
-import { DM_Sans, Space_Mono } from "next/font/google"
-import { ThemeProvider } from "next-themes"
+import { TooltipProvider } from "@/components/ui/tooltip"
+import { APP_CONFIG } from "@/config/app-config"
+import { fontVars } from "@/lib/fonts/registry"
+import { PREFERENCE_DEFAULTS } from "@/lib/preferences/preferences-config"
+import { ThemeBootScript } from "@/scripts/theme-boot"
+import { PreferencesStoreProvider } from "@/stores/preferences/preferences-provider"
 import "./globals.css"
 
-const dmSans = DM_Sans({
-  variable: "--font-sans",
-  subsets: ["latin"],
-})
-
-const spaceMono = Space_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-  weight: ["400", "700"],
-})
-
 export const metadata: Metadata = {
-  title: "Profiler — The Learner Intelligence Platform",
-  description:
-    "Connect your institutional systems, extract AI-powered signals, and build learner profiles that capture who students really are. Beyond the resume.",
+  title: APP_CONFIG.meta.title,
+  description: APP_CONFIG.meta.description,
 }
 
 export default function RootLayout({
@@ -25,12 +17,31 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const { theme_mode, theme_preset, content_layout, navbar_style, sidebar_variant, sidebar_collapsible, font } =
+    PREFERENCE_DEFAULTS
+
   return (
-    <html lang="en" className={`${dmSans.variable} ${spaceMono.variable} h-full antialiased`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${fontVars} h-full antialiased`}
+      data-theme-mode={theme_mode}
+      data-theme-preset={theme_preset}
+      data-content-layout={content_layout}
+      data-navbar-style={navbar_style}
+      data-sidebar-variant={sidebar_variant}
+      data-sidebar-collapsible={sidebar_collapsible}
+      data-font={font}
+      suppressHydrationWarning
+    >
+      <head>
+        <ThemeBootScript />
+      </head>
       <body className="flex min-h-full flex-col bg-background font-sans text-foreground antialiased">
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-          {children}
-        </ThemeProvider>
+        <TooltipProvider>
+          <PreferencesStoreProvider initialValues={PREFERENCE_DEFAULTS}>
+            {children}
+          </PreferencesStoreProvider>
+        </TooltipProvider>
       </body>
     </html>
   )

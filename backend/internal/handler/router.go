@@ -91,7 +91,10 @@ func RegisterRoutes(
 	authxHandler := NewAuthxHandler(authxSvc, authxEnabled)
 	xintResolver := xint.NewResolver(userRepo)
 	jobIngestService := service.NewJobIngestService(db, jobRepo, rewardRepo, institutionRepo, registerRepo)
-	xintHandler := NewXintHandler(xintResolver, jobIngestService)
+	batchFitService := service.NewBatchFitService(jobRepo, userRepo, rewardRepo, metricService, xintCfg.ProfileLinkSigner)
+	projectFitService := service.NewProjectFitService(jobRepo, userRepo, rewardRepo, metricService, xintCfg.ProfileLinkSigner)
+	xintHandler := NewXintHandler(xintResolver, jobIngestService, batchFitService)
+	projectFitHandler := NewProjectFitHandler(projectFitService)
 	institutionHandler := NewInstitutionHandler(institutionService)
 	institutionUserHandler := NewInstitutionUserHandler(institutionUserService, enforcer)
 	dataSourceHandler := NewDataSourceHandler(dataSourceService)
@@ -123,9 +126,11 @@ func RegisterRoutes(
 	xintGroup := api.Group("/xint", middleware.RequireXint(xintCfg))
 	{
 		xintGroup.GET("/health", xintHandler.Health)
+		xintGroup.GET("/traits", xintHandler.ListTraits)
 		xintGroup.GET("/users/resolve", xintHandler.ResolveUser)
 		xintGroup.POST("/jobs", xintHandler.UpsertJob)
 		xintGroup.GET("/jobs/lookup", xintHandler.LookupJob)
+		xintGroup.POST("/fit/batch", xintHandler.BatchFit)
 	}
 
 	api.GET("/connectors",
@@ -216,6 +221,8 @@ func RegisterRoutes(
 		)
 	}
 
+	api.GET("/project-fit", requireAuth, projectFitHandler.Get)
+
 	jobs := api.Group("/jobs", requireAuth, authz.Require(enforcer, authz.ResourceJobs, authz.ActionRead))
 	{
 		jobs.GET("", profileHandler.ListJobs)
@@ -227,6 +234,7 @@ func RegisterRoutes(
 		users.GET("/:userId/traits", profileHandler.ListUserTraits)
 		users.POST("/:userId/traits/refresh", profileHandler.RefreshUserTraits)
 		users.GET("/:userId/streams/activity", profileHandler.ListUserStreamActivity)
+		users.GET("/:userId/jobs/fit", profileHandler.ListUserJobFits)
 		users.GET("/:userId/jobs/:jobId/fit", profileHandler.GetUserJobFit)
 		users.GET("/:userId/traits/:trait/evidence", profileHandler.GetTraitEvidence)
 	}

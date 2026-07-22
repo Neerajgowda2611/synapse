@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 // Public routes — no auth check in proxy (token is in localStorage, checked client-side)
-const publicPaths = ["/login", "/auth/callback", "/api/auth/callback/zitadel"]
+const publicPaths = ["/login", "/auth/callback", "/logout/callback", "/api/auth/callback/zitadel"]
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl

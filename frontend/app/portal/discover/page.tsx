@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { CareerDiscoveryView } from "@/components/portal/career-discovery-view"
+import { ErrorState } from "@/components/ui/error-state"
 import { Skeleton } from "@/components/ui/skeleton"
-import { getUserJobFit, listJobs } from "@/lib/api/profiler"
+import { listJobs, listUserJobFits } from "@/lib/api/profiler"
 import { usePortalUser } from "@/contexts/portal-user-context"
 import { mapCareerDiscovery } from "@/lib/profiling/mappers"
 import type { CareerDiscoveryResponse } from "@/lib/profiling/career-discovery-types"
@@ -21,8 +22,10 @@ export default function DiscoverPage() {
       setLoading(true)
       setError(null)
       try {
-        const { data: jobs } = await listJobs()
-        const fits = await Promise.all(jobs.map((job) => getUserJobFit(userId, job.id)))
+        const [{ data: jobs }, { data: fits }] = await Promise.all([
+          listJobs(),
+          listUserJobFits(userId),
+        ])
 
         if (!cancelled) {
           setData(mapCareerDiscovery(jobs, fits))
@@ -56,19 +59,11 @@ export default function DiscoverPage() {
   }
 
   if (error) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <p className="text-muted-foreground">{error}</p>
-      </div>
-    )
+    return <ErrorState message={error} className="my-8" />
   }
 
   if (!data) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <p className="text-muted-foreground">Unable to load career discovery.</p>
-      </div>
-    )
+    return <ErrorState message="Unable to load career discovery." className="my-8" />
   }
 
   return <CareerDiscoveryView data={data} />

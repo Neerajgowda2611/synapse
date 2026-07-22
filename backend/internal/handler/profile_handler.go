@@ -118,6 +118,24 @@ func (h *ProfileHandler) GetUserJobFit(c *gin.Context) {
 	c.JSON(http.StatusOK, fit)
 }
 
+func (h *ProfileHandler) ListUserJobFits(c *gin.Context) {
+	userID, err := uuid.Parse(c.Param("userId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		return
+	}
+	if !h.canAccessUserProfile(c, userID) {
+		return
+	}
+	asOf := parseAsOf(c)
+	fits, err := h.metricService.ListUserJobFits(c.Request.Context(), userID, asOf, learnerInstitutionFilter(c))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to compute job fits"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": fits, "as_of": asOf})
+}
+
 func (h *ProfileHandler) GetTraitEvidence(c *gin.Context) {
 	userID, err := uuid.Parse(c.Param("userId"))
 	if err != nil {

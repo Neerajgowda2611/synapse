@@ -2,7 +2,20 @@
 
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { appConfig, AUTH_CODE_VERIFIER_KEY, setAccessToken } from "@/lib/config"
+
+import { AuthErrorState, AuthLoadingState } from "@/components/auth/auth-page-state"
+import {
+  appConfig,
+  AUTH_CODE_VERIFIER_KEY,
+  AUTH_REDIRECT_KEY,
+  setAccessToken,
+} from "@/lib/config"
+
+function safeRedirectPath(value: string | null): string | null {
+  if (!value) return null
+  if (value.startsWith("/") && !value.startsWith("//")) return value
+  return null
+}
 
 export function AuthCallback() {
   const searchParams = useSearchParams()
@@ -16,12 +29,12 @@ export function AuthCallback() {
       const codeVerifier = sessionStorage.getItem(AUTH_CODE_VERIFIER_KEY)
 
       if (!code) {
-        setError("Missing authorization code")
+        setError("Missing authorization code.")
         return
       }
 
       if (!codeVerifier) {
-        setError("Missing PKCE verifier — please log in again")
+        setError("Missing PKCE verifier — please sign in again.")
         return
       }
 
@@ -44,7 +57,9 @@ export function AuthCallback() {
 
         setAccessToken(accessToken)
         sessionStorage.removeItem(AUTH_CODE_VERIFIER_KEY)
-        router.replace("/dashboard")
+        const redirectPath = safeRedirectPath(sessionStorage.getItem(AUTH_REDIRECT_KEY))
+        sessionStorage.removeItem(AUTH_REDIRECT_KEY)
+        router.replace(redirectPath || "/dashboard")
       } catch {
         setError("Authentication failed. Please try again.")
       }
@@ -54,21 +69,13 @@ export function AuthCallback() {
   }, [searchParams, router])
 
   if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <a href="/login" className="text-indigo-600 hover:underline">
-            Back to login
-          </a>
-        </div>
-      </div>
-    )
+    return <AuthErrorState title="Sign in failed" error={error} />
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <p className="text-gray-600">Signing you in...</p>
-    </div>
+    <AuthLoadingState
+      title="Signing you in"
+      description="Completing authentication and preparing your workspace."
+    />
   )
 }

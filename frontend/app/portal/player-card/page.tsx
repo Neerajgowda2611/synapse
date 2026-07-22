@@ -1,8 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { getUserJobFit, listJobs } from "@/lib/api/profiler"
+import { listJobs, listUserJobFits } from "@/lib/api/profiler"
 import { PlayerCardView } from "@/components/portal/player-card-view"
+import { ErrorState } from "@/components/ui/error-state"
 import { Skeleton } from "@/components/ui/skeleton"
 import { usePortalUser } from "@/contexts/portal-user-context"
 import { mapPlayerCard } from "@/lib/profiling/mappers"
@@ -21,15 +22,14 @@ export default function PlayerCardPage() {
       setLoading(true)
       setError(null)
       try {
-        const { data: jobs } = await listJobs()
+        const [{ data: jobs }, { data: fits }] = await Promise.all([
+          listJobs(),
+          listUserJobFits(userId),
+        ])
         if (jobs.length === 0) {
           if (!cancelled) setData({ roles: [], sourceLabels: {} })
           return
         }
-
-        const fits = await Promise.all(
-          jobs.map((job) => getUserJobFit(userId, job.id))
-        )
 
         if (!cancelled) {
           setData(
@@ -67,19 +67,11 @@ export default function PlayerCardPage() {
   }
 
   if (error) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <p className="text-muted-foreground">{error}</p>
-      </div>
-    )
+    return <ErrorState message={error} className="my-8" />
   }
 
   if (!data) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <p className="text-muted-foreground">Unable to load profile.</p>
-      </div>
-    )
+    return <ErrorState message="Unable to load profile." className="my-8" />
   }
 
   return <PlayerCardView data={data} />

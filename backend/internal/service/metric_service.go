@@ -122,70 +122,26 @@ func (s *MetricService) ComputeJobFit(ctx context.Context, userID uuid.UUID, job
 	if err != nil {
 		return nil, err
 	}
-	rewardSystems, err := metric.LoadRewardSystems(ctx, s.rewardRepo)
+	rewardSystem, err := metric.LoadRewardSystem(ctx, s.rewardRepo, job.RewardSystemID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("reward system not found: %s", job.RewardSystemID)
+		}
+		return nil, err
+	}
+	score, readings, estimates, derived, err := s.scoreRewardSystemForUser(ctx, userID, rewardSystem, asOf)
 	if err != nil {
 		return nil, err
 	}
-	rewardSystem, ok := rewardSystems[job.RewardSystemID]
-	if !ok {
-		return nil, fmt.Errorf("reward system not found: %s", job.RewardSystemID)
-	}
-
-	estimateRows, _, err := s.estimateRepo.LatestByUser(ctx, userID, asOf)
-	derived := false
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
-	}
-	estimates, err := parseEstimateRows(estimateRows)
-	if err != nil {
-		return nil, err
-	}
-	if len(estimates) == 0 {
-		_, estimates, ensureErr := s.EnsureUserTraits(ctx, userID, asOf, "metric:auto-ensure-user-traits")
-		if ensureErr != nil {
-			return nil, ensureErr
-		}
-		derived = true
-		if len(estimates) == 0 {
-			return nil, fmt.Errorf("no construct estimates generated for user %s", userID.String())
-		}
-	}
-	score, readings := metric.ScoreRewardSystem(rewardSystem, estimates, userID)
 
 	runNotes := notes
 	if runNotes == "" {
 		runNotes = "metric:compute-job-fit"
 	}
-	run := &model.MetricRun{
-		AsOf:       asOf,
-		UserID:     userID,
-		NEstimates: len(estimates),
-		NScores:    1,
-		Notes:      &runNotes,
-	}
-	if err := s.metricRunRepo.Create(ctx, run); err != nil {
-		return nil, err
-	}
-
-	spec, err := json.Marshal(score)
+	run, err := s.persistFitMetricRun(ctx, userID, asOf, runNotes, len(estimates), []rewardScorePersist{
+		{RewardSystemID: rewardSystem.ID, Score: score, Readings: readings},
+	})
 	if err != nil {
-		return nil, err
-	}
-	readingsJSON, err := json.Marshal(readings)
-	if err != nil {
-		return nil, err
-	}
-	row := &model.RewardScore{
-		RunID:          run.ID,
-		UserID:         userID,
-		RewardSystemID: rewardSystem.ID,
-		Score:          score.Score,
-		CILower:        score.Confidence.Lower,
-		CIUpper:        score.Confidence.Upper,
-		Spec:           model.JSONB(spec),
-		Readings:       model.JSONB(readingsJSON),
-	}
-	if err := s.rewardScoreRepo.Upsert(ctx, row); err != nil {
 		return nil, err
 	}
 
@@ -201,6 +157,122 @@ func (s *MetricService) ComputeJobFit(ctx context.Context, userID uuid.UUID, job
 		MetricRun:     run,
 		WasDerived:    derived,
 	}, nil
+}
+
+type rewardScorePersist struct {
+	RewardSystemID string
+	Score          metric.RewardScore
+	Readings       map[string]metric.MetricReading
+}
+
+func (s *MetricService) persistFitMetricRun(
+	ctx context.Context,
+	userID uuid.UUID,
+	asOf time.Time,
+	notes string,
+	nEstimates int,
+	scores []rewardScorePersist,
+) (*model.MetricRun, error) {
+	run := &model.MetricRun{
+		AsOf:       asOf,
+		UserID:     userID,
+		NEstimates: nEstimates,
+		NScores:    len(scores),
+		Notes:      &notes,
+	}
+	if err := s.metricRunRepo.Create(ctx, run); err != nil {
+		return nil, err
+	}
+	for _, item := range scores {
+		spec, err := json.Marshal(item.Score)
+		if err != nil {
+			return nil, err
+		}
+		readingsJSON, err := json.Marshal(item.Readings)
+		if err != nil {
+			return nil, err
+		}
+		row := &model.RewardScore{
+			RunID:          run.ID,
+			UserID:         userID,
+			RewardSystemID: item.RewardSystemID,
+			Score:          item.Score.Score,
+			CILower:        item.Score.Confidence.Lower,
+			CIUpper:        item.Score.Confidence.Upper,
+			Spec:           model.JSONB(spec),
+			Readings:       model.JSONB(readingsJSON),
+		}
+		if err := s.rewardScoreRepo.Upsert(ctx, row); err != nil {
+			return nil, err
+		}
+	}
+	return run, nil
+}
+
+func (s *MetricService) ScoreJobFitForUser(ctx context.Context, userID uuid.UUID, job *model.Job, asOf time.Time) (*JobFitResult, error) {
+	rewardSystem, err := metric.LoadRewardSystem(ctx, s.rewardRepo, job.RewardSystemID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("reward system not found: %s", job.RewardSystemID)
+		}
+		return nil, err
+	}
+	return s.ScoreJobFitForUserWithRewardSystem(ctx, userID, job, rewardSystem, asOf)
+}
+
+func (s *MetricService) ScoreJobFitForUserWithRewardSystem(
+	ctx context.Context,
+	userID uuid.UUID,
+	job *model.Job,
+	rewardSystem metric.RewardSystem,
+	asOf time.Time,
+) (*JobFitResult, error) {
+	score, readings, estimates, derived, err := s.scoreRewardSystemForUser(ctx, userID, rewardSystem, asOf)
+	if err != nil {
+		return nil, err
+	}
+
+	return &JobFitResult{
+		JobID:         job.ID,
+		JobTitle:      job.Title,
+		AsOf:          asOf,
+		RewardID:      rewardSystem.ID,
+		MetricWeights: rewardSystem.MetricWeights,
+		Score:         score,
+		Readings:      readings,
+		Estimates:     estimates,
+		MetricRun:     nil,
+		WasDerived:    derived,
+	}, nil
+}
+
+func (s *MetricService) scoreRewardSystemForUser(
+	ctx context.Context,
+	userID uuid.UUID,
+	rewardSystem metric.RewardSystem,
+	asOf time.Time,
+) (metric.RewardScore, map[string]metric.MetricReading, map[string]metric.ConstructEstimate, bool, error) {
+	estimateRows, _, err := s.estimateRepo.LatestByUser(ctx, userID, asOf)
+	derived := false
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return metric.RewardScore{}, nil, nil, false, err
+	}
+	estimates, err := parseEstimateRows(estimateRows)
+	if err != nil {
+		return metric.RewardScore{}, nil, nil, false, err
+	}
+	if len(estimates) == 0 {
+		_, estimates, ensureErr := s.EnsureUserTraits(ctx, userID, asOf, "metric:auto-ensure-user-traits")
+		if ensureErr != nil {
+			return metric.RewardScore{}, nil, nil, false, ensureErr
+		}
+		derived = true
+		if len(estimates) == 0 {
+			return metric.RewardScore{}, nil, nil, false, fmt.Errorf("no construct estimates generated for user %s", userID.String())
+		}
+	}
+	score, readings := metric.ScoreRewardSystem(rewardSystem, estimates, userID)
+	return score, readings, estimates, derived, nil
 }
 
 func toScoringSignals(rows []model.Signal) ([]metric.ScoringSignal, error) {

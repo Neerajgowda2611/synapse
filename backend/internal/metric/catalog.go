@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/profiler/backend/internal/model"
 	"github.com/profiler/backend/internal/repository"
 )
 
@@ -69,6 +70,46 @@ func LoadNorms(ctx context.Context, repo *repository.MetricNormRepository) (map[
 	return out, nil
 }
 
+func LoadRewardSystem(ctx context.Context, repo *repository.RewardSystemRepository, id string) (RewardSystem, error) {
+	row, err := repo.GetByID(ctx, id)
+	if err != nil {
+		return RewardSystem{}, err
+	}
+	return parseRewardSystemRow(*row)
+}
+
+func LoadRewardSystemsByIDs(ctx context.Context, repo *repository.RewardSystemRepository, ids []string) (map[string]RewardSystem, error) {
+	unique := make([]string, 0, len(ids))
+	seen := make(map[string]struct{}, len(ids))
+	for _, id := range ids {
+		if id == "" {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		unique = append(unique, id)
+	}
+	if len(unique) == 0 {
+		return map[string]RewardSystem{}, nil
+	}
+
+	rows, err := repo.ListByIDs(ctx, unique)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]RewardSystem, len(rows))
+	for _, row := range rows {
+		rewardSystem, err := parseRewardSystemRow(row)
+		if err != nil {
+			return nil, err
+		}
+		out[rewardSystem.ID] = rewardSystem
+	}
+	return out, nil
+}
+
 func LoadRewardSystems(ctx context.Context, repo *repository.RewardSystemRepository) (map[string]RewardSystem, error) {
 	rows, err := repo.ListAll(ctx)
 	if err != nil {
@@ -76,13 +117,20 @@ func LoadRewardSystems(ctx context.Context, repo *repository.RewardSystemReposit
 	}
 	out := make(map[string]RewardSystem, len(rows))
 	for _, row := range rows {
-		var rewardSystem RewardSystem
-		if err := json.Unmarshal(row.Spec, &rewardSystem); err != nil {
+		rewardSystem, err := parseRewardSystemRow(row)
+		if err != nil {
 			return nil, err
 		}
-		rewardSystem.ID = row.ID
 		out[rewardSystem.ID] = rewardSystem
 	}
 	return out, nil
 }
 
+func parseRewardSystemRow(row model.RewardSystem) (RewardSystem, error) {
+	var rewardSystem RewardSystem
+	if err := json.Unmarshal(row.Spec, &rewardSystem); err != nil {
+		return RewardSystem{}, err
+	}
+	rewardSystem.ID = row.ID
+	return rewardSystem, nil
+}

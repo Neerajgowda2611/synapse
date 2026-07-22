@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -32,14 +33,24 @@ func RequestLogger() gin.HandlerFunc {
 	}
 }
 
-// CORS returns a middleware allowing requests from the specified origin.
-// Use a specific origin (not "*") so credentialed requests (Authorization header) work.
-func CORS(allowedOrigin string) gin.HandlerFunc {
+// Hardcoded origins allowed in addition to CORS_ALLOW_ORIGINS (temporary).
+const hardcodedCORSOrigins = "http://localhost:3000,http://localhost:3001,https://profiler-dev.xceleratordev.com,https://profiler.xceleratordemo.in"
+
+// CORS returns a middleware allowing requests from the given origin allowlist.
+// allowedOrigins is a comma-separated list (e.g. "https://a.example,https://b.example").
+// The request Origin is echoed when it matches, so credentialed requests work.
+func CORS(allowedOrigins string) gin.HandlerFunc {
+	allowed := parseOrigins(hardcodedCORSOrigins + "," + allowedOrigins)
+
 	return func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", allowedOrigin)
+		origin := c.GetHeader("Origin")
+		if origin != "" && isAllowedOrigin(origin, allowed) {
+			c.Header("Access-Control-Allow-Origin", origin)
+			c.Header("Vary", "Origin")
+			c.Header("Access-Control-Allow-Credentials", "true")
+		}
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization")
-		c.Header("Access-Control-Allow-Credentials", "true")
 
 		if c.Request.Method == http.MethodOptions {
 			c.AbortWithStatus(http.StatusNoContent)
@@ -48,4 +59,20 @@ func CORS(allowedOrigin string) gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+func parseOrigins(raw string) map[string]struct{} {
+	allowed := make(map[string]struct{})
+	for _, part := range strings.Split(raw, ",") {
+		origin := strings.TrimSpace(part)
+		if origin != "" {
+			allowed[origin] = struct{}{}
+		}
+	}
+	return allowed
+}
+
+func isAllowedOrigin(origin string, allowed map[string]struct{}) bool {
+	_, ok := allowed[origin]
+	return ok
 }

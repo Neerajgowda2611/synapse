@@ -24,6 +24,21 @@ func (r *RewardSystemRepository) GetByID(ctx context.Context, id string) (*model
 	return &row, nil
 }
 
+func (r *RewardSystemRepository) ListByIDs(ctx context.Context, ids []string) ([]model.RewardSystem, error) {
+	if len(ids) == 0 {
+		return []model.RewardSystem{}, nil
+	}
+	var rows []model.RewardSystem
+	err := r.dbWithContext(ctx).
+		Where("id IN ?", ids).
+		Order("id ASC").
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
 func (r *RewardSystemRepository) ListAll(ctx context.Context) ([]model.RewardSystem, error) {
 	var rows []model.RewardSystem
 	err := r.dbWithContext(ctx).

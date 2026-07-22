@@ -7,6 +7,7 @@ export const appConfig = {
 export const AUTH_TOKEN_KEY = "access_token"
 export const AUTH_CODE_VERIFIER_KEY = "code_verifier"
 export const AUTHX_REFRESH_TOKEN_KEY = "authx_refresh_token"
+export const AUTHX_ID_TOKEN_KEY = "authx_id_token"
 export const AUTHX_CODE_VERIFIER_KEY = "authx_code_verifier"
 export const AUTHX_OAUTH_STATE_KEY = "authx_oauth_state"
 export const AUTHX_FLOW_KEY = "authx_flow"
@@ -32,8 +33,18 @@ export function setAuthxRefreshToken(token: string) {
   window.localStorage.setItem(AUTHX_REFRESH_TOKEN_KEY, token)
 }
 
+export function getAuthxIdToken(): string | null {
+  if (typeof window === "undefined") return null
+  return window.localStorage.getItem(AUTHX_ID_TOKEN_KEY)
+}
+
+export function setAuthxIdToken(token: string) {
+  window.localStorage.setItem(AUTHX_ID_TOKEN_KEY, token)
+}
+
 export function clearAccessToken() {
   window.localStorage.removeItem(AUTH_TOKEN_KEY)
   window.localStorage.removeItem(AUTH_CODE_VERIFIER_KEY)
   window.localStorage.removeItem(AUTHX_REFRESH_TOKEN_KEY)
+  window.localStorage.removeItem(AUTHX_ID_TOKEN_KEY)
 }

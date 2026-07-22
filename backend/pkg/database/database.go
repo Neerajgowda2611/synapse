@@ -415,6 +415,7 @@ func ensureConnectorTables(db *gorm.DB) error {
 			institution_id uuid,
 			source_app text,
 			xint_source_ref text,
+			target_kind text NOT NULL DEFAULT 'job',
 			company_name text,
 			subtitle text,
 			external_url text,
@@ -422,6 +423,7 @@ func ensureConnectorTables(db *gorm.DB) error {
 			status text NOT NULL DEFAULT 'active',
 			created_at timestamptz NOT NULL DEFAULT now(),
 			updated_at timestamptz NOT NULL DEFAULT now(),
+			CONSTRAINT chk_jobs_target_kind CHECK (target_kind IN ('job', 'career_profile', 'project')),
 			CONSTRAINT fk_jobs_reward_system FOREIGN KEY (reward_system_id) REFERENCES reward_system(id) ON DELETE RESTRICT,
 			CONSTRAINT fk_jobs_institution FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE SET NULL,
 			CONSTRAINT fk_jobs_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
@@ -429,12 +431,20 @@ func ensureConnectorTables(db *gorm.DB) error {
 		`ALTER TABLE jobs ADD COLUMN IF NOT EXISTS institution_id uuid`,
 		`ALTER TABLE jobs ADD COLUMN IF NOT EXISTS source_app text`,
 		`ALTER TABLE jobs ADD COLUMN IF NOT EXISTS xint_source_ref text`,
+		`ALTER TABLE jobs ADD COLUMN IF NOT EXISTS target_kind text NOT NULL DEFAULT 'job'`,
 		`ALTER TABLE jobs ADD COLUMN IF NOT EXISTS company_name text`,
 		`ALTER TABLE jobs ADD COLUMN IF NOT EXISTS subtitle text`,
 		`ALTER TABLE jobs ADD COLUMN IF NOT EXISTS external_url text`,
+		`UPDATE jobs SET target_kind = 'career_profile' WHERE xint_source_ref LIKE 'placement:career_profile:%'`,
+		`UPDATE jobs SET target_kind = 'project' WHERE xint_source_ref LIKE 'projex:project:%'`,
+		`DO $$ BEGIN
+			ALTER TABLE jobs ADD CONSTRAINT chk_jobs_target_kind CHECK (target_kind IN ('job', 'career_profile', 'project'));
+		EXCEPTION WHEN duplicate_object THEN NULL;
+		END $$`,
 		`CREATE INDEX IF NOT EXISTS idx_jobs_reward_system_id ON jobs (reward_system_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs (status)`,
 		`CREATE INDEX IF NOT EXISTS idx_jobs_institution_id ON jobs (institution_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_jobs_target_kind ON jobs (target_kind)`,
 		// Full unique index (not partial) so ON CONFLICT (source_app, xint_source_ref) works.
 		// Seeded jobs keep both columns NULL; Postgres allows multiple NULL pairs.
 		`DROP INDEX IF EXISTS idx_jobs_xint_source`,

@@ -156,8 +156,45 @@ export interface RefreshTraitsResponse {
   n_traits: number
 }
 
+export interface ProjectFitTraitDetail {
+  trait: string
+  weight: number
+  weight_share_percent: number
+  trait_percent: number
+  fit_percent: number
+  contribution_percent: number
+  usable: boolean
+  missing: boolean
+  confidence: ConfidenceInterval
+  evidence: EvidenceDensity
+}
+
+export interface ProjectFitDetailResponse {
+  target_id: string
+  target_kind: "project"
+  project_name: string
+  xint_source_ref: string
+  learner: {
+    id: string
+    name: string
+    email: string
+  }
+  as_of: string
+  fit_percent: number
+  score: number
+  confidence: ConfidenceInterval
+  traits: ProjectFitTraitDetail[]
+  missing_traits: string[]
+}
+
 export function getProfilerMe() {
   return api.get<ProfilerMeResponse>("/api/v1/auth/me")
+}
+
+export function getProjectFitDetail(token: string) {
+  return api.get<ProjectFitDetailResponse>(
+    `/api/v1/project-fit?token=${encodeURIComponent(token)}`
+  )
 }
 
 export function listJobs() {
@@ -175,6 +212,15 @@ export function listUserStreamActivity(userId: string, asOf?: string) {
   )
 }
 
+export async function listUserStreamActivitySafe(userId: string, asOf?: string) {
+  try {
+    return await listUserStreamActivity(userId, asOf)
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null
+    throw error
+  }
+}
+
 export interface StreamActivityObservation {
   connector: string
   observation_type: string
@@ -189,6 +235,13 @@ export function listUserTraits(userId: string, asOf?: string) {
 
 export function refreshUserTraits(userId: string) {
   return api.post<RefreshTraitsResponse>(`/api/v1/users/${userId}/traits/refresh`, {})
+}
+
+export function listUserJobFits(userId: string, asOf?: string) {
+  const query = asOf ? `?as_of=${encodeURIComponent(asOf)}` : ""
+  return api.get<{ data: JobFitResponse[]; as_of: string }>(
+    `/api/v1/users/${userId}/jobs/fit${query}`
+  )
 }
 
 export function getUserJobFit(userId: string, jobId: string) {

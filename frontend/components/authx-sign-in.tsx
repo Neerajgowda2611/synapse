@@ -3,6 +3,10 @@
 import { useState } from "react"
 import { useSearchParams } from "next/navigation"
 
+import { AuthAlert } from "@/components/auth/auth-alert"
+import { AuthShell } from "@/components/auth/auth-shell"
+import { authErrorMessage } from "@/components/auth/auth-error-messages"
+import { Button } from "@/components/ui/button"
 import { beginAuthxLogin } from "@/lib/auth/authx"
 import { AUTH_REDIRECT_KEY } from "@/lib/config"
 
@@ -51,32 +55,25 @@ export function AuthxSignIn() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-semibold text-gray-900">Profiler</h1>
-            <p className="mt-2 text-sm text-gray-500">
-              Sign in with your Xcelerator account
-            </p>
-          </div>
+    <AuthShell
+      title="Sign in to Profiler"
+      description="Use your Xcelerator account to access your learner profile and dashboards."
+    >
+      {error ? <AuthAlert message={error} className="mb-6" /> : null}
 
-          {error && (
-            <div className="mb-6 rounded-lg bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
-              {error}
-            </div>
-          )}
+      <Button
+        type="button"
+        className="w-full"
+        size="lg"
+        onClick={handleSignIn}
+        disabled={redirecting}
+      >
+        {redirecting ? "Redirecting…" : "Continue with Xcelerator"}
+      </Button>
 
-          <button
-            type="button"
-            onClick={handleSignIn}
-            disabled={redirecting}
-            className="w-full rounded-lg bg-indigo-600 px-4 py-3 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-          >
-            {redirecting ? "Redirecting…" : "Sign in with Xcelerator"}
-          </button>
-        </div>
-      </div>
-    </div>
+      <p className="mt-6 text-center text-xs text-muted-foreground">
+        You will be redirected to the Xcelerator identity provider to complete sign in.
+      </p>
+    </AuthShell>
   )
 }

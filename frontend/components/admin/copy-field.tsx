@@ -2,6 +2,11 @@
 
 import { useState } from "react"
 
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
+
 type CopyFieldProps = {
   label: string
   value: string
@@ -18,23 +23,13 @@ export function CopyField({ label, value, mono = true }: CopyFieldProps) {
   }
 
   return (
-    <div>
-      <p className="text-sm font-medium text-gray-700">{label}</p>
-      <div className="mt-1.5 flex gap-2">
-        <input
-          readOnly
-          value={value}
-          className={`w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 ${
-            mono ? "font-mono" : ""
-          }`}
-        />
-        <button
-          type="button"
-          onClick={copy}
-          className="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-        >
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <div className="flex gap-2">
+        <Input readOnly value={value} className={cn(mono && "font-mono text-xs")} />
+        <Button type="button" variant="outline" onClick={copy} className="shrink-0">
           {copied ? "Copied" : "Copy"}
-        </button>
+        </Button>
       </div>
     </div>
   )

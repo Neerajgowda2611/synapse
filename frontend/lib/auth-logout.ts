@@ -5,6 +5,7 @@ import {
   AUTHX_LOGGED_OUT_KEY,
   AUTH_REDIRECT_KEY,
   clearAccessToken,
+  getAuthxIdToken,
   getAuthxRefreshToken,
 } from "@/lib/config"
 import { isAuthxEnabled } from "@/lib/authx-config"
@@ -19,25 +20,29 @@ export async function performLogout(returnTo?: string): Promise<void> {
     if (isAuthxEnabled && refreshToken) {
       await revokeAuthxSession(refreshToken)
     }
-
-    clearAccessToken()
   }
 
   if (!isAuthxEnabled || !idpUrl) {
+    clearAccessToken()
     window.location.replace(returnTo ?? "/login")
     return
   }
 
   const destination = returnTo ?? "/login"
+  const idToken = getAuthxIdToken()
 
-  if (typeof window !== "undefined") {
-    sessionStorage.setItem(AUTH_LOGOUT_RETURN_KEY, destination)
-    sessionStorage.removeItem(AUTH_REDIRECT_KEY)
+  sessionStorage.setItem(AUTH_LOGOUT_RETURN_KEY, destination)
+  sessionStorage.removeItem(AUTH_REDIRECT_KEY)
+
+  const params = new URLSearchParams({
+    post_logout_redirect_uri: `${window.location.origin}/logout/callback`,
+  })
+  if (idToken) {
+    params.set("id_token_hint", idToken)
   }
 
-  const postLogoutRedirect = encodeURIComponent(
-    `${window.location.origin}/logout/callback`
-  )
+  // Clear local tokens after capturing id_token_hint for the IdP logout request.
+  clearAccessToken()
 
-  window.location.href = `${idpUrl.replace(/\/$/, "")}/api/oauth2/endsession?post_logout_redirect_uri=${postLogoutRedirect}`
+  window.location.href = `${idpUrl.replace(/\/$/, "")}/api/oauth2/endsession?${params.toString()}`
 }

@@ -2,6 +2,7 @@ import {
   AUTH_REDIRECT_KEY,
   AUTHX_CODE_VERIFIER_KEY,
   AUTHX_FLOW_KEY,
+  AUTHX_LOGGED_OUT_KEY,
   AUTHX_OAUTH_STATE_KEY,
 } from "@/lib/config"
 import { isAuthxEnabled } from "@/lib/authx-config"
@@ -80,6 +81,12 @@ export async function beginAuthxLogin(callbackUrl?: string): Promise<void> {
     code_challenge_method: "S256",
     state,
   })
+
+  // After an explicit logout, force the IdP to re-authenticate even if an SSO
+  // cookie is still present (covers IdPs that ignore endsession without hint).
+  if (sessionStorage.getItem(AUTHX_LOGGED_OUT_KEY) === "1") {
+    params.set("prompt", "login")
+  }
 
   window.location.href = `${idpUrl.replace(/\/$/, "")}/api/auth/oauth2/authorize?${params.toString()}`
 }

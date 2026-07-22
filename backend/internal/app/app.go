@@ -81,13 +81,26 @@ func Start() {
 	userRepo := repository.NewUserRepository(db)
 	resolver := auth.NewResolver(userRepo)
 	authxSessionService := auth.NewAuthxSessionService(userRepo, authxCfg)
+	var profileLinkSigner *xint.ProfileLinkSigner
+	if cfg.XintEnabled {
+		profileLinkSigner, err = xint.NewProfileLinkSigner(
+			cfg.ProfileLinkSigningSecret,
+			cfg.ProfileLinkTTL,
+			cfg.FrontendURL,
+		)
+		if err != nil {
+			logs.Error("failed to configure project-fit profile links", "error", err.Error())
+			os.Exit(1)
+		}
+	}
 	xintCfg := xint.Config{
-		Enabled:        cfg.XintEnabled,
-		ServiceToken:   cfg.XintServiceToken,
-		AllowedSources: xint.ParseAllowedSources(cfg.XintAllowedSources),
-		PlacementURL:   cfg.XintPlacementURL,
-		ProjexURL:      cfg.XintProjexURL,
-		ShipxURL:       cfg.XintShipxURL,
+		Enabled:           cfg.XintEnabled,
+		ServiceToken:      cfg.XintServiceToken,
+		AllowedSources:    xint.ParseAllowedSources(cfg.XintAllowedSources),
+		PlacementURL:      cfg.XintPlacementURL,
+		ProjexURL:         cfg.XintProjexURL,
+		ShipxURL:          cfg.XintShipxURL,
+		ProfileLinkSigner: profileLinkSigner,
 	}
 	if xintCfg.Enabled {
 		logs.Info("xint enabled", "allowed_sources", cfg.XintAllowedSources)

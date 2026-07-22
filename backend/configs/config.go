@@ -30,6 +30,8 @@ type Config struct {
 	XintPlacementURL             string
 	XintProjexURL                string
 	XintShipxURL                 string
+	ProfileLinkSigningSecret     string
+	ProfileLinkTTL               time.Duration
 	FrontendURL                  string
 	CORSAllowOrigins             string
 	ObservationWorkerEnabled     bool
@@ -113,6 +115,8 @@ func Load(configPath string) (*Config, error) {
 		XintPlacementURL:             os.Getenv("XINT_PLACEMENT_URL"),
 		XintProjexURL:                os.Getenv("XINT_PROJEX_URL"),
 		XintShipxURL:                 os.Getenv("XINT_SHIPX_URL"),
+		ProfileLinkSigningSecret:     getEnv("PROFILE_LINK_SIGNING_SECRET", xintServiceToken),
+		ProfileLinkTTL:               getEnvDuration("PROFILE_LINK_TTL", time.Hour),
 		FrontendURL:                  frontendURL,
 		CORSAllowOrigins:             getEnv("CORS_ALLOW_ORIGINS", frontendURL),
 		ObservationWorkerEnabled:     getEnvBool("OBSERVATION_WORKER_ENABLED", true),
