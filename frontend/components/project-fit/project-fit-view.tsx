@@ -208,10 +208,10 @@ export function ProjectFitView() {
   return (
     <main className="min-h-screen bg-muted/20">
       <div className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6 sm:py-12">
-        <Button variant="ghost" className="-ml-3" onClick={() => window.history.back()}>
+        {/* <Button variant="ghost" className="-ml-3" onClick={() => window.history.back()}>
           <ArrowLeft className="size-4" />
           Back to Projex
-        </Button>
+        </Button> */}
 
         <Card className="overflow-hidden">
           <CardContent className="grid gap-6 py-2 sm:grid-cols-[1fr_auto] sm:items-center">

@@ -34,7 +34,7 @@ func RequestLogger() gin.HandlerFunc {
 }
 
 // Hardcoded origins allowed in addition to CORS_ALLOW_ORIGINS (temporary).
-const hardcodedCORSOrigins = "http://localhost:3000,https://profiler-dev.xceleratordev.com,https://profiler.xceleratordemo.in"
+const hardcodedCORSOrigins = "http://localhost:3000,http://localhost:3001,https://profiler-dev.xceleratordev.com,https://profiler.xceleratordemo.in"
 
 // CORS returns a middleware allowing requests from the given origin allowlist.
 // allowedOrigins is a comma-separated list (e.g. "https://a.example,https://b.example").

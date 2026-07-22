@@ -221,6 +221,11 @@ func (s *JobIngestService) LookupJob(ctx context.Context, sourceApp, xintSourceR
 		}
 		return nil, err
 	}
+	// Re-derive target_kind from the ref so the API reports the correct kind
+	// even for jobs stored before target_kind inference existed.
+	if kind, kindErr := inferTargetKind(sourceApp, xintSourceRef); kindErr == nil {
+		job.TargetKind = kind
+	}
 	return job, nil
 }
 

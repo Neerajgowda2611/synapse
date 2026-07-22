@@ -118,6 +118,22 @@ func (s *BatchFitService) BatchFitByXintSource(ctx context.Context, sourceApp st
 		return nil, ErrJobNotFound
 	}
 
+	// Re-derive target_kind from the source ref so scoring + profile-link
+	// behavior never depends on a stale stored value (e.g. a job first ingested
+	// before projex target_kind inference existed). Fall back to the stored
+	// value when the ref is not a recognized pattern.
+	if kind, kindErr := inferTargetKind(sourceApp, req.XintSourceRef); kindErr == nil {
+		job.TargetKind = kind
+	}
+
+	// Re-derive target_kind from the source ref so scoring + profile-link
+	// behavior never depends on a stale stored value (e.g. a job first ingested
+	// before projex target_kind inference existed). Fall back to the stored
+	// value when the ref is not a recognized pattern.
+	if kind, kindErr := inferTargetKind(sourceApp, req.XintSourceRef); kindErr == nil {
+		job.TargetKind = kind
+	}
+
 	rewardSystem, err := metric.LoadRewardSystem(ctx, s.rewardRepo, job.RewardSystemID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
