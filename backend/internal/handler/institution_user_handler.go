@@ -4,22 +4,18 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/casbin/casbin/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/profiler/backend/internal/auth"
-	"github.com/profiler/backend/internal/authz"
-	"github.com/profiler/backend/internal/logs"
 	"github.com/profiler/backend/internal/service"
 )
 
 type InstitutionUserHandler struct {
-	service  *service.InstitutionUserService
-	enforcer *casbin.Enforcer
+	service *service.InstitutionUserService
 }
 
-func NewInstitutionUserHandler(svc *service.InstitutionUserService, enforcer *casbin.Enforcer) *InstitutionUserHandler {
-	return &InstitutionUserHandler{service: svc, enforcer: enforcer}
+func NewInstitutionUserHandler(svc *service.InstitutionUserService) *InstitutionUserHandler {
+	return &InstitutionUserHandler{service: svc}
 }
 
 type createInstitutionUserRequest struct {
@@ -67,12 +63,6 @@ func (h *InstitutionUserHandler) Create(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
 		}
 		return
-	}
-
-	// Assign the Casbin role so the user can immediately exercise permissions.
-	if err := authz.AssignRole(h.enforcer, user.UserID, user.Role, institutionID.String()); err != nil {
-		logs.Error("failed to assign casbin role", "user_id", user.UserID, "role", user.Role, "error", err)
-		// Non-fatal: the user row was created; Casbin can be repaired separately.
 	}
 
 	c.JSON(http.StatusCreated, user)

@@ -13,37 +13,60 @@ import type { ThreeStreamsResponse } from "@/lib/profiling/three-streams-types"
  * when the backend route is unavailable or returns no observations yet.
  */
 export async function loadThreeStreamsData(userId: string): Promise<ThreeStreamsResponse> {
+  const traitsPromise = loadTraits(userId)
+
   try {
-    const { data: activity } = await listUserStreamActivity(userId)
-    return mapThreeStreamsFromActivity(activity)
+    const [{ data: activity }, traits] = await Promise.all([
+      listUserStreamActivity(userId),
+      traitsPromise,
+    ])
+    return mapThreeStreamsFromActivity(activity, traits)
   } catch {
     // Stream activity endpoint may be missing on older backends — use legacy path.
   }
 
   try {
-    return await loadThreeStreamsFromTraitEvidence(userId)
+    return await loadThreeStreamsFromTraitEvidence(userId, await traitsPromise)
   } catch {
     return mapThreeStreamsFromActivity([])
   }
 }
 
-async function loadThreeStreamsFromTraitEvidence(userId: string): Promise<ThreeStreamsResponse> {
-  let traitsResponse = await listUserTraits(userId)
-
-  if (traitsResponse.data.length === 0) {
-    try {
-      await refreshUserTraits(userId)
-      traitsResponse = await listUserTraits(userId)
-    } catch {
-      return mapThreeStreamsFromActivity([])
+async function loadTraits(userId: string) {
+  try {
+    let traitsResponse = await listUserTraits(userId)
+    if (traitsResponse.data.length === 0) {
+      try {
+        await refreshUserTraits(userId)
+        traitsResponse = await listUserTraits(userId)
+      } catch {
+        return []
+      }
     }
+    return traitsResponse.data
+  } catch {
+    return []
+  }
+}
+
+async function loadThreeStreamsFromTraitEvidence(
+  userId: string,
+  traits = [] as Awaited<ReturnType<typeof loadTraits>>
+): Promise<ThreeStreamsResponse> {
+  let traitsResponse = traits
+  if (traitsResponse.length === 0) {
+    traitsResponse = await loadTraits(userId)
+  }
+
+  if (traitsResponse.length === 0) {
+    return mapThreeStreamsFromActivity([])
   }
 
   const evidenceList = (
     await Promise.all(
-      traitsResponse.data.map((trait) => getTraitEvidenceSafe(userId, trait.trait))
+      traitsResponse.map((trait) => getTraitEvidenceSafe(userId, trait.trait))
     )
   ).filter((evidence): evidence is NonNullable<typeof evidence> => evidence !== null)
 
-  return mapThreeStreams(evidenceList)
+  return mapThreeStreams(evidenceList, traitsResponse)
 }

@@ -96,11 +96,11 @@ func RegisterRoutes(
 	xintHandler := NewXintHandler(xintResolver, jobIngestService, batchFitService)
 	projectFitHandler := NewProjectFitHandler(projectFitService)
 	institutionHandler := NewInstitutionHandler(institutionService)
-	institutionUserHandler := NewInstitutionUserHandler(institutionUserService, enforcer)
+	institutionUserHandler := NewInstitutionUserHandler(institutionUserService)
 	dataSourceHandler := NewDataSourceHandler(dataSourceService)
 	webhookHandler := NewWebhookHandler(dataSourceService)
 
-	requireAuth := middleware.RequireAuth(validator, resolver, enforcer)
+	requireAuth := middleware.RequireAuth(validator, resolver)
 
 	api := router.Group("/api/v1")
 

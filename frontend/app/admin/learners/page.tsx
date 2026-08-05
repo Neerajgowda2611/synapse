@@ -19,7 +19,11 @@ export default function AdminLearnersPage() {
   const [previewLearner, setPreviewLearner] = useState<LearnerRow | null>(null)
 
   useEffect(() => {
-    if (authLoading || !me?.institution_id) return
+    if (authLoading) return
+    if (!me?.institution_id) {
+      setLoading(false)
+      return
+    }
 
     loadAdminLearners(me.institution_id)
       .then(setLearners)
@@ -41,6 +45,14 @@ export default function AdminLearnersPage() {
 
   if (authLoading || loading) {
     return <LoadingState label="Loading learners..." />
+  }
+
+  if (!me?.institution_id) {
+    return (
+      <div className="rounded-2xl border border-dashed bg-card px-6 py-16 text-center text-sm text-muted-foreground">
+        Your account is missing an institution assignment.
+      </div>
+    )
   }
 
   return (

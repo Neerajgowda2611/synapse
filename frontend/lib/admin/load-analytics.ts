@@ -1,11 +1,10 @@
 import {
   DataSource,
   SyncJob,
-  getLatestSyncJob,
   listDataSources,
   listSyncJobs,
 } from "@/lib/api/data-sources"
-import { loadAdminLearners } from "@/lib/admin/load-learners"
+import { listInstitutionUsers } from "@/lib/api/institution-users"
 
 export type AnalyticsSummary = {
   connectedSources: number
@@ -19,41 +18,56 @@ export type AnalyticsSummary = {
   ingestionTrend: Array<{ label: string; imported: number; failed: number }>
 }
 
+/** Keep analytics off the N+1 path — a few recent sources is enough for overview charts. */
+const SYNC_SAMPLE_LIMIT = 3
+const SYNC_HISTORY_LIMIT = 5
+
 function formatJobLabel(job: SyncJob) {
   const date = job.completed_at ?? job.started_at ?? job.created_at
   return new Date(date).toLocaleDateString(undefined, { month: "short", day: "numeric" })
 }
 
-async function loadSourceJobs(source: DataSource) {
-  const [latestResult, historyResult] = await Promise.all([
-    getLatestSyncJob(source.id).catch(() => ({ data: null as SyncJob | null })),
-    listSyncJobs(source.id, 8).catch(() => ({ data: [] as SyncJob[] })),
-  ])
+function pickSourcesForSyncSample(sources: DataSource[]) {
+  return [...sources]
+    .filter((source) => source.connector_definition?.slug !== "webhook")
+    .sort((a, b) => {
+      const aTime = a.last_sync_at ? new Date(a.last_sync_at).getTime() : 0
+      const bTime = b.last_sync_at ? new Date(b.last_sync_at).getTime() : 0
+      return bTime - aTime
+    })
+    .slice(0, SYNC_SAMPLE_LIMIT)
+}
 
+async function loadSourceHistory(source: DataSource) {
+  const historyResult = await listSyncJobs(source.id, SYNC_HISTORY_LIMIT).catch(() => ({
+    data: [] as SyncJob[],
+  }))
   return {
     source,
-    latest: latestResult.data,
     history: historyResult.data ?? [],
   }
 }
 
 export async function loadAnalyticsSummary(institutionId: string): Promise<AnalyticsSummary> {
-  const [sourcesResult, learners] = await Promise.all([
+  const [sourcesResult, users] = await Promise.all([
     listDataSources(institutionId),
-    loadAdminLearners(institutionId).catch(() => []),
+    listInstitutionUsers(institutionId).catch(() => []),
   ])
 
   const sources = sourcesResult.data ?? []
-  const sourceJobs = await Promise.all(sources.map(loadSourceJobs))
+  const learnerCount = users.filter((user) => user.role === "learner").length
+  const activeSources = sources.filter((source) => source.status === "active").length
+
+  const sample = pickSourcesForSyncSample(sources)
+  const sourceJobs = sample.length > 0 ? await Promise.all(sample.map(loadSourceHistory)) : []
 
   let totalRecordsImported = 0
   let totalFailedRecords = 0
-  let activeSources = 0
   const recentJobs: AnalyticsSummary["recentJobs"] = []
   const trendMap = new Map<string, { imported: number; failed: number }>()
 
-  for (const { source, latest, history } of sourceJobs) {
-    if (latest?.status === "completed") activeSources += 1
+  for (const { source, history } of sourceJobs) {
+    const latest = history[0]
     if (latest) {
       totalRecordsImported += latest.records_processed
       totalFailedRecords += latest.records_failed
@@ -70,15 +84,6 @@ export async function loadAnalyticsSummary(institutionId: string): Promise<Analy
     }
   }
 
-  const profiled = learners.filter((learner) => learner.status === "profiled")
-  const strengths = profiled
-    .map((learner) => learner.profileStrength ?? 0)
-    .filter((value) => value > 0)
-  const avgProfileStrength =
-    strengths.length > 0
-      ? Math.round(strengths.reduce((sum, value) => sum + value, 0) / strengths.length)
-      : 0
-
   const ingestionTrend = Array.from(trendMap.entries())
     .map(([label, values]) => ({ label, ...values }))
     .slice(-6)
@@ -94,9 +99,9 @@ export async function loadAnalyticsSummary(institutionId: string): Promise<Analy
     activeSources,
     totalRecordsImported,
     totalFailedRecords,
-    learnerCount: learners.length,
-    profiledLearners: profiled.length,
-    avgProfileStrength,
+    learnerCount,
+    profiledLearners: 0,
+    avgProfileStrength: 0,
     recentJobs: recentJobs.slice(0, 8),
     ingestionTrend,
   }

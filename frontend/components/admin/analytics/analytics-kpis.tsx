@@ -17,18 +17,18 @@ export function AnalyticsKpis({ summary }: AnalyticsKpisProps) {
       value: summary.totalRecordsImported.toLocaleString(),
       hint:
         summary.totalFailedRecords > 0
-          ? `${summary.totalFailedRecords.toLocaleString()} failed`
-          : "Across latest sync jobs",
+          ? `${summary.totalFailedRecords.toLocaleString()} failed (recent sample)`
+          : "From recent sync sample",
     },
     {
       label: "Learners tracked",
       value: String(summary.learnerCount),
-      hint: `${summary.profiledLearners} with profiles`,
+      hint: "Registered learner accounts",
     },
     {
       label: "Avg profile strength",
       value: summary.avgProfileStrength > 0 ? `${summary.avgProfileStrength}%` : "—",
-      hint: "From derived trait readings",
+      hint: "Open a learner preview for trait detail",
     },
   ]
 

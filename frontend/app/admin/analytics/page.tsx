@@ -23,7 +23,11 @@ export default function AdminAnalyticsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (authLoading || !me?.institution_id) return
+    if (authLoading) return
+    if (!me?.institution_id) {
+      setLoading(false)
+      return
+    }
 
     loadAnalyticsSummary(me.institution_id)
       .then(setSummary)
@@ -33,6 +37,20 @@ export default function AdminAnalyticsPage() {
 
   if (authLoading || loading) {
     return <LoadingState label="Loading analytics..." />
+  }
+
+  if (!me?.institution_id) {
+    return (
+      <>
+        <PageHeader
+          title="Analytics"
+          description="Institutional intelligence across ingestion, profiles, and learner engagement."
+        />
+        <div className="rounded-2xl border border-dashed px-6 py-16 text-center text-sm text-muted-foreground">
+          Your account is missing an institution assignment.
+        </div>
+      </>
+    )
   }
 
   if (!summary) {

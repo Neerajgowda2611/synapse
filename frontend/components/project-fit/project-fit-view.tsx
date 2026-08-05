@@ -42,6 +42,53 @@ function importanceLabel(
   return "Low"
 }
 
+function targetContext(kind: ProjectFitDetailResponse["target_kind"]) {
+  switch (kind) {
+    case "career_profile":
+      return {
+        badge: "Career profile fit",
+        backLabel: "Back to Placement",
+        overallLabel: "Overall career-profile fit",
+        weightBlurb: (pct: number) => `${pct}% of this career profile's scoring weight`,
+        missingTitle: "Some career-profile traits lack evidence",
+        missingBody: (names: string, singular: boolean) =>
+          `${names} ${singular ? "is" : "are"} selected by this career profile but do not yet have enough learner signals. Fit may improve as more activity is observed.`,
+        expired: "This link has expired. Return to Placement and refresh the candidate scores.",
+        compareHint:
+          "Traits are ranked by contribution so you can see how the learner profile compares with this career profile's selected weights.",
+        sourceName: "Placement",
+      }
+    case "job":
+      return {
+        badge: "Role fit profile",
+        backLabel: "Back to Placement",
+        overallLabel: "Overall role fit",
+        weightBlurb: (pct: number) => `${pct}% of this role's scoring weight`,
+        missingTitle: "Some role traits lack evidence",
+        missingBody: (names: string, singular: boolean) =>
+          `${names} ${singular ? "is" : "are"} selected for this role but do not yet have enough learner signals. Fit may improve as more activity is observed.`,
+        expired: "This link has expired. Return to Placement and refresh the candidate scores.",
+        compareHint:
+          "Traits are ranked by contribution so you can see how the learner profile compares with this role's selected weights.",
+        sourceName: "Placement",
+      }
+    default:
+      return {
+        badge: "Project fit profile",
+        backLabel: "Back to Projex",
+        overallLabel: "Overall project fit",
+        weightBlurb: (pct: number) => `${pct}% of this project's scoring weight`,
+        missingTitle: "Some project traits lack evidence",
+        missingBody: (names: string, singular: boolean) =>
+          `${names} ${singular ? "is" : "are"} selected by this project but do not yet have enough learner signals. Fit may improve as more activity is observed.`,
+        expired: "This link has expired. Return to Projex and refresh the candidate scores.",
+        compareHint:
+          "Traits are ranked by contribution so you can see how the learner profile compares with this project's selected weights.",
+        sourceName: "Projex",
+      }
+  }
+}
+
 function ProjectFitError({ message }: { message: string }) {
   return (
     <main className="grid min-h-screen place-items-center bg-muted/20 px-4">
@@ -50,7 +97,7 @@ function ProjectFitError({ message }: { message: string }) {
           <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-destructive/10 text-destructive">
             <CircleAlert className="size-5" />
           </div>
-          <CardTitle>Unable to open project fit</CardTitle>
+          <CardTitle>Unable to open fit profile</CardTitle>
           <CardDescription>{message}</CardDescription>
         </CardHeader>
         <CardContent>
@@ -91,7 +138,13 @@ function ComparisonBar({
   )
 }
 
-function TraitFitCard({ trait }: { trait: ProjectFitTraitDetail }) {
+function TraitFitCard({
+  trait,
+  weightBlurb,
+}: {
+  trait: ProjectFitTraitDetail
+  weightBlurb: (pct: number) => string
+}) {
   const importance = importanceLabel(trait.weight_share_percent)
 
   return (
@@ -103,7 +156,7 @@ function TraitFitCard({ trait }: { trait: ProjectFitTraitDetail }) {
             <CardDescription>
               {trait.missing
                 ? "Profiler does not yet have enough evidence for this trait."
-                : `${trait.weight_share_percent}% of this project's scoring weight`}
+                : weightBlurb(trait.weight_share_percent)}
             </CardDescription>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -183,21 +236,24 @@ export function ProjectFitView() {
           return
         }
         if (requestError instanceof ApiError && requestError.status === 410) {
-          setError("This link has expired. Return to Projex and refresh the candidate scores.")
+          setError(
+            "This link has expired. Return to the source app and refresh the candidate scores."
+          )
           return
         }
         setError(
           requestError instanceof Error
             ? requestError.message
-            : "The project-fit profile could not be loaded."
+            : "The fit profile could not be loaded."
         )
       })
   }, [router, token])
 
-  if (!token) return <ProjectFitError message="This project-fit link is incomplete." />
+  if (!token) return <ProjectFitError message="This fit profile link is incomplete." />
   if (error) return <ProjectFitError message={error} />
-  if (!data) return <AuthLoadingState title="Loading project fit" />
+  if (!data) return <AuthLoadingState title="Loading fit profile" />
 
+  const copy = targetContext(data.target_kind)
   const rankedTraits = [...data.traits].sort((a, b) => {
     if (a.contribution_percent !== b.contribution_percent) {
       return b.contribution_percent - a.contribution_percent
@@ -208,15 +264,15 @@ export function ProjectFitView() {
   return (
     <main className="min-h-screen bg-muted/20">
       <div className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6 sm:py-12">
-        {/* <Button variant="ghost" className="-ml-3" onClick={() => window.history.back()}>
+        <Button variant="ghost" className="-ml-3" onClick={() => window.history.back()}>
           <ArrowLeft className="size-4" />
-          Back to Projex
-        </Button> */}
+          {copy.backLabel}
+        </Button>
 
         <Card className="overflow-hidden">
           <CardContent className="grid gap-6 py-2 sm:grid-cols-[1fr_auto] sm:items-center">
             <div className="space-y-4">
-              <Badge variant="outline">Project fit profile</Badge>
+              <Badge variant="outline">{copy.badge}</Badge>
               <div>
                 <p className="text-sm text-muted-foreground">{data.project_name}</p>
                 <h1 className="mt-1 font-heading text-3xl font-semibold tracking-tight">
@@ -253,7 +309,7 @@ export function ProjectFitView() {
                 <span className="text-xl font-semibold tabular-nums">{data.fit_percent}%</span>
               </ProgressRing>
               <div className="max-w-40">
-                <p className="font-medium">Overall project fit</p>
+                <p className="font-medium">{copy.overallLabel}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Confidence {Math.round(data.confidence.lower * 100)}–
                   {Math.round(data.confidence.upper * 100)}%
@@ -268,12 +324,12 @@ export function ProjectFitView() {
             <CardContent className="flex items-start gap-3 py-4">
               <CircleAlert className="mt-0.5 size-4 shrink-0 text-amber-700 dark:text-amber-400" />
               <div>
-                <p className="text-sm font-medium">Some project traits lack evidence</p>
+                <p className="text-sm font-medium">{copy.missingTitle}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {data.missing_traits.map(traitLabel).join(", ")}{" "}
-                  {data.missing_traits.length === 1 ? "is" : "are"} selected by this project but
-                  do not yet have enough learner signals. Fit may improve as more activity is
-                  observed.
+                  {copy.missingBody(
+                    data.missing_traits.map(traitLabel).join(", "),
+                    data.missing_traits.length === 1
+                  )}
                 </p>
               </div>
             </CardContent>
@@ -282,15 +338,12 @@ export function ProjectFitView() {
 
         <div>
           <h2 className="font-heading text-xl font-semibold">Why this fit score</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Traits are ranked by contribution so you can see how the learner profile compares
-            with this project&apos;s selected weights.
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">{copy.compareHint}</p>
         </div>
 
         <div className="grid gap-4">
           {rankedTraits.map((trait) => (
-            <TraitFitCard key={trait.trait} trait={trait} />
+            <TraitFitCard key={trait.trait} trait={trait} weightBlurb={copy.weightBlurb} />
           ))}
         </div>
       </div>

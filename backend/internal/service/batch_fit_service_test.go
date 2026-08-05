@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/profiler/backend/internal/metric"
+	"github.com/profiler/backend/internal/model"
 )
 
 func TestBuildBatchFitTraitScores(t *testing.T) {
@@ -54,5 +55,26 @@ func TestBuildBatchFitTraitScores(t *testing.T) {
 	collaboration := traits[1]
 	if collaboration.ContributionPercent != 20 {
 		t.Fatalf("got collaboration contribution %v, want 20", collaboration.ContributionPercent)
+	}
+}
+
+func TestShouldIssueProfileLink(t *testing.T) {
+	cases := []struct {
+		source string
+		kind   model.JobTargetKind
+		want   bool
+	}{
+		{"projex", model.JobTargetKindProject, true},
+		{"projex", model.JobTargetKindJob, false},
+		{"placement", model.JobTargetKindCareerProfile, true},
+		{"placement", model.JobTargetKindJob, true},
+		{"placement", model.JobTargetKindProject, false},
+		{"shipx", model.JobTargetKindJob, false},
+	}
+	for _, tc := range cases {
+		got := shouldIssueProfileLink(tc.source, tc.kind)
+		if got != tc.want {
+			t.Fatalf("%s/%s: got %v, want %v", tc.source, tc.kind, got, tc.want)
+		}
 	}
 }

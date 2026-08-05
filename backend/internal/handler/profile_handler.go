@@ -192,7 +192,7 @@ func (h *ProfileHandler) canAccessUserProfile(c *gin.Context, targetUserID uuid.
 		return false
 	}
 	if ac.UserID == targetUserID {
-		allowed, err := h.enforcer.Enforce(ac.UserID.String(), ac.Domain(), authz.ResourceProfile, authz.ActionRead)
+		allowed, err := h.enforcer.Enforce(ac.Role, ac.Domain(), authz.ResourceProfile, authz.ActionRead)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "authorization check failed"})
 			return false
@@ -203,7 +203,7 @@ func (h *ProfileHandler) canAccessUserProfile(c *gin.Context, targetUserID uuid.
 		}
 		return true
 	}
-	allowed, err := h.enforcer.Enforce(ac.UserID.String(), ac.Domain(), authz.ResourceUsers, authz.ActionRead)
+	allowed, err := h.enforcer.Enforce(ac.Role, ac.Domain(), authz.ResourceUsers, authz.ActionRead)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "authorization check failed"})
 		return false

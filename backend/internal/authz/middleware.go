@@ -9,8 +9,8 @@ import (
 	"github.com/profiler/backend/internal/logs"
 )
 
-// Require returns a Gin middleware that enforces (sub, dom, obj, act) via Casbin.
-// Must be placed after the RequireAuth middleware so AuthContext is available.
+// Require returns a Gin middleware that enforces (role, domain, object, action) via Casbin.
+// Must be placed after RequireAuth so AuthContext (including role from user_roles) is available.
 func Require(enforcer *casbin.Enforcer, obj, act string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ac := auth.FromContext(c.Request.Context())
@@ -19,18 +19,18 @@ func Require(enforcer *casbin.Enforcer, obj, act string) gin.HandlerFunc {
 			return
 		}
 
-		sub := ac.UserID.String()
+		role := ac.Role
 		dom := ac.Domain()
 
-		allowed, err := enforcer.Enforce(sub, dom, obj, act)
+		allowed, err := enforcer.Enforce(role, dom, obj, act)
 		if err != nil {
-			logs.Error("casbin enforce error", "error", err, "sub", sub, "dom", dom, "obj", obj, "act", act)
+			logs.Error("casbin enforce error", "error", err, "role", role, "dom", dom, "obj", obj, "act", act)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "authorization check failed"})
 			return
 		}
 
 		if !allowed {
-			logs.Info("access denied", "sub", sub, "dom", dom, "obj", obj, "act", act, "role", ac.Role)
+			logs.Info("access denied", "role", role, "dom", dom, "obj", obj, "act", act, "user_id", ac.UserID)
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 			return
 		}

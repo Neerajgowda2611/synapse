@@ -1,7 +1,9 @@
 import type {
   JobFitResponse,
   JobWithCriteria,
+  StreamActivityObservation,
   TraitEvidenceResponse,
+  UserTraitSummary,
 } from "@/lib/api/profiler"
 import type { CareerDiscoveryResponse } from "@/lib/profiling/career-discovery-types"
 import { mapJobFitBreakdown } from "@/lib/profiling/job-fit-breakdown"
@@ -13,13 +15,23 @@ import {
   observationItemText,
 } from "@/lib/profiling/evidence-labels"
 import type { PlayerCardViewData } from "@/lib/profiling/types"
-import type { StreamIcon, ThreeStreamsResponse } from "@/lib/profiling/three-streams-types"
+import type {
+  Stream,
+  StreamActivityEvent,
+  StreamIcon,
+  StreamTraitLink,
+  StreamTypeCount,
+  ThreeStreamsResponse,
+} from "@/lib/profiling/three-streams-types"
 
 const CONNECTOR_TO_STREAM: Record<string, string> = {
   vtu_placements: "vtu",
   vtu: "vtu",
+  placement: "vtu",
   projex: "projex",
   mentorship: "mentorship",
+  shipx: "mentorship",
+  ship_ee: "mentorship",
 }
 
 const STREAM_STATIC: Record<
@@ -34,7 +46,7 @@ const STREAM_STATIC: Record<
   }
 > = {
   vtu: {
-    label: "VTU",
+    label: "Placement",
     subtitle: "Career Profile",
     icon: "briefcase",
     contributes: ["Professional Profile", "Readiness", "Technical Skills"],
@@ -49,7 +61,7 @@ const STREAM_STATIC: Record<
     what_activities_show: ["Career Ready", "Professionalism", "Technical Skills"],
   },
   projex: {
-    label: "PROJEX",
+    label: "Projex",
     subtitle: "Project Experience",
     icon: "rocket",
     contributes: ["Teamwork", "Project Delivery", "Ownership"],
@@ -64,7 +76,7 @@ const STREAM_STATIC: Record<
     what_activities_show: ["Reliability", "Collaboration", "Project Ownership"],
   },
   mentorship: {
-    label: "MENTORSHIP",
+    label: "Mentorship",
     subtitle: "Growth & Guidance",
     icon: "messages-square",
     contributes: ["Continuous Learning", "Guidance", "Personal Growth"],
@@ -77,6 +89,13 @@ const STREAM_STATIC: Record<
     ],
     what_activities_show: ["Learning Mindset", "Consistency", "Growth"],
   },
+}
+
+/** Traits each stream typically feeds (aligned with construct source apps). */
+const STREAM_TRAIT_KEYS: Record<string, string[]> = {
+  vtu: ["conscientiousness", "agency", "communication", "risk_appetite"],
+  projex: ["collaboration", "agency", "conscientiousness", "creativity", "resilience"],
+  mentorship: ["help_seeking", "communication", "resilience", "collaboration"],
 }
 
 const HIGHLIGHT_RULES: Array<{
@@ -291,11 +310,32 @@ export function mapCareerDiscovery(
 }
 
 function streamIdForConnector(connector: string): string | undefined {
-  if (CONNECTOR_TO_STREAM[connector]) return CONNECTOR_TO_STREAM[connector]
+  const normalized = connector.toLowerCase()
+  if (CONNECTOR_TO_STREAM[normalized]) return CONNECTOR_TO_STREAM[normalized]
   for (const [key, streamId] of Object.entries(CONNECTOR_TO_STREAM)) {
-    if (connector.includes(key)) return streamId
+    if (normalized.includes(key)) return streamId
   }
   return undefined
+}
+
+function eventSortTime(event: { occurred_at?: string; received_at?: string }) {
+  const raw = event.received_at || event.occurred_at || ""
+  const time = new Date(raw).getTime()
+  return Number.isNaN(time) ? 0 : time
+}
+
+function toStreamEvent(obs: StreamActivityObservation): StreamActivityEvent | null {
+  if (!obs.connector || !obs.observation_type) return null
+  const fields = obs.fields ?? {}
+  return {
+    id: obs.id || `${obs.connector}:${obs.observation_type}:${obs.occurred_at}`,
+    connector: obs.connector,
+    observation_type: obs.observation_type,
+    label: formatObservationTypeLabel(obs.observation_type),
+    detail: observationItemDetail(obs.observation_type, fields) ?? undefined,
+    occurred_at: obs.occurred_at,
+    received_at: obs.received_at,
+  }
 }
 
 function aggregateHighlightsFromActivity(
@@ -333,31 +373,68 @@ function aggregateHighlightsFromActivity(
   return highlights
 }
 
-function aggregateHighlights(
-  evidenceList: TraitEvidenceResponse[]
-): Record<string, string[]> {
-  const observations: Array<{ connector: string; observation_type: string }> = []
-  for (const evidence of evidenceList) {
-    for (const signal of evidence.signals) {
-      for (const obs of signal.canonical_observations) {
-        observations.push({
-          connector: obs.source.connector,
-          observation_type: obs.observation_type,
-        })
-      }
-    }
+function traitLinksFromSummaries(traits: UserTraitSummary[]): StreamTraitLink[] {
+  return traits
+    .map((trait) => ({
+      trait: trait.trait,
+      name: formatTraitName(trait.trait),
+      score: traitPercent(trait.value),
+      evidence_count: trait.evidence?.n_observations ?? 0,
+    }))
+    .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
+}
+
+function buildTypeCounts(events: StreamActivityEvent[]): StreamTypeCount[] {
+  const counts = new Map<string, number>()
+  for (const event of events) {
+    counts.set(event.observation_type, (counts.get(event.observation_type) ?? 0) + 1)
   }
-  return aggregateHighlightsFromActivity(observations)
+  return [...counts.entries()]
+    .map(([observation_type, count]) => ({
+      observation_type,
+      label: formatObservationTypeLabel(observation_type),
+      count,
+    }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
 }
 
 export function mapThreeStreamsFromActivity(
-  observations: Array<{ connector: string; observation_type: string }>
+  observations: StreamActivityObservation[],
+  traits: UserTraitSummary[] = []
 ): ThreeStreamsResponse {
   const highlights = aggregateHighlightsFromActivity(observations)
+  const traitLinks = traitLinksFromSummaries(traits)
+  const traitByKey = new Map(traitLinks.map((t) => [t.trait, t]))
 
-  return {
-    title: "How Your Profile Is Built",
-    streams: Object.entries(STREAM_STATIC).map(([id, config]) => ({
+  const eventsByStream: Record<string, StreamActivityEvent[]> = {
+    vtu: [],
+    projex: [],
+    mentorship: [],
+  }
+
+  const allEvents: StreamActivityEvent[] = []
+  for (const obs of observations) {
+    const event = toStreamEvent(obs)
+    if (!event) continue
+    allEvents.push(event)
+    const streamId = streamIdForConnector(obs.connector)
+    if (streamId && eventsByStream[streamId]) {
+      eventsByStream[streamId].push(event)
+    }
+  }
+
+  allEvents.sort((a, b) => eventSortTime(b) - eventSortTime(a))
+  for (const streamId of Object.keys(eventsByStream)) {
+    eventsByStream[streamId].sort((a, b) => eventSortTime(b) - eventSortTime(a))
+  }
+
+  const streams: Stream[] = Object.entries(STREAM_STATIC).map(([id, config]) => {
+    const recent_events = eventsByStream[id] ?? []
+    const linked_traits = (STREAM_TRAIT_KEYS[id] ?? [])
+      .map((trait) => traitByKey.get(trait))
+      .filter((t): t is StreamTraitLink => Boolean(t))
+
+    return {
       id,
       label: config.label,
       subtitle: config.subtitle,
@@ -366,28 +443,52 @@ export function mapThreeStreamsFromActivity(
       activities_we_consider: config.activities_we_consider,
       what_activities_show: config.what_activities_show,
       recent_highlights: highlights[id] ?? [],
-    })),
+      activity_count: recent_events.length,
+      type_counts: buildTypeCounts(recent_events),
+      recent_events: recent_events.slice(0, 25),
+      linked_traits,
+    }
+  })
+
+  return {
+    title: "How Your Profile Is Built",
+    subtitle:
+      "Live activity from Placement, Projex, and Mentorship — and how it feeds your trait scores.",
+    streams,
+    recent_activity: allEvents.slice(0, 20),
+    traits: traitLinks,
   }
 }
 
 export function mapThreeStreams(
-  evidenceList: TraitEvidenceResponse[]
+  evidenceList: TraitEvidenceResponse[],
+  traits: UserTraitSummary[] = []
 ): ThreeStreamsResponse {
-  const highlights = aggregateHighlights(evidenceList)
-
-  return {
-    title: "How Your Profile Is Built",
-    streams: Object.entries(STREAM_STATIC).map(([id, config]) => ({
-      id,
-      label: config.label,
-      subtitle: config.subtitle,
-      icon: config.icon,
-      contributes: config.contributes,
-      activities_we_consider: config.activities_we_consider,
-      what_activities_show: config.what_activities_show,
-      recent_highlights: highlights[id] ?? [],
-    })),
+  const observations: StreamActivityObservation[] = []
+  for (const evidence of evidenceList) {
+    for (const signal of evidence.signals) {
+      for (const obs of signal.canonical_observations) {
+        observations.push({
+          id: obs.id,
+          connector: obs.source.connector,
+          observation_type: obs.observation_type,
+          occurred_at: obs.occurred_at,
+          received_at: obs.source.received_at,
+          fields: obs.fields,
+        })
+      }
+    }
   }
+  if (traits.length === 0) {
+    traits = evidenceList.map((e) => ({
+      trait: e.trait,
+      value: e.value,
+      confidence: e.confidence,
+      evidence: e.evidence,
+      as_of: e.as_of,
+    }))
+  }
+  return mapThreeStreamsFromActivity(observations, traits)
 }
 
 export function mapTraitEvidenceToDialog(

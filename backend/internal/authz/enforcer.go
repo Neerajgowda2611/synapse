@@ -9,8 +9,12 @@ import (
 	"gorm.io/gorm"
 )
 
-// rbacModel is the Casbin model for domain-based RBAC.
-// sub = user UUID, dom = institution UUID (or "*"), obj = resource, act = action.
+// rbacModel is role-based: sub is the role from user_roles (not a user id).
+// Domains still scope requests; policies may use "*" for any domain.
+//
+// role_definition (g) is declared only because the gorm adapter may still load
+// legacy grouping rows during startup; we do not use g() in the matcher and we
+// delete those rows before serving traffic.
 const rbacModel = `
 [request_definition]
 r = sub, dom, obj, act
@@ -25,12 +29,18 @@ g = _, _, _
 e = some(where (p.eft == allow))
 
 [matchers]
-m = (g(r.sub, p.sub, r.dom) || g(r.sub, p.sub, "*")) && (r.dom == p.dom || p.dom == "*") && r.obj == p.obj && r.act == p.act
+m = r.sub == p.sub && (r.dom == p.dom || p.dom == "*") && r.obj == p.obj && r.act == p.act
 `
 
 // NewEnforcer creates a Casbin enforcer backed by the Postgres DB (gorm-adapter).
-// It seeds default role policies on every startup.
+// It stores only role→permission policies. User→role assignment lives in user_roles.
 func NewEnforcer(db *gorm.DB) (*casbin.Enforcer, error) {
+	// Remove legacy per-user grouping rows before LoadPolicy so startup does not
+	// depend on them (and so we never enforce via user→role g rules).
+	if err := db.Exec(`DELETE FROM casbin_rule WHERE ptype = 'g'`).Error; err != nil {
+		return nil, fmt.Errorf("clearing grouping policies: %w", err)
+	}
+
 	adapter, err := gormadapter.NewAdapterByDB(db)
 	if err != nil {
 		return nil, fmt.Errorf("casbin gorm adapter: %w", err)

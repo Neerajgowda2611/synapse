@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -26,6 +27,14 @@ type MetricService struct {
 	metricRunRepo   *repository.MetricRunRepository
 	estimateRepo    *repository.ConstructEstimateRepository
 	rewardScoreRepo *repository.RewardScoreRepository
+
+	// Scoring catalogs change rarely (seeded rulebook). Cache for process lifetime
+	// so batch fit / auto-ensure do not re-load them for every user.
+	catalogOnce sync.Once
+	catalogErr  error
+	claims      metric.ClaimRegistry
+	register    metric.ConstructRegister
+	norms       map[string]metric.NormSpec
 }
 
 type JobFitResult struct {
@@ -70,28 +79,29 @@ func NewMetricService(
 }
 
 func (s *MetricService) EnsureUserTraits(ctx context.Context, userID uuid.UUID, asOf time.Time, notes string) (*model.MetricRun, map[string]metric.ConstructEstimate, error) {
-	claims, err := metric.LoadClaimRegistry(ctx, s.claimRepo)
-	if err != nil {
-		return nil, nil, err
-	}
-	register, err := metric.LoadConstructRegister(ctx, s.registerRepo)
-	if err != nil {
-		return nil, nil, err
-	}
-	norms, err := metric.LoadNorms(ctx, s.normRepo)
-	if err != nil {
-		return nil, nil, err
-	}
+	// Load signals first. Users with no activity cannot produce traits — avoid
+	// catalog loads + empty metric_run inserts (common on xint/fit/batch).
 	signals, err := s.signalRepo.ListByUserBefore(ctx, userID, asOf)
 	if err != nil {
 		return nil, nil, err
 	}
 	signals = s.signalRepo.DedupeLatestBySignalType(signals)
+	if len(signals) == 0 {
+		return nil, map[string]metric.ConstructEstimate{}, nil
+	}
+
+	claims, register, norms, err := s.loadScoringCatalog(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
 	scoringSignals, err := toScoringSignals(signals)
 	if err != nil {
 		return nil, nil, err
 	}
 	estimates := metric.RunTraitPipeline(scoringSignals, claims, register, norms, userID, asOf)
+	if len(estimates) == 0 {
+		return nil, map[string]metric.ConstructEstimate{}, nil
+	}
 
 	runNotes := notes
 	if runNotes == "" {
@@ -117,6 +127,33 @@ func (s *MetricService) EnsureUserTraits(ctx context.Context, userID uuid.UUID, 
 	return run, estimates, nil
 }
 
+func (s *MetricService) loadScoringCatalog(ctx context.Context) (metric.ClaimRegistry, metric.ConstructRegister, map[string]metric.NormSpec, error) {
+	s.catalogOnce.Do(func() {
+		claims, err := metric.LoadClaimRegistry(ctx, s.claimRepo)
+		if err != nil {
+			s.catalogErr = err
+			return
+		}
+		register, err := metric.LoadConstructRegister(ctx, s.registerRepo)
+		if err != nil {
+			s.catalogErr = err
+			return
+		}
+		norms, err := metric.LoadNorms(ctx, s.normRepo)
+		if err != nil {
+			s.catalogErr = err
+			return
+		}
+		s.claims = claims
+		s.register = register
+		s.norms = norms
+	})
+	if s.catalogErr != nil {
+		return metric.ClaimRegistry{}, metric.ConstructRegister{}, nil, s.catalogErr
+	}
+	return s.claims, s.register, s.norms, nil
+}
+
 func (s *MetricService) ComputeJobFit(ctx context.Context, userID uuid.UUID, jobID uuid.UUID, asOf time.Time, notes string) (*JobFitResult, error) {
 	job, err := s.jobRepo.GetByID(ctx, jobID)
 	if err != nil {
@@ -129,7 +166,7 @@ func (s *MetricService) ComputeJobFit(ctx context.Context, userID uuid.UUID, job
 		}
 		return nil, err
 	}
-	score, readings, estimates, derived, err := s.scoreRewardSystemForUser(ctx, userID, rewardSystem, asOf)
+	score, readings, estimates, derived, err := s.scoreRewardSystemForUser(ctx, userID, rewardSystem, asOf, true)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +254,7 @@ func (s *MetricService) ScoreJobFitForUser(ctx context.Context, userID uuid.UUID
 		}
 		return nil, err
 	}
-	return s.ScoreJobFitForUserWithRewardSystem(ctx, userID, job, rewardSystem, asOf)
+	return s.ScoreJobFitForUserWithRewardSystem(ctx, userID, job, rewardSystem, asOf, true)
 }
 
 func (s *MetricService) ScoreJobFitForUserWithRewardSystem(
@@ -226,8 +263,9 @@ func (s *MetricService) ScoreJobFitForUserWithRewardSystem(
 	job *model.Job,
 	rewardSystem metric.RewardSystem,
 	asOf time.Time,
+	autoEnsureTraits bool,
 ) (*JobFitResult, error) {
-	score, readings, estimates, derived, err := s.scoreRewardSystemForUser(ctx, userID, rewardSystem, asOf)
+	score, readings, estimates, derived, err := s.scoreRewardSystemForUser(ctx, userID, rewardSystem, asOf, autoEnsureTraits)
 	if err != nil {
 		return nil, err
 	}
@@ -251,6 +289,7 @@ func (s *MetricService) scoreRewardSystemForUser(
 	userID uuid.UUID,
 	rewardSystem metric.RewardSystem,
 	asOf time.Time,
+	autoEnsureTraits bool,
 ) (metric.RewardScore, map[string]metric.MetricReading, map[string]metric.ConstructEstimate, bool, error) {
 	estimateRows, _, err := s.estimateRepo.LatestByUser(ctx, userID, asOf)
 	derived := false
@@ -262,6 +301,9 @@ func (s *MetricService) scoreRewardSystemForUser(
 		return metric.RewardScore{}, nil, nil, false, err
 	}
 	if len(estimates) == 0 {
+		if !autoEnsureTraits {
+			return metric.RewardScore{}, nil, nil, false, fmt.Errorf("no construct estimates generated for user %s", userID.String())
+		}
 		_, estimates, ensureErr := s.EnsureUserTraits(ctx, userID, asOf, "metric:auto-ensure-user-traits")
 		if ensureErr != nil {
 			return metric.RewardScore{}, nil, nil, false, ensureErr

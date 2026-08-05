@@ -3,7 +3,6 @@ package authz
 import (
 	"github.com/casbin/casbin/v3"
 	"github.com/profiler/backend/internal/auth"
-	"gorm.io/gorm"
 )
 
 // Resources
@@ -26,9 +25,8 @@ const (
 	ActionDelete = "delete"
 )
 
-// seedPolicies adds default role-based policies (p rules) on startup.
-// These define what each role is allowed to do; user-role assignments (g rules)
-// are added at user provisioning/login time.
+// seedPolicies adds default role→permission policies (p rules) on startup.
+// User→role assignment is not stored in Casbin; it comes from user_roles at request time.
 func seedPolicies(e *casbin.Enforcer) error {
 	policies := [][]string{
 		// Platform admin — full access globally
@@ -92,107 +90,19 @@ func seedPolicies(e *casbin.Enforcer) error {
 		{auth.RoleLearner, "*", ResourceJobs, ActionRead},
 	}
 
+	changed := false
 	for _, p := range policies {
-		if _, err := e.AddPolicy(p[0], p[1], p[2], p[3]); err != nil {
+		added, err := e.AddPolicy(p[0], p[1], p[2], p[3])
+		if err != nil {
 			return err
 		}
-	}
-
-	return e.SavePolicy()
-}
-
-func roleDomains(institutionID *string) []string {
-	if institutionID != nil && *institutionID != "" {
-		return []string{*institutionID, "*"}
-	}
-	return []string{"*"}
-}
-
-func assignRoleInDomains(e *casbin.Enforcer, userID, role, institutionID string) error {
-	domains := roleDomains(nil)
-	if institutionID != "" && institutionID != "*" {
-		domains = roleDomains(&institutionID)
-	}
-	seen := make(map[string]struct{}, len(domains))
-	for _, domain := range domains {
-		if _, ok := seen[domain]; ok {
-			continue
-		}
-		seen[domain] = struct{}{}
-		if _, err := e.AddRoleForUserInDomain(userID, role, domain); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// AssignRole adds Casbin g rules for a user in their institution domain and globally.
-func AssignRole(e *casbin.Enforcer, userID, role, domain string) error {
-	if err := assignRoleInDomains(e, userID, role, domain); err != nil {
-		return err
-	}
-	return e.SavePolicy()
-}
-
-// RemoveRole removes a g rule for a user in a domain.
-func RemoveRole(e *casbin.Enforcer, userID, role, domain string) error {
-	_, err := e.DeleteRoleForUserInDomain(userID, role, domain)
-	return err
-}
-
-// SyncRolesFromDB rebuilds Casbin G-rules from user_roles on startup.
-// It replaces all grouping policies so stale roles (e.g. after a role change in
-// SQL) cannot linger and cause authorization mismatches.
-func SyncRolesFromDB(db *gorm.DB, e *casbin.Enforcer) error {
-	var rows []struct {
-		UserID        string  `gorm:"column:user_id"`
-		Role          string  `gorm:"column:role"`
-		InstitutionID *string `gorm:"column:institution_id"`
-	}
-
-	if err := db.Raw(`
-		SELECT user_id::text, role, institution_id::text
-		FROM user_roles
-		WHERE status = 'active'
-	`).Scan(&rows).Error; err != nil {
-		return err
-	}
-
-	grouping, err := e.GetGroupingPolicy()
-	if err != nil {
-		return err
-	}
-	for _, rule := range grouping {
-		if len(rule) < 3 {
-			continue
-		}
-		if _, err := e.RemoveGroupingPolicy(rule[0], rule[1], rule[2]); err != nil {
-			return err
+		if added {
+			changed = true
 		}
 	}
 
-	for _, r := range rows {
-		institutionID := ""
-		if r.InstitutionID != nil {
-			institutionID = *r.InstitutionID
-		}
-		if err := assignRoleInDomains(e, r.UserID, r.Role, institutionID); err != nil {
-			return err
-		}
-	}
-
-	return e.SavePolicy()
-}
-
-// EnsureUserRoles idempotently syncs Casbin g rules for the authenticated user.
-// Called on each request so role assignments stay aligned with user_roles.
-func EnsureUserRoles(e *casbin.Enforcer, ac *auth.AuthContext) error {
-	institutionID := ""
-	if ac.InstitutionID != nil {
-		institutionID = ac.InstitutionID.String()
-	}
-	if err := assignRoleInDomains(e, ac.UserID.String(), ac.Role, institutionID); err != nil {
-		return err
+	if !changed {
+		return nil
 	}
 	return e.SavePolicy()
 }

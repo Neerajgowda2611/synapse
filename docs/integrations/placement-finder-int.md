@@ -67,7 +67,20 @@ Rules:
       "email": "student1@college.edu",
       "status": "available",
       "fit_percent": 86.5,
-      "score": 0.865
+      "score": 0.865,
+      "user_id": "721480a9-97d9-4cb8-88cd-cf2ab16f52eb",
+      "profile_url": "https://profiler.example.com/project-fit?token=<signed-token>",
+      "traits": [
+        {
+          "trait": "agency",
+          "weight": 0.7,
+          "trait_percent": 90.0,
+          "fit_percent": 90.0,
+          "contribution_percent": 25.0,
+          "usable": true,
+          "missing": false
+        }
+      ]
     },
     {
       "email": "student2@college.edu",
@@ -88,6 +101,13 @@ Rules:
 - `available` -> fit computed successfully
 - `unavailable` -> user not found or no usable scoring data
 - `error` -> per-row processing failure (request still returns 200)
+
+For available Placement results (`career_profile` or `job` targets):
+
+- `profile_url` is a short-lived signed link to Profiler's fit profile page (`/project-fit?token=...`).
+- `user_id` is the Profiler learner id for that email.
+- Do not store `profile_url` permanently; refresh via a new batch fit when a new link is needed.
+- Placement opens `profile_url` for **View profile** (user must sign in to Profiler).
 
 ---
 

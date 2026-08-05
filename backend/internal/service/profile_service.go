@@ -124,8 +124,12 @@ type TraitEvidenceResponse struct {
 }
 
 type StreamActivityObservation struct {
-	Connector       string `json:"connector"`
-	ObservationType string `json:"observation_type"`
+	ID              uuid.UUID      `json:"id"`
+	Connector       string         `json:"connector"`
+	ObservationType string         `json:"observation_type"`
+	OccurredAt      time.Time      `json:"occurred_at"`
+	ReceivedAt      *time.Time     `json:"received_at,omitempty"`
+	Fields          map[string]any `json:"fields,omitempty"`
 }
 
 func (s *MetricService) ListJobsWithCriteria(ctx context.Context, learnerInstitutionID *uuid.UUID) ([]JobWithCriteria, error) {
@@ -220,19 +224,37 @@ func (s *MetricService) ListUserStreamActivity(ctx context.Context, userID uuid.
 	if err != nil {
 		return nil, err
 	}
-	out := make([]StreamActivityObservation, 0, len(rows))
+	const maxActivity = 200
+	out := make([]StreamActivityObservation, 0, min(len(rows), maxActivity))
 	for _, row := range rows {
+		if len(out) >= maxActivity {
+			break
+		}
 		connector := ""
+		var receivedAt time.Time
 		if row.RawObservation.ID != uuid.Nil {
 			connector = row.RawObservation.SourceConnector
+			receivedAt = row.RawObservation.ReceivedAt
 		}
 		if connector == "" {
 			continue
 		}
-		out = append(out, StreamActivityObservation{
+		fields := map[string]any{}
+		if len(row.Fields) > 0 {
+			_ = json.Unmarshal(row.Fields, &fields)
+		}
+		item := StreamActivityObservation{
+			ID:              row.ID,
 			Connector:       connector,
 			ObservationType: row.ObservationType,
-		})
+			OccurredAt:      row.OccurredAt,
+			Fields:          fields,
+		}
+		if !receivedAt.IsZero() {
+			t := receivedAt
+			item.ReceivedAt = &t
+		}
+		out = append(out, item)
 	}
 	return out, nil
 }

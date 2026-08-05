@@ -84,9 +84,6 @@ func (s *ProjectFitService) GetBySignedToken(ctx context.Context, token string) 
 	if err != nil {
 		return nil, err
 	}
-	if claims.Source != "projex" {
-		return nil, ErrProjectFitTargetMismatch
-	}
 
 	job, err := s.jobRepo.GetByID(ctx, claims.TargetID)
 	if err != nil {
@@ -95,11 +92,7 @@ func (s *ProjectFitService) GetBySignedToken(ctx context.Context, token string) 
 		}
 		return nil, err
 	}
-	if job.TargetKind != model.JobTargetKindProject ||
-		job.Status != "active" ||
-		job.SourceApp == nil ||
-		strings.TrimSpace(*job.SourceApp) != claims.Source ||
-		job.XintSourceRef == nil {
+	if !profileLinkMatchesTarget(claims.Source, job) {
 		return nil, ErrProjectFitTargetMismatch
 	}
 
@@ -116,7 +109,7 @@ func (s *ProjectFitService) GetBySignedToken(ctx context.Context, token string) 
 	}
 
 	asOf := time.Now().UTC()
-	result, err := s.metricSvc.ScoreJobFitForUserWithRewardSystem(ctx, user.ID, job, rewardSystem, asOf)
+	result, err := s.metricSvc.ScoreJobFitForUserWithRewardSystem(ctx, user.ID, job, rewardSystem, asOf, true)
 	if err != nil {
 		return nil, err
 	}
@@ -169,4 +162,14 @@ func buildProjectFitTraitDetails(result *JobFitResult) []ProjectFitTraitDetail {
 		return details[i].Trait < details[j].Trait
 	})
 	return details
+}
+
+func profileLinkMatchesTarget(source string, job *model.Job) bool {
+	if job == nil || job.Status != "active" || job.SourceApp == nil || job.XintSourceRef == nil {
+		return false
+	}
+	if strings.TrimSpace(*job.SourceApp) != strings.TrimSpace(source) {
+		return false
+	}
+	return shouldIssueProfileLink(source, job.TargetKind)
 }

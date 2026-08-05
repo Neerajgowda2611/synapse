@@ -126,14 +126,6 @@ func (s *BatchFitService) BatchFitByXintSource(ctx context.Context, sourceApp st
 		job.TargetKind = kind
 	}
 
-	// Re-derive target_kind from the source ref so scoring + profile-link
-	// behavior never depends on a stale stored value (e.g. a job first ingested
-	// before projex target_kind inference existed). Fall back to the stored
-	// value when the ref is not a recognized pattern.
-	if kind, kindErr := inferTargetKind(sourceApp, req.XintSourceRef); kindErr == nil {
-		job.TargetKind = kind
-	}
-
 	rewardSystem, err := metric.LoadRewardSystem(ctx, s.rewardRepo, job.RewardSystemID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -162,7 +154,7 @@ func (s *BatchFitService) BatchFitByXintSource(ctx context.Context, sourceApp st
 			continue
 		}
 
-		fitResult, scoreErr := s.metricSvc.ScoreJobFitForUserWithRewardSystem(ctx, userID, job, rewardSystem, asOf)
+		fitResult, scoreErr := s.metricSvc.ScoreJobFitForUserWithRewardSystem(ctx, userID, job, rewardSystem, asOf, false)
 		if scoreErr != nil {
 			if strings.Contains(scoreErr.Error(), "no construct estimates generated") {
 				row.Status = "unavailable"
@@ -183,13 +175,13 @@ func (s *BatchFitService) BatchFitByXintSource(ctx context.Context, sourceApp st
 		row.FitPercent = &fitPercent
 		row.Score = &fitResult.Score.Score
 		row.Traits = buildBatchFitTraitScores(fitResult)
-		if job.TargetKind == model.JobTargetKindProject && sourceApp == "projex" {
+		if shouldIssueProfileLink(sourceApp, job.TargetKind) {
 			if s.linkSigner == nil {
-				return nil, fmt.Errorf("project-fit profile link signer is not configured")
+				return nil, fmt.Errorf("profile link signer is not configured")
 			}
 			_, profileURL, linkErr := s.linkSigner.Issue(job.ID, userID, sourceApp)
 			if linkErr != nil {
-				return nil, fmt.Errorf("issue project-fit profile link: %w", linkErr)
+				return nil, fmt.Errorf("issue profile link: %w", linkErr)
 			}
 			profileUserID := userID
 			row.UserID = &profileUserID
@@ -233,4 +225,17 @@ func buildBatchFitTraitScores(result *JobFitResult) []BatchFitTraitScore {
 
 func roundFitPercent(value float64) float64 {
 	return math.Round(value*1000) / 10
+}
+
+// shouldIssueProfileLink controls when batch fit returns a signed View-profile URL.
+// Projex: project targets. Placement: career profiles and jobs.
+func shouldIssueProfileLink(sourceApp string, kind model.JobTargetKind) bool {
+	switch strings.TrimSpace(sourceApp) {
+	case "projex":
+		return kind == model.JobTargetKindProject
+	case "placement":
+		return kind == model.JobTargetKindCareerProfile || kind == model.JobTargetKindJob
+	default:
+		return false
+	}
 }

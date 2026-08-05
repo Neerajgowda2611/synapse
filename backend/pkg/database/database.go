@@ -52,15 +52,7 @@ func InitDB(databaseURL string) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	if err := seedObservationCatalog(db); err != nil {
-		return nil, err
-	}
-
-	if err := seedSignalCatalog(db); err != nil {
-		return nil, err
-	}
-
-	if err := seedMetricCatalog(db); err != nil {
+	if err := seedProfilingCatalogIfNeeded(db); err != nil {
 		return nil, err
 	}
 

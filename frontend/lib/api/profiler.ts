@@ -171,7 +171,7 @@ export interface ProjectFitTraitDetail {
 
 export interface ProjectFitDetailResponse {
   target_id: string
-  target_kind: "project"
+  target_kind: "project" | "career_profile" | "job"
   project_name: string
   xint_source_ref: string
   learner: {
@@ -222,8 +222,12 @@ export async function listUserStreamActivitySafe(userId: string, asOf?: string) 
 }
 
 export interface StreamActivityObservation {
+  id: string
   connector: string
   observation_type: string
+  occurred_at: string
+  received_at?: string
+  fields?: Record<string, unknown>
 }
 
 export function listUserTraits(userId: string, asOf?: string) {

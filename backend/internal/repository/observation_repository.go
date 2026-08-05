@@ -178,7 +178,9 @@ func (r *ObservationRepository) ListFiltered(
 
 func (r *ObservationRepository) listBy(ctx context.Context, condition string, args []any, limit, offset int) ([]model.Observation, error) {
 	var observations []model.Observation
-	query := r.dbWithContext(ctx).Where(condition, args...).Order("received_at DESC")
+	// Prefer created_at (actual ingest time). Seeded/demo rows often set
+	// occurred_at/received_at to future event times, which buries real new events.
+	query := r.dbWithContext(ctx).Where(condition, args...).Order("created_at DESC")
 	if limit > 0 {
 		query = query.Limit(limit)
 	}

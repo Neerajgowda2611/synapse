@@ -20,15 +20,32 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (authLoading || !me?.institution_id) return
+    if (authLoading) return
+    if (!me?.institution_id) {
+      setLoading(false)
+      return
+    }
 
     listDataSources(me.institution_id)
       .then((response) => setDataSources(response.data ?? []))
+      .catch(() => setDataSources([]))
       .finally(() => setLoading(false))
   }, [authLoading, me?.institution_id])
 
   if (authLoading || loading) {
     return <LoadingState />
+  }
+
+  if (!me?.institution_id) {
+    return (
+      <div className="rounded-2xl border border-dashed bg-card px-6 py-16 text-center">
+        <h3 className="text-lg font-medium">Institution not linked</h3>
+        <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+          Your institution admin account is missing an institution assignment. Ask a platform
+          admin to attach your role to an institution, then sign in again.
+        </p>
+      </div>
+    )
   }
 
   return (

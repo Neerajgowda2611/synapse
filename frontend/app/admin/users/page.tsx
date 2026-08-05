@@ -14,7 +14,11 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (authLoading || !me?.institution_id) return
+    if (authLoading) return
+    if (!me?.institution_id) {
+      setLoading(false)
+      return
+    }
 
     listInstitutionUsers(me.institution_id)
       .then(setUsers)
@@ -27,7 +31,11 @@ export default function AdminUsersPage() {
   }
 
   if (!me?.institution_id) {
-    return <LoadingState label="Institution not found..." />
+    return (
+      <div className="rounded-2xl border border-dashed bg-card px-6 py-16 text-center text-sm text-muted-foreground">
+        Your account is missing an institution assignment.
+      </div>
+    )
   }
 
   return (

@@ -189,14 +189,14 @@ export default function CollectedDataPage() {
           ) : isWebhook ? (
             <>
               <DataTable
-                headers={["Occurred", "Event type", "Source / ID", "Payload"]}
+                headers={["Ingested", "Event type", "Source / ID", "Payload"]}
                 rows={observations.map((obs) => {
                   const expanded = expandedId === obs.id
                   return (
                     <TableRow key={obs.id}>
                       <TableCell className="whitespace-nowrap text-muted-foreground">
-                        {formatTime(obs.occurred_at)}
-                        <span className="block text-xs">received {formatTime(obs.received_at)}</span>
+                        {formatTime(obs.created_at ?? obs.received_at)}
+                        <span className="block text-xs">occurred {formatTime(obs.occurred_at)}</span>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">{obs.source_event_type}</Badge>
