@@ -42,13 +42,29 @@ function importanceLabel(
   return "Low"
 }
 
-function targetContext(kind: ProjectFitDetailResponse["target_kind"]) {
+type FitTargetCopy = {
+  badge: string
+  backLabel: string
+  overallLabel: string
+  importanceLabel: string
+  weightShareLabel: string
+  weightBlurb: (pct: number) => string
+  missingTitle: string
+  missingBody: (names: string, singular: boolean) => string
+  expired: string
+  compareHint: string
+  sourceName: string
+}
+
+function targetContext(kind: ProjectFitDetailResponse["target_kind"]): FitTargetCopy {
   switch (kind) {
     case "career_profile":
       return {
         badge: "Career profile fit",
         backLabel: "Back to Placement",
         overallLabel: "Overall career-profile fit",
+        importanceLabel: "Profile importance",
+        weightShareLabel: "Profile weight share",
         weightBlurb: (pct: number) => `${pct}% of this career profile's scoring weight`,
         missingTitle: "Some career-profile traits lack evidence",
         missingBody: (names: string, singular: boolean) =>
@@ -60,16 +76,18 @@ function targetContext(kind: ProjectFitDetailResponse["target_kind"]) {
       }
     case "job":
       return {
-        badge: "Role fit profile",
+        badge: "Job fit profile",
         backLabel: "Back to Placement",
-        overallLabel: "Overall role fit",
-        weightBlurb: (pct: number) => `${pct}% of this role's scoring weight`,
-        missingTitle: "Some role traits lack evidence",
+        overallLabel: "Overall job fit",
+        importanceLabel: "Job importance",
+        weightShareLabel: "Job weight share",
+        weightBlurb: (pct: number) => `${pct}% of this job's scoring weight`,
+        missingTitle: "Some job traits lack evidence",
         missingBody: (names: string, singular: boolean) =>
-          `${names} ${singular ? "is" : "are"} selected for this role but do not yet have enough learner signals. Fit may improve as more activity is observed.`,
+          `${names} ${singular ? "is" : "are"} selected for this job but do not yet have enough learner signals. Fit may improve as more activity is observed.`,
         expired: "This link has expired. Return to Placement and refresh the candidate scores.",
         compareHint:
-          "Traits are ranked by contribution so you can see how the learner profile compares with this role's selected weights.",
+          "Traits are ranked by contribution so you can see how the learner profile compares with this job's selected weights.",
         sourceName: "Placement",
       }
     default:
@@ -77,6 +95,8 @@ function targetContext(kind: ProjectFitDetailResponse["target_kind"]) {
         badge: "Project fit profile",
         backLabel: "Back to Projex",
         overallLabel: "Overall project fit",
+        importanceLabel: "Project importance",
+        weightShareLabel: "Project weight share",
         weightBlurb: (pct: number) => `${pct}% of this project's scoring weight`,
         missingTitle: "Some project traits lack evidence",
         missingBody: (names: string, singular: boolean) =>
@@ -140,10 +160,10 @@ function ComparisonBar({
 
 function TraitFitCard({
   trait,
-  weightBlurb,
+  copy,
 }: {
   trait: ProjectFitTraitDetail
-  weightBlurb: (pct: number) => string
+  copy: FitTargetCopy
 }) {
   const importance = importanceLabel(trait.weight_share_percent)
 
@@ -156,7 +176,7 @@ function TraitFitCard({
             <CardDescription>
               {trait.missing
                 ? "Profiler does not yet have enough evidence for this trait."
-                : weightBlurb(trait.weight_share_percent)}
+                : copy.weightBlurb(trait.weight_share_percent)}
             </CardDescription>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -174,7 +194,7 @@ function TraitFitCard({
             <p className="mt-1 text-xl font-semibold tabular-nums">{trait.trait_percent}%</p>
           </div>
           <div className="rounded-lg bg-muted/40 p-3">
-            <p className="text-xs text-muted-foreground">Project importance</p>
+            <p className="text-xs text-muted-foreground">{copy.importanceLabel}</p>
             <p className="mt-1 text-xl font-semibold tabular-nums">
               {trait.weight_share_percent}%
             </p>
@@ -193,7 +213,7 @@ function TraitFitCard({
         <div className="grid gap-4 sm:grid-cols-2">
           <ComparisonBar label="Learner profile level" value={trait.trait_percent} />
           <ComparisonBar
-            label="Project weight share"
+            label={copy.weightShareLabel}
             value={trait.weight_share_percent}
             tone="weight"
           />
@@ -343,7 +363,7 @@ export function ProjectFitView() {
 
         <div className="grid gap-4">
           {rankedTraits.map((trait) => (
-            <TraitFitCard key={trait.trait} trait={trait} weightBlurb={copy.weightBlurb} />
+            <TraitFitCard key={trait.trait} trait={trait} copy={copy} />
           ))}
         </div>
       </div>

@@ -92,6 +92,15 @@ func (s *ProjectFitService) GetBySignedToken(ctx context.Context, token string) 
 		}
 		return nil, err
 	}
+	// Prefer kind inferred from the source ref so UI copy stays correct even when
+	// the stored target_kind is stale (e.g. jobs ingested before inference existed).
+	targetKind := job.TargetKind
+	if job.XintSourceRef != nil {
+		if kind, kindErr := inferTargetKind(claims.Source, *job.XintSourceRef); kindErr == nil {
+			targetKind = kind
+			job.TargetKind = kind
+		}
+	}
 	if !profileLinkMatchesTarget(claims.Source, job) {
 		return nil, ErrProjectFitTargetMismatch
 	}
@@ -116,7 +125,7 @@ func (s *ProjectFitService) GetBySignedToken(ctx context.Context, token string) 
 
 	return &ProjectFitDetailResponse{
 		TargetID:    job.ID,
-		TargetKind:  job.TargetKind,
+		TargetKind:  targetKind,
 		ProjectName: job.Title,
 		SourceRef:   strings.TrimSpace(*job.XintSourceRef),
 		Learner: ProjectFitLearner{
